@@ -29,7 +29,9 @@ jobs:
             echo "== api"
             grep -n -B2 -A14 -E "declare function (closePositionInstructions|harvestPositionInstructions|decreaseLiquidityInstructions|fetchPositionsForOwner)\b|type (ClosePositionInstructions|HarvestPositionInstructions|DecreaseLiquidityInstructions)\b" node_modules/@orca-so/whirlpools/dist/index.d.ts | head -n 200 || true
             echo "== core quotes"
-            grep -n -A8 -E "type (CollectFeesQuote|CollectRewardsQuote|DecreaseLiquidityQuote|CollectRewardQuote) " node_modules/@orca-so/whirlpools-core/dist/browser/*.d.ts | head -n 80 || true
+            grep -rn -A8 -E "(type|interface) (CollectFeesQuote|CollectRewardsQuote|CollectRewardQuote)\b" node_modules/@orca-so/whirlpools-core/dist/ --include=*.d.ts | head -n 60 || true
+            echo "== orca meta"
+            curl -s https://api.orca.so/v2/solana/pools/Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE | head -c 5000
             echo "== whirlpool fields"
             grep -n -A30 -E "^type Whirlpool = " node_modules/@orca-so/whirlpools-client/dist/index.d.ts | cut -c1-160 || true
           } > ../sdk/api.txt 2>&1
