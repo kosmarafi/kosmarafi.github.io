@@ -7,11 +7,21 @@ const out = await pg.evaluate(async () => {
   const RPC = "https://mainnet.helius-rpc.com/?api-key=d69a3929-b7b3-4523-8dea-9d82a0bcfd36";
   const call = async (m, p) => { for (let i = 0; i < 6; i++) { const r = await fetch(RPC, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: m, params: p }) }); if (r.status === 429) { await new Promise(z => setTimeout(z, 800 * (i + 1))); continue } return (await r.json()).result } };
   const log = [kzSdk.version];
-  const sigs = await call("getSignaturesForAddress", ["whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc", { limit: 300 }]);
+  const accs = await call("getProgramAccounts", ["whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc", { encoding: "base64", dataSlice: { offset: 40, length: 32 }, filters: [{ dataSize: 216 }, { memcmp: { offset: 8, bytes: "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE" } }] }]);
+  log.push("posiciones en pool " + (accs ? accs.length : "null"));
   const owners = new Set();
-  for (let i = 0; i < sigs.length && owners.size < 12; i += 3) {
-    const txs = await Promise.all(sigs.slice(i, i + 3).filter(s => !s.err).map(s => call("getTransaction", [s.signature, { encoding: "jsonParsed", maxSupportedTransactionVersion: 0 }])));
-    txs.forEach(t => { if (!t) return; const l = (t.meta.logMessages || []).join("|"); if (/Instruction: (IncreaseLiquidity|CollectFees|DecreaseLiquidity)/.test(l) && !/Instruction: (Swap|TwoHopSwap)/.test(l)) owners.add(t.transaction.message.accountKeys[0].pubkey) });
+  const A = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+  const enc = (u) => { let n = 0n; for (const x of u) n = n * 256n + BigInt(x); let s = ""; while (n > 0n) { s = A[Number(n % 58n)] + s; n /= 58n } for (const x of u) { if (x) break; s = "1" + s } return s };
+  const pickd = (accs || []).sort(() => Math.random() - 0.5).slice(0, 25);
+  for (const a of pickd) {
+    if (owners.size >= 8) break;
+    const mint = enc(Uint8Array.from(atob(a.account.data[0]), c => c.charCodeAt(0)));
+    const la = await call("getTokenLargestAccounts", [mint]);
+    const ta = la && la.value && la.value.find(v => v.uiAmount === 1);
+    if (!ta) continue;
+    const ai = await call("getAccountInfo", [ta.address, { encoding: "jsonParsed" }]);
+    const ow = ai && ai.value && ai.value.data.parsed && ai.value.data.parsed.info.owner;
+    if (ow) owners.add(ow);
   }
   log.push("candidatos " + owners.size);
   for (const ow of owners) {
