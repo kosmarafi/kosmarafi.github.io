@@ -1791,7 +1791,7 @@ function posCard(p){
  var r=function(a,b){return '<div class="row" style="margin-top:6px"><span class="dim" style="font-size:13px">'+a+'</span><span class="v"><b>'+b+"</b></span></div>"};
  return '<div class="pos"><div class="srow" style="justify-content:space-between"><b style="font-size:17px">'+esc(p.pair)+'</b><span class="tag o">'+esc(p.fee)+'%</span></div>'+
   '<div class="srow" style="justify-content:space-between;margin-top:10px"><span class="tag '+(inR?"":"o")+'">'+(inR?"Dentro del rango":"Fuera de rango")+'</span><span class="num">'+fp(p.price)+'</span></div>'+
-  '<div class="srow" style="justify-content:space-between;margin-top:8px"><b class="num up">'+fp(p.lo)+'</b><b class="num up">'+fp(p.hi)+'</b></div><div class="rg"><i style="left:calc('+pc+'% - 3px)"></i></div>'+
+  '<div class="srow" style="justify-content:space-between;margin-top:8px"><b class="num up">'+(p.lo<1e-9?"0":fp(p.lo))+'</b><b class="num up">'+(p.hi>1e12?"∞":fp(p.hi))+'</b></div><div class="rg"><i style="left:calc('+pc+'% - 3px)"></i></div>'+
   (p.symA?r("Tokens",f(p.amtA,4)+" "+esc(p.symA)+" + "+f(p.amtB,4)+" "+esc(p.symB)):"")+r("Saldo",usd(p.usd))+
   r("PNL total",p.pnl==null?"—":'<span class="'+(p.pnl>=0?"up":"dn")+'">'+(p.pnl>=0?"+":"−")+usd(Math.abs(p.pnl))+(p.pnlPct!=null?" ("+(p.pnl>=0?"+":"−")+f(Math.abs(p.pnlPct),2)+"%)":"")+"</span>")+
   r("Rendimiento cosechado",usd(p.harv))+r("Rendimiento pendiente",usd(p.pend))+
@@ -1928,7 +1928,7 @@ async function loadPos(){var ow=hSol();if(!ow||!(window.kzSdk&&kzSdk.ready))retu
  try{if(p.on)p.on("accountChanged",function(k){if(k&&S.wid===w.id)go(k)})}catch(e){}
 })();
 window.addEventListener("kzsdk",function(){loadPos();if(S.sel&&!$("ps").hidden)rPs()});
-try{var kzM=document.createElement("script");kzM.type="module";kzM.src="./sdk/kz-sdk.js?v=2";document.head.appendChild(kzM)}catch(e){}
+try{var kzM=document.createElement("script");kzM.type="module";kzM.src="./sdk/kz-sdk.js?v=3";document.head.appendChild(kzM)}catch(e){}
 
 window.kzP=400;
 rRoad();rHome();rPf();rWallet();rLot();rNet("eth");rNet("bsc");loadNet("eth").then(function(){loadNet("bsc")});loadAave();

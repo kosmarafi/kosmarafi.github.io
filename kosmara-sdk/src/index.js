@@ -170,7 +170,7 @@ async function sendIxs(o, instructions) {
   const V = window.solanaWeb3 && window.solanaWeb3.VersionedTransaction;
   if (!V) throw new Error("No se cargó la librería de Solana");
   const rpc = createSolanaRpc(o.rpc);
-  const payer = createNoopSigner(address(o.owner));
+  const payer = o.signer || createNoopSigner(address(o.owner));
   const blockhash = (await rpc.getLatestBlockhash().send()).value;
   const build = async (ixs) => {
     const message = pipe(
@@ -214,11 +214,13 @@ async function sendIxs(o, instructions) {
 async function closePosition(o) {
   if (!o || !o.provider || !o.owner) throw new Error("Conecta tu wallet primero");
   const rpc = createSolanaRpc(o.rpc);
+  // Un solo firmante para la wallet: si hubiera dos objetos con la misma direccion, @solana/kit lo rechaza.
+  const signer = createNoopSigner(address(o.owner));
   const res = await closePositionInstructions(rpc, address(o.mint), {
     slippageToleranceBps: Math.max(1, Math.round(o.slipBps || 100)),
-    authority: createNoopSigner(address(o.owner)),
+    authority: signer,
   });
-  return sendIxs(o, res.instructions);
+  return sendIxs(Object.assign({}, o, { signer }), res.instructions);
 }
 
 /**
@@ -228,8 +230,9 @@ async function closePosition(o) {
 async function harvest(o) {
   if (!o || !o.provider || !o.owner) throw new Error("Conecta tu wallet primero");
   const rpc = createSolanaRpc(o.rpc);
-  const res = await harvestPositionInstructions(rpc, address(o.mint), { authority: createNoopSigner(address(o.owner)) });
-  return sendIxs(o, res.instructions);
+  const signer = createNoopSigner(address(o.owner));
+  const res = await harvestPositionInstructions(rpc, address(o.mint), { authority: signer });
+  return sendIxs(Object.assign({}, o, { signer }), res.instructions);
 }
 
 async function poolMeta(addr) {
@@ -342,7 +345,9 @@ async function history(url, posAddr, vaultA, vaultB, rewardVaults) {
     before = r[r.length - 1].signature;
   }
   const opened = sigs.length ? sigs[sigs.length - 1].blockTime : null;
-  const ok = sigs.filter((x) => !x.err).slice(0, 60);
+  let ok = sigs.filter((x) => !x.err);
+  // Si hay muchas, nos quedamos con las mas recientes y las mas antiguas (donde estan los depositos iniciales).
+  if (ok.length > 100) ok = ok.slice(0, 70).concat(ok.slice(-30));
   const txs = await pool(ok, 3, (x) => rpcCall(url, "getTransaction", [x.signature, { encoding: "jsonParsed", maxSupportedTransactionVersion: 0, commitment: "confirmed" }]));
 
   const ev = [];
@@ -358,7 +363,8 @@ async function history(url, posAddr, vaultA, vaultB, rewardVaults) {
       seq.forEach((x) => {
         if (x.programId === WHIRLPOOL_PROGRAM && x.data && Array.isArray(x.accounts)) {
           const kind = disc[Array.from(b58decode(x.data).slice(0, 8)).join(",")];
-          cur = kind && x.accounts.indexOf(posAddr) >= 0 ? { kind, a: 0, b: 0 } : null;
+          // Instrucciones nuevas o desconocidas que tocan la posicion: se clasifican por el sentido de las transferencias.
+          cur = x.accounts.indexOf(posAddr) >= 0 ? { kind: kind || "unk", ai: 0, bi: 0, ao: 0, bo: 0 } : null;
           if (cur && cur.kind !== "rew") ev.push(cur);
           return;
         }
@@ -372,12 +378,22 @@ async function history(url, posAddr, vaultA, vaultB, rewardVaults) {
           if (m) rew[m] = (rew[m] || 0) + amt;
           return;
         }
-        if (info.destination === vaultA || info.source === vaultA) cur.a += amt;
-        else if (info.destination === vaultB || info.source === vaultB) cur.b += amt;
+        if (info.destination === vaultA) cur.ai += amt;
+        else if (info.source === vaultA) cur.ao += amt;
+        else if (info.destination === vaultB) cur.bi += amt;
+        else if (info.source === vaultB) cur.bo += amt;
       });
     });
   });
-  return { opened, events: ev, rewards: rew, txCount: sigs.length };
+  const events = [];
+  ev.forEach((e) => {
+    let k = e.kind;
+    if (k === "unk") k = e.ai + e.bi > 0 ? "inc" : e.ao + e.bo > 0 ? "dec" : null;
+    if (!k) return;
+    if (k === "inc") events.push({ kind: k, a: e.ai, b: e.bi });
+    else events.push({ kind: k, a: e.ao, b: e.bo });
+  });
+  return { opened, events, rewards: rew, txCount: sigs.length };
 }
 
 async function usdPrices(mints) {
