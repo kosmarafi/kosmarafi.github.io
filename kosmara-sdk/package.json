@@ -1,0 +1,16 @@
+{
+  "name": "kosmara-sdk",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": { "build": "vite build" },
+  "dependencies": {
+    "@orca-so/whirlpools": "^8.0.1",
+    "@orca-so/whirlpools-client": "^7.0.0",
+    "@solana/kit": "^5.5.1"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0",
+    "vite-plugin-wasm": "^3.3.0"
+  }
+}

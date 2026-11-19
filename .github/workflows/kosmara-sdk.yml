@@ -1,0 +1,44 @@
+name: Kosmara SDK
+on:
+  push:
+    branches: [main]
+    paths:
+      - "kosmara-sdk/**"
+      - ".github/workflows/kosmara-sdk.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: kosmara-sdk
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Compilar
+        working-directory: kosmara-sdk
+        run: |
+          mkdir -p ../sdk
+          ( npm install && npm run build ) > ../sdk/build-log.txt 2>&1 && echo "BUILD OK" >> ../sdk/build-log.txt || echo "BUILD FAILED" >> ../sdk/build-log.txt
+          tail -n 80 ../sdk/build-log.txt > ../sdk/build-log.tmp && mv ../sdk/build-log.tmp ../sdk/build-log.txt
+          {
+            echo "== api"
+            grep -n -B2 -A14 -E "declare function (closePositionInstructions|harvestPositionInstructions|decreaseLiquidityInstructions|fetchPositionsForOwner)\b|type (ClosePositionInstructions|HarvestPositionInstructions|DecreaseLiquidityInstructions)\b" node_modules/@orca-so/whirlpools/dist/index.d.ts | head -n 200 || true
+            echo "== core quotes"
+            grep -n -A8 -E "type (CollectFeesQuote|CollectRewardsQuote|DecreaseLiquidityQuote|CollectRewardQuote) " node_modules/@orca-so/whirlpools-core/dist/browser/*.d.ts | head -n 80 || true
+            echo "== whirlpool fields"
+            grep -n -A30 -E "^type Whirlpool = " node_modules/@orca-so/whirlpools-client/dist/index.d.ts | cut -c1-160 || true
+          } > ../sdk/api.txt 2>&1
+      - name: Guardar resultado
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add sdk
+          git commit -m "Compilar SDK de Kosmara" || exit 0
+          git pull --rebase origin main
+          git push
