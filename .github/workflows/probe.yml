@@ -1,0 +1,21 @@
+name: probe
+on: push
+jobs:
+  p:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          sleep 60
+          npm i playwright@1 >/dev/null 2>&1 && npx playwright install --with-deps chromium >/dev/null 2>&1
+          cat > t.mjs <<'JS'
+          import { chromium } from 'playwright';
+          const b=await chromium.launch();const pg=await b.newPage();
+          await pg.goto('https://kosmarafi.github.io/?v='+Date.now());await pg.waitForFunction(()=>window.solanaWeb3,null,{timeout:60000});
+          const r=await pg.evaluate(async()=>{const W=solanaWeb3,out={};const pk=W.Keypair.generate().publicKey,to=new W.PublicKey("7ZeR8DKhdDDXsYHk5oBWPvf9edAzF6cvaJBmuJsry9Uw");
+            try{W.SystemProgram.transfer({fromPubkey:pk,toPubkey:to,lamports:20000});out.old="ok"}catch(e){out.old="ERR "+e.message}
+            try{S.pk=pk.toBase58();const q=await jj("v1/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&amount=10000000&slippageBps=100");
+              const tx=await jupBuild(q,20000);out.newTx=tx.serialize().length;out.ixs=tx.message.compiledInstructions.length}catch(e){out.newErr=e.message}
+            return out});
+          console.log("RESULT",JSON.stringify(r));await b.close();
+          JS
+          node t.mjs
