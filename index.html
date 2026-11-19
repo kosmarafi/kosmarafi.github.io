@@ -694,7 +694,9 @@ function jIx(ix){var W=solanaWeb3;return new W.TransactionInstruction({programId
 async function jupBuild(q,feeL){
  var W=solanaWeb3,si=await jj("v1/swap-instructions",{quoteResponse:q,userPublicKey:S.pk,dynamicComputeUnitLimit:true,dynamicSlippage:false});
  var ixs=[].concat((si.computeBudgetInstructions||[]).map(jIx),(si.setupInstructions||[]).map(jIx),[jIx(si.swapInstruction)],si.cleanupInstruction?[jIx(si.cleanupInstruction)]:[],(si.otherInstructions||[]).map(jIx));
- if(feeL>0)ixs.push(W.SystemProgram.transfer({fromPubkey:new W.PublicKey(S.pk),toPubkey:new W.PublicKey(JFEE_TO),lamports:feeL}));
+ if(feeL>0){/* transferencia de SOL armada a mano (instrucción 2 del System Program + u64 LE), sin depender del Buffer del navegador */
+  var d=new Uint8Array(12),dv=new DataView(d.buffer);dv.setUint32(0,2,true);dv.setBigUint64(4,BigInt(Math.floor(feeL)),true);
+  ixs.push(new W.TransactionInstruction({programId:W.SystemProgram.programId,keys:[{pubkey:new W.PublicKey(S.pk),isSigner:true,isWritable:true},{pubkey:new W.PublicKey(JFEE_TO),isSigner:false,isWritable:true}],data:d}))}
  var alts=[];for(var i=0;i<(si.addressLookupTableAddresses||[]).length;i++){var a=si.addressLookupTableAddresses[i],ai=await rc("getAccountInfo",[a,{encoding:"base64"}]);var v=ai&&ai.value;if(v)alts.push(new W.AddressLookupTableAccount({key:new W.PublicKey(a),state:W.AddressLookupTableAccount.deserialize(b64u(v.data[0]))}))}
  var bh=await rc("getLatestBlockhash",[{commitment:"confirmed"}]);
  return new W.VersionedTransaction(new W.TransactionMessage({payerKey:new W.PublicKey(S.pk),recentBlockhash:(bh.value||bh).blockhash,instructions:ixs}).compileToV0Message(alts))}
