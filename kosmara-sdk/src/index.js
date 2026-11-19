@@ -126,10 +126,23 @@ const b64 = (u8) => {
 };
 
 async function rpcCall(url, method, params) {
-  const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }) });
-  const j = await r.json();
-  if (j.error) throw new Error(j.error.message || "Error del RPC");
-  return j.result;
+  // Reintenta si el RPC pide calma (429): el plan gratuito limita peticiones por segundo.
+  for (let i = 0; ; i++) {
+    const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }) });
+    if ((r.status === 429 || r.status >= 500) && i < 5) {
+      await sleep(400 * Math.pow(2, i) + Math.random() * 200);
+      continue;
+    }
+    const txt = await r.text();
+    let j;
+    try {
+      j = JSON.parse(txt);
+    } catch (e) {
+      throw new Error("El RPC respondió: " + txt.slice(0, 60));
+    }
+    if (j.error) throw new Error(j.error.message || "Error del RPC");
+    return j.result;
+  }
 }
 
 // Monta la transaccion, la simula y la pasa a la wallet para firmar.
@@ -311,7 +324,7 @@ async function history(url, posAddr, vaultA, vaultB, rewardVaults) {
   }
   const opened = sigs.length ? sigs[sigs.length - 1].blockTime : null;
   const ok = sigs.filter((x) => !x.err).slice(0, 60);
-  const txs = await pool(ok, 4, (x) => rpcCall(url, "getTransaction", [x.signature, { encoding: "jsonParsed", maxSupportedTransactionVersion: 0, commitment: "confirmed" }]));
+  const txs = await pool(ok, 3, (x) => rpcCall(url, "getTransaction", [x.signature, { encoding: "jsonParsed", maxSupportedTransactionVersion: 0, commitment: "confirmed" }]));
 
   const ev = [];
   const rew = {};
@@ -423,7 +436,7 @@ async function positions(o) {
   const owner = createNoopSigner(address(o.owner));
   const now = Date.now() / 1000;
 
-  const out = await pool(list, 3, async (p) => {
+  const out = await pool(list, 2, async (p) => {
     const d = p.data;
     const w = P[String(d.whirlpool)];
     if (!w) return null;
