@@ -706,7 +706,12 @@ async function execSwap(v,im,om,amt,slip){
  var V=solanaWeb3.VersionedTransaction;window.kzLastFee=0;
  var q=await jj("v1/quote?inputMint="+im+"&outputMint="+om+"&amount="+amt+"&slippageBps="+Math.round(slip*100)+(v==="Jupiter"?"":"&dexes="+encodeURIComponent(await dexFor(v))));
  var fee=0;try{fee=await jfeeLamports(im,om,amt,q)}catch(e){fee=0}
- if(fee>0){var tx=await jupBuild(q,fee),r0=await pv.signAndSendTransaction(tx);window.kzLastFee=fee;return r0.signature}
+ if(fee>0){var tx=await jupBuild(q,fee);
+  /* Como recomienda Phantom: simular antes de pedir la firma, firmar con signTransaction y enviar por nuestro RPC con comprobación previa */
+  var sim=await rc("simulateTransaction",[u8b(tx.serialize()),{encoding:"base64",sigVerify:false,commitment:"confirmed"}]),sv=sim&&(sim.value||sim);
+  if(sv&&sv.err){var lg=(sv.logs||[]).join(" ");throw new Error(/insufficient|0x1\b/i.test(lg)?"insufficient funds":/slippage|0x1771/i.test(lg)?"slippage":"La simulación del swap falló; pide un precio nuevo")}
+  var stx=await pv.signTransaction(tx),sig=await rc("sendTransaction",[u8b(stx.serialize()),{encoding:"base64",skipPreflight:false,preflightCommitment:"confirmed",maxRetries:3}]);
+  window.kzLastFee=fee;return sig}
  if(v==="Jupiter"){
   var o=await jj("v2/order?inputMint="+im+"&outputMint="+om+"&amount="+amt+"&taker="+S.pk);if(!o.transaction)throw new Error("Jupiter no devolvió transacción");
   var sg=await pv.signTransaction(V.deserialize(b64u(o.transaction))),ex=await jj("v2/execute",{signedTransaction:u8b(sg.serialize()),requestId:o.requestId});
