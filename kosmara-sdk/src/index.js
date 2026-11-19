@@ -4,7 +4,8 @@
 import { openPositionInstructions, fetchPositionsForOwner, closePositionInstructions, harvestPositionInstructions } from "@orca-so/whirlpools";
 import { fetchAllWhirlpool } from "@orca-so/whirlpools-client";
 import {
-  createSolanaRpc,
+  createSolanaRpcFromTransport,
+  createDefaultRpcTransport,
   address,
   createNoopSigner,
   pipe,
@@ -30,6 +31,24 @@ const STABLES = {
 const MAX_TX_BYTES = 1232;
 const PRIORITY_MICROLAMPORTS = 20000;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// RPC con reintentos: si el proveedor responde 429 (demasiadas peticiones), espera y repite.
+function createSolanaRpc(url) {
+  const base = createDefaultRpcTransport({ url });
+  const transport = async (req) => {
+    for (let i = 0; ; i++) {
+      try {
+        return await base(req);
+      } catch (e) {
+        const code = e && e.context && e.context.statusCode;
+        const busy = code === 429 || (code >= 500 && code < 600) || /8100002/.test(String(e && e.message));
+        if (!busy || i >= 5) throw e;
+        await sleep(400 * Math.pow(2, i) + Math.random() * 200);
+      }
+    }
+  };
+  return createSolanaRpcFromTransport(transport);
+}
 
 // Instruccion del programa Compute Budget: etiqueta + entero little-endian.
 function budgetIx(tag, value, bytes) {
