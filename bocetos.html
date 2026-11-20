@@ -61,11 +61,11 @@ function mkP(){var P=[];SR.forEach(function(s,i){for(var k=0;k<3;k++)P.push({s:i
   var gl=x.createRadialGradient(cx,cy,0,cx,cy,S*.35);gl.addColorStop(0,"rgba(255,255,255,.9)");gl.addColorStop(.4,"rgba(170,150,255,.35)");gl.addColorStop(1,"rgba(170,150,255,0)");x.fillStyle=gl;x.beginPath();x.arc(cx,cy,S*.35,0,6.3);x.fill();
   streams(x,W,H,cx,cy,P,dt);
   /* redes saliendo del fondo */
-  if(L.length<5&&Math.random()<dt*1.6){var a=Math.random()*6.283;L.push({k:k++%NW.length,a:a,z:0})}
+  if(L.length<6&&Math.random()<dt*2.2){var a=Math.random()*6.283;L.push({k:k++%NW.length,a:a,z:0})}
   bt-=dt;if(bt<=0){L.push({btc:1,a:-.7,z:0});bt=7}
   L.sort(function(p,q){return p.z-q.z});
   for(var j=L.length-1;j>=0;j--){var o=L[j];o.z+=dt*.28;if(o.z>1){L.splice(j,1);continue}
-   var e=Math.pow(o.z,2),d=e*S*1.25,px=cx+Math.cos(o.a)*d*1.15,py=cy+Math.sin(o.a)*d*.8,r=3+e*S*.2,al=Math.min(1,o.z*4)*(o.z>.85?(1-o.z)/.15:1);
+   var e=Math.pow(o.z,1.7),d=e*S*1.25,px=cx+Math.cos(o.a)*d*1.15,py=cy+Math.sin(o.a)*d*.8,r=4+e*S*.2,al=Math.min(1,o.z*4)*(o.z>.85?(1-o.z)/.15:1);
    if(o.btc){logo(x,BTC,px,py,r,al,"rgba(247,147,26,.9)");if(o.z>.45)label(x,"Bitcoin - THORChain",px,py+r+5,al,"#ffe1b4")}
    else{logo(x,NW[o.k].im,px,py,r,al);if(o.z>.55)label(x,NW[o.k].n,px,py+r+5,al)}}
  })})();
@@ -75,13 +75,13 @@ function mkP(){var P=[];SR.forEach(function(s,i){for(var k=0;k<3;k++)P.push({s:i
  setup("c3",function(x,W,H,dt,T){var s=Math.min(W/358,H/236),ox=(W-358*s)/2,oy=(H-236*s)/2;function X(v){return ox+v*s}function Y(v){return oy+v*s}
   var hub=[178,118],n=SR.length,lines=[];
   /* líneas de protocolos: nombre a la izquierda, tramo recto y bajada en 45° hasta el intercambiador */
-  for(var i=0;i<n;i++){var y=20+i*33,dy=y-hub[1],bx=Math.max(66,hub[0]-Math.abs(dy)-14);lines.push({c:SR[i][1],p:[[66,y],[bx,y],[hub[0]-14,hub[1]+(dy>0?1:dy<0?-1:0)*0],[hub[0],hub[1]]],n:SR[i][0]})}
+  for(var i=0;i<n;i++){var y=20+i*33,dy=y-hub[1],bx=Math.max(80,hub[0]-Math.abs(dy)-14);lines.push({c:SR[i][1],p:[[80,y],[bx,y],[hub[0]-14,hub[1]+(dy>0?1:dy<0?-1:0)*0],[hub[0],hub[1]]],n:SR[i][0]})}
   /* ramas hacia las redes */
   var br=[{c:"208,139,255",p:[[178,118],[228,68],[330,68]],st:[0,11,12,6]},{c:"120,200,255",p:[[178,118],[330,118]],st:[1,3,4,9,10]},{c:"255,170,120",p:[[178,118],[228,168],[330,168]],st:[2,5,8,13,7]}];
   function plen(p){var L=0;for(var i=1;i<p.length;i++)L+=Math.hypot(p[i][0]-p[i-1][0],p[i][1]-p[i-1][1]);return L}
   function at(p,u){var L=plen(p)*u;for(var i=1;i<p.length;i++){var sl=Math.hypot(p[i][0]-p[i-1][0],p[i][1]-p[i-1][1]);if(L<=sl){var f=L/sl;return[p[i-1][0]+(p[i][0]-p[i-1][0])*f,p[i-1][1]+(p[i][1]-p[i-1][1])*f]}L-=sl}return p[p.length-1]}
   function path(p,col,w,dash){x.beginPath();x.moveTo(X(p[0][0]),Y(p[0][1]));for(var i=1;i<p.length;i++)x.lineTo(X(p[i][0]),Y(p[i][1]));x.strokeStyle=col;x.lineWidth=w*s;x.lineJoin="round";x.lineCap="round";x.setLineDash(dash||[]);x.stroke();x.setLineDash([])}
-  lines.forEach(function(l){path(l.p,"rgba("+l.c+",.9)",3);x.fillStyle="rgb("+l.c+")";x.beginPath();x.arc(X(66),Y(l.p[0][1]),3.2*s,0,6.3);x.fill();x.font="600 "+(10.5*s)+"px "+F;x.textAlign="right";x.textBaseline="middle";x.fillStyle="#c9cadb";x.fillText(l.n,X(58),Y(l.p[0][1]))});
+  lines.forEach(function(l){path(l.p,"rgba("+l.c+",.9)",3);x.fillStyle="rgb("+l.c+")";x.beginPath();x.arc(X(80),Y(l.p[0][1]),3.2*s,0,6.3);x.fill();x.font="600 "+(10.5*s)+"px "+F;x.textAlign="right";x.textBaseline="middle";x.fillStyle="#c9cadb";x.fillText(l.n,X(73),Y(l.p[0][1]))});
   br.forEach(function(b){path(b.p,"rgba("+b.c+",.9)",3.4)});
   /* THORChain: línea discontinua que une el final de las ramas y sube a Bitcoin */
   var th=[[345,168],[345,118],[345,68],[345,22]];path(th,"rgba(51,255,190,.95)",2.2,[5*s,4*s]);
