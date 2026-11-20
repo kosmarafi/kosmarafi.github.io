@@ -506,7 +506,7 @@ Se detecta de dos formas: la marca kzdl=ph del enlace, o que la página ocupe ca
 <div id="kmenu" hidden role="dialog" aria-modal="true" aria-label="Menú"><div class="mpan"></div></div>
 <div class="view on" data-view="home">
 <header class="all hz">
-<canvas id="door" role="img" aria-label="Orca, Raydium, Jupiter, Kamino, Uniswap, Curve y PancakeSwap confluyen en un único universo: Kosmara"></canvas>
+<canvas id="door" role="img" aria-label="Orca, Raydium, Jupiter, Kamino, Uniswap, Curve y PancakeSwap confluyen en el portal de Kosmara, rodeado por un anillo con sus 14 redes: Solana, Ethereum, BNB Chain, Base, Arbitrum, Avalanche, HyperEVM, Robinhood Chain, Polygon, Optimism, Unichain, Monad, Sonic y Linea"></canvas>
 <div><h1><span><i>La sencillez</i></span><span><i>de un único</i></span><span><i>universo</i></span></h1>
 <p class="lead">Pools de liquidez, swaps en 14 redes y todo tu portafolio en un solo sitio. Tus fondos no salen de tu wallet: cada operación la firmas tú.</p>
 <div class="hz-cta"><button class="btn hz-go" data-v="pools">Explorar pools</button><button class="btn hz-alt" data-v="swap">Cambiar tokens</button></div>
@@ -1574,14 +1574,28 @@ function tickRun(){if(tkOn||!window.requestAnimationFrame)return;tkOn=true;var b
  box.addEventListener("pointerenter",function(){tkHold=true});box.addEventListener("pointerleave",function(){tkHold=false});
  box.addEventListener("touchstart",function(){tkHold=true},{passive:true});box.addEventListener("touchend",function(){setTimeout(function(){tkHold=false},1200)});
  (function loop(n){var tt=box.querySelector(".tick-in");if(tt&&tt.style&&!box.hidden&&!document.hidden){if(!tkLast)tkLast=n;var dt=Math.min(64,n-tkLast);if(!tkHold)tkX+=dt*.04;var q=tt.scrollWidth/4;if(q>0&&tkX>=q)tkX%=q;tt.style.transform="translateX("+(-tkX).toFixed(1)+"px)"}tkLast=n;requestAnimationFrame(loop)})(performance.now())}
-/* La puerta: los protocolos integrados confluyen en un solo punto. */
+/* La puerta: los protocolos integrados confluyen en el portal. Dentro, un túnel de luz que acelera con cada llegada;
+   alrededor, un anillo inclinado con las 14 redes orbitando (pasan por detrás del portal y por delante,
+   y la que cruza por delante muestra su nombre). */
 (function(){
  var cv=$("door");if(!cv||!cv.getContext)return;var x=cv.getContext("2d"),W=0,H=0,D=1,raf=0,t0=0,still=false,F=[],G=0,M=[];
  var SR=[["Orca","20,241,149"],["Raydium","20,241,149"],["Jupiter","20,241,149"],["Kamino","20,241,149"],["Uniswap","140,158,255"],["Curve","140,158,255"],["PancakeSwap","243,186,47"]],P=[];
+ var NW=[["solana","Solana"],["ethereum","Ethereum"],["bsc","BNB Chain"],["base","Base"],["arbitrum","Arbitrum"],["avalanche","Avalanche"],["hyperevm","HyperEVM"],["robinhood","Robinhood Chain"],["polygon","Polygon"],["optimism","Optimism"],["unichain","Unichain"],["monad","Monad"],["sonic","Sonic"],["linea","Linea"]].map(function(n){var im=new Image();im.src="./chains/"+n[0]+".svg";return{im:im,n:n[1]}}),ROT=0,WP=[];
+ for(var w=0;w<70;w++)WP.push({a:Math.random()*6.283,z:Math.random(),v:.25+Math.random()*.5});
  SR.forEach(function(s,i){for(var k=0;k<4;k++)P.push({s:i,t:(k/4+i*.137)%1,v:.07+((i*7+k*3)%5)*.012})});
  for(var m=0;m<14;m++)M.push({x:Math.random(),y:Math.random(),v:.08+Math.random()*.14,r:.6+Math.random()*1.4,c:SR[m%SR.length][1]});
  function size(){D=Math.min(2,window.devicePixelRatio||1);W=cv.clientWidth;H=cv.clientHeight;cv.width=W*D;cv.height=H*D;x.setTransform(D,0,0,D,0,0)}
- function geo(){var dh=H*.74,dw=Math.min(dh*.46,W*.3),dx=W-Math.max(dw/2+10,H*.31+4),dy=H/2;return{dh:dh,dw:dw,dx:dx,dy:dy,l:dx-dw/2,top:dy-dh/2}}
+ function geo(){var dh=H*.74,dw=Math.min(dh*.46,W*.3),rx=dw*.8+18,dx=W-Math.max(dw/2+10,H*.31+4,rx+14),dy=H/2;return{dh:dh,dw:dw,dx:dx,dy:dy,l:dx-dw/2,top:dy-dh/2,rx:rx,ry:Math.max(14,dh*.12)}}
+ /* Punto del anillo: elipse inclinada alrededor del centro del portal; d>0 = por delante */
+ function orb(g,a){var ph=-.26,cx=g.dx,cy=g.dy+g.dh*.08,ca=Math.cos(a),sa=Math.sin(a);return{x:cx+g.rx*ca*Math.cos(ph)-g.ry*sa*Math.sin(ph),y:cy+g.rx*ca*Math.sin(ph)+g.ry*sa*Math.cos(ph),d:sa}}
+ function ring(g,front){x.beginPath();for(var s=0;s<=48;s++){var a=front?s/48*Math.PI:Math.PI+s/48*Math.PI,o=orb(g,a);s?x.lineTo(o.x,o.y):x.moveTo(o.x,o.y)}
+  x.strokeStyle=front?"rgba(190,175,255,.38)":"rgba(190,175,255,.16)";x.lineWidth=front?1.3:1;x.stroke()}
+ function nets(g,front){var n=NW.length,lb=null;for(var k=0;k<n;k++){var a=ROT+k/n*6.283,o=orb(g,a);if((o.d>0)!==front)continue;
+   var sc=.72+.38*(o.d+1)/2,r=Math.max(6,g.dw*.11)*sc,al=front?.95:.5+.3*(o.d+1);
+   x.save();x.globalAlpha=al;x.shadowColor="rgba(124,92,255,.8)";x.shadowBlur=front?10:0;x.fillStyle="#0d1424";x.beginPath();x.arc(o.x,o.y,r+1.5,0,6.3);x.fill();x.shadowBlur=0;
+   x.beginPath();x.arc(o.x,o.y,r,0,6.3);x.clip();var im=NW[k].im;if(im.complete&&im.naturalWidth)x.drawImage(im,o.x-r,o.y-r,r*2,r*2);x.restore();
+   if(front&&o.d>.93)lb={o:o,r:r,n:NW[k].n,a:Math.min(1,(o.d-.93)/.05)}}
+  if(lb){x.save();x.globalAlpha=lb.a;x.font='600 10.5px "Space Grotesk",system-ui,sans-serif';x.textAlign="center";x.textBaseline="top";x.fillStyle="#e8e6ff";x.shadowColor="rgba(0,0,0,.8)";x.shadowBlur=6;x.fillText(lb.n,lb.o.x,lb.o.y+lb.r+5);x.restore()}}
  function arch(g,pad){var l=g.l-pad,r=g.l+g.dw+pad,t=g.top-pad,b=g.top+g.dh+pad,rd=Math.max(0,(r-l)/2);x.beginPath();x.moveTo(l,b);x.lineTo(l,t+rd);x.arc(l+rd,t+rd,rd,Math.PI,0);x.lineTo(r,b);x.closePath()}
  function pt(g,i,t){var n=SR.length,y0=H*.09+(H*.82)*(i/(n-1)),x0=Math.min(96,W*.29),x3=g.l+g.dw*.5,y3=g.dy+(i-(n-1)/2)*(g.dh*.07),c=x0+(x3-x0)*.55,u=1-t;
   return[u*u*u*x0+3*u*u*t*c+3*u*t*t*(x0+(x3-x0)*.62)+t*t*t*x3,u*u*u*y0+3*u*u*t*y0+3*u*t*t*y3+t*t*t*y3]}
@@ -1590,12 +1604,17 @@ function tickRun(){if(tkOn||!window.requestAnimationFrame)return;tkOn=true;var b
   var dt=t0?Math.min(.05,(ts-t0)/1000):0;t0=ts;x.clearRect(0,0,W,H);var g=geo(),n=SR.length;
   // resplandor y hueco de la puerta
   x.save();x.translate(g.dx,g.dy);x.scale(.62,1);var rg=x.createRadialGradient(0,0,4,0,0,H/2);rg.addColorStop(0,"rgba(124,92,255,.42)");rg.addColorStop(.55,"rgba(45,212,191,.12)");rg.addColorStop(1,"rgba(0,0,0,0)");x.fillStyle=rg;x.beginPath();x.arc(0,0,H/2,0,6.3);x.fill();x.restore();
+  ROT+=dt*(.16+.5*Math.min(1,G));ring(g,false);nets(g,false);
   arch(g,0);var lg=x.createLinearGradient(0,g.top,0,g.top+g.dh);G=Math.max(0,G-dt*1.6);var gk=Math.min(1,G);
   lg.addColorStop(0,"rgba(190,175,255,"+(.88+.12*gk)+")");lg.addColorStop(.55,"rgba(90,200,220,"+(.68+.25*gk)+")");lg.addColorStop(1,"rgba(45,212,191,"+(.32+.3*gk)+")");x.fillStyle=lg;x.shadowColor="rgba(124,92,255,.95)";x.shadowBlur=34+30*gk;x.fill();x.shadowBlur=0;
-  // motas de luz que suben dentro de la puerta
-  x.save();arch(g,-2);x.clip();for(var mi=0;mi<M.length;mi++){var mo=M[mi];mo.y-=mo.v*dt;if(mo.y<0){mo.y=1;mo.x=Math.random()}var my=g.top+mo.y*g.dh,mx=g.l+6+mo.x*(g.dw-12),ma=Math.min(1,mo.y*3)*(.35+.5*gk);
-   x.fillStyle="rgba(255,255,255,"+ma.toFixed(2)+")";x.shadowColor="rgba("+mo.c+",1)";x.shadowBlur=8;x.beginPath();x.arc(mx,my,mo.r,0,6.3);x.fill()}x.shadowBlur=0;x.restore();
+  // túnel de luz dentro del portal: rayas que salen del fondo hacia ti y aceleran con cada llegada
+  x.save();arch(g,-2);x.clip();var vx=g.dx,vy=g.dy-g.dh*.08,sp=1+3*gk,R=Math.max(g.dw,g.dh)*.75;x.lineCap="round";
+  for(var wi=0;wi<WP.length;wi++){var wp=WP[wi],z0=wp.z;wp.z+=wp.v*dt*sp*(.35+wp.z);if(wp.z>1){wp.z=Math.random()*.15;wp.a=Math.random()*6.283;continue}
+   var r0=R*z0*z0,r1=R*wp.z*wp.z,ca2=Math.cos(wp.a),sa2=Math.sin(wp.a)*1.25,al2=Math.min(1,wp.z*2.2)*(.35+.45*gk);
+   x.strokeStyle="rgba(255,255,255,"+al2.toFixed(2)+")";x.lineWidth=.6+1.6*wp.z;x.beginPath();x.moveTo(vx+ca2*Math.max(r0,r1-14-30*gk),vy+sa2*Math.max(r0,r1-14-30*gk));x.lineTo(vx+ca2*r1,vy+sa2*r1);x.stroke()}
+  var cg=x.createRadialGradient(vx,vy,0,vx,vy,g.dw*.55);cg.addColorStop(0,"rgba(255,255,255,"+(.55+.35*gk)+")");cg.addColorStop(1,"rgba(255,255,255,0)");x.fillStyle=cg;x.beginPath();x.arc(vx,vy,g.dw*.55,0,6.3);x.fill();x.restore();
   arch(g,7);x.strokeStyle="rgba(255,255,255,.16)";x.lineWidth=1;x.stroke();
+  ring(g,true);nets(g,true);
   // corrientes
   x.font='600 11.5px "Space Grotesk",system-ui,sans-serif';x.textBaseline="middle";
   for(var i=0;i<n;i++){var c=SR[i][1],a=pt(g,i,0);
