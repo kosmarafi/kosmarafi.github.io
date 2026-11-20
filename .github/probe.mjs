@@ -1,0 +1,21 @@
+import { chromium } from "playwright";
+const b = await chromium.launch(); const pg = await b.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1.5 });
+pg.on("pageerror", e => console.log("PAGEERR", e.message));
+await pg.goto("https://kosmarafi.github.io/?t=" + Date.now(), { waitUntil: "load" });
+await pg.waitForFunction(() => typeof kzConfirm === "function", null, { timeout: 90000 });
+await pg.waitForTimeout(5000);
+await pg.evaluate(() => {
+  document.querySelectorAll("[id*=splash],.splash").forEach(e => e.remove());
+  document.querySelector('[data-v="portfolio"]').click();
+  S.pk = "8AMfcuNiwoQH8xKiytkujH5JVjiskER8eRTK7XAfhQ21"; S.wid = "ph"; S.wname = "Phantom"; S.sw = {}; S.wch = {};
+  window.hSol = () => S.pk; window.needSol = async () => true; S.pfTab = "liq";
+  S.positions = [{ pair: "ANT/USDC", fee: "0.04", price: 91.94, lo: 89.7453, hi: 94.0826, usd: 157.11, amtA: 0.83, amtB: 80.45, symA: "ANT", symB: "USDC", pnl: 1.25, pnlPct: 0.8, harv: 0, pend: 0.28, est: { "24h": 7.53 }, entry: 91.177, dur: "55m", mint: "X", pool: "Y" }];
+  rConn(); rPf();
+  document.querySelector('[data-pact="close"]').scrollIntoView({ block: "center" });
+  document.querySelector('[data-pact="close"]').click();
+});
+await pg.waitForTimeout(800);
+await pg.screenshot({ path: "b.png" });
+await pg.click('.kzc [data-k="0"]');
+console.log("CLOSED", await pg.evaluate(() => !document.querySelector(".kzc")));
+await b.close();
