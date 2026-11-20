@@ -1630,7 +1630,7 @@ function tickRun(){if(tkOn||!window.requestAnimationFrame)return;tkOn=true;var b
   var dt=t0?Math.min(.05,(ts-t0)/1000):0;t0=ts;x.clearRect(0,0,W,H);var g=geo(),n=SR.length;
   // resplandor y hueco de la puerta
   x.save();x.translate(g.dx,g.dy);x.scale(.62,1);var rg=x.createRadialGradient(0,0,4,0,0,H/2);rg.addColorStop(0,"rgba(124,92,255,.42)");rg.addColorStop(.55,"rgba(45,212,191,.12)");rg.addColorStop(1,"rgba(0,0,0,0)");x.fillStyle=rg;x.beginPath();x.arc(0,0,H/2,0,6.3);x.fill();x.restore();
-  ROT+=dt*(.16+.5*Math.min(1,G));ring(g,false);nets(g,false);
+  ROT+=dt*.22;/* velocidad constante del anillo */ring(g,false);nets(g,false);
   arch(g,0);var lg=x.createLinearGradient(0,g.top,0,g.top+g.dh);G=Math.max(0,G-dt*1.6);var gk=Math.min(1,G);
   lg.addColorStop(0,"rgba(190,175,255,"+(.88+.12*gk)+")");lg.addColorStop(.55,"rgba(90,200,220,"+(.68+.25*gk)+")");lg.addColorStop(1,"rgba(45,212,191,"+(.32+.3*gk)+")");x.fillStyle=lg;x.shadowColor="rgba(124,92,255,.95)";x.shadowBlur=34+30*gk;x.fill();x.shadowBlur=0;
   // túnel de luz dentro del portal: rayas que salen del fondo hacia ti y aceleran con cada llegada
