@@ -506,7 +506,7 @@ Se detecta de dos formas: la marca kzdl=ph del enlace, o que la página ocupe ca
 <div id="kmenu" hidden role="dialog" aria-modal="true" aria-label="Menú"><div class="mpan"></div></div>
 <div class="view on" data-view="home">
 <header class="all hz">
-<canvas id="door" role="img" aria-label="Orca, Raydium, Jupiter, Kamino, Uniswap, Curve y PancakeSwap confluyen en el portal de Kosmara, rodeado por un anillo con sus 14 redes; entre redes, THORChain, que además trae Bitcoin: Solana, Ethereum, BNB Chain, Base, Arbitrum, Avalanche, HyperEVM, Robinhood Chain, Polygon, Optimism, Unichain, Monad, Sonic y Linea"></canvas>
+<canvas id="door" role="img" aria-label="Orca, Raydium, Jupiter, Kamino, Uniswap, Curve y PancakeSwap confluyen en el portal de Kosmara, rodeado por un anillo con sus 14 redes conectadas entre sí por THORChain, que además trae Bitcoin: Solana, Ethereum, BNB Chain, Base, Arbitrum, Avalanche, HyperEVM, Robinhood Chain, Polygon, Optimism, Unichain, Monad, Sonic y Linea"></canvas>
 <div><h1><span><i>La sencillez</i></span><span><i>de un único</i></span><span><i>universo</i></span></h1>
 <p class="lead">Pools de liquidez, swaps en 14 redes y todo tu portafolio en un solo sitio. Tus fondos no salen de tu wallet: cada operación la firmas tú.</p>
 <div class="hz-cta"><button class="btn hz-go" data-v="pools">Explorar pools</button><button class="btn hz-alt" data-v="swap">Cambiar tokens</button></div>
@@ -1582,9 +1582,30 @@ function tickRun(){if(tkOn||!window.requestAnimationFrame)return;tkOn=true;var b
  var SR=[["Orca","34,255,170"],["Raydium","34,255,170"],["Jupiter","34,255,170"],["Kamino","34,255,170"],["Uniswap","150,165,255"],["Curve","150,165,255"],["PancakeSwap","255,196,46"]],P=[];
  var NW=[["solana","Solana"],["ethereum","Ethereum"],["bsc","BNB Chain"],["base","Base"],["arbitrum","Arbitrum"],["avalanche","Avalanche"],["hyperevm","HyperEVM"],["robinhood","Robinhood Chain"],["polygon","Polygon"],["optimism","Optimism"],["unichain","Unichain"],["monad","Monad"],["sonic","Sonic"],["linea","Linea"]].map(function(n){var im=new Image();im.src="./chains/"+n[0]+".svg";return{im:im,n:n[1]}}),ROT=0,WP=[],CO=[["bitcoin","Bitcoin"]].map(function(n){var im=new Image();im.src="./chains/"+n[0]+".svg";return{im:im,n:n[1]}}),BRn=0;
  for(var w=0;w<70;w++)WP.push({a:Math.random()*6.283,z:Math.random(),v:.25+Math.random()*.5});
- /* THORChain: cada pocos segundos entra Bitcoin desde fuera hasta el portal; abajo, un rótulo fijo lo indica */
+ /* THORChain: cada pocos segundos entra Bitcoin desde fuera hasta el portal */
  var BR=null,BRt=1.2;
- function bridge(g,dt){BRt-=dt;if(!BR&&BRt<=0)BR={c:CO[0],l:0};
+ /* Salto entre redes (THORChain): como una ruta de vuelo. Una línea fina se traza en un arco bajo de una red
+    a otra del anillo, un punto de luz la recorre y la red de destino emite una onda al llegar. Sin textos. */
+ var HP=null,HPt=2.5;
+ function hop(g,dt){HPt-=dt;var n=NW.length;
+  if(!HP&&HPt<=0&&!BR){var fr=[];for(var q=0;q<n;q++)if(orb(g,ROT+q/n*6.283+.4).d>.2)fr.push(q);
+   if(fr.length>=3){var k1=fr[0],k2=fr[fr.length-1];if(Math.random()<.5){k1=fr[fr.length-1];k2=fr[0]}HP={a:k1,b:k2,l:0}}}
+  if(!HP)return;HP.l+=dt/2.2;if(HP.l>=1){HP=null;HPt=3.2+Math.random()*1.8;return}
+  var p1=orb(g,ROT+HP.a/n*6.283),p2=orb(g,ROT+HP.b/n*6.283),cx3=(p1.x+p2.x)/2,cy3=Math.min(p1.y,p2.y)-g.ry*1.6-Math.abs(p2.x-p1.x)*.12,
+   tr=Math.min(1,HP.l/.55),fd=HP.l>.75?(1-HP.l)/.25:1,B=function(u){return{x:(1-u)*(1-u)*p1.x+2*(1-u)*u*cx3+u*u*p2.x,y:(1-u)*(1-u)*p1.y+2*(1-u)*u*cy3+u*u*p2.y}};
+  x.save();x.lineCap="round";
+  /* ruta: tenue completa + tramo trazado */
+  x.setLineDash([2,4]);x.strokeStyle="rgba(120,240,220,"+(.28*fd).toFixed(2)+")";x.lineWidth=1;x.beginPath();x.moveTo(p1.x,p1.y);x.quadraticCurveTo(cx3,cy3,p2.x,p2.y);x.stroke();x.setLineDash([]);
+  var gr=x.createLinearGradient(p1.x,p1.y,p2.x,p2.y);gr.addColorStop(0,"rgba(0,204,255,"+(.15*fd).toFixed(2)+")");gr.addColorStop(1,"rgba(51,255,190,"+(.95*fd).toFixed(2)+")");
+  x.strokeStyle=gr;x.lineWidth=1.8;x.beginPath();x.moveTo(p1.x,p1.y);for(var s=1;s<=30;s++){var pp=B(tr*s/30);x.lineTo(pp.x,pp.y)}x.stroke();
+  /* punto de luz en cabeza */
+  if(HP.l<.55){var hd=B(tr);x.fillStyle="#fff";x.shadowColor="rgba(51,255,190,1)";x.shadowBlur=10;x.beginPath();x.arc(hd.x,hd.y,2.4,0,6.3);x.fill();x.shadowBlur=0}
+  /* origen: aro fino; destino: onda al llegar */
+  var rN=Math.max(7.5,g.dw*.1)*1.1;x.strokeStyle="rgba(0,204,255,"+(.7*fd).toFixed(2)+")";x.lineWidth=1.2;x.beginPath();x.arc(p1.x,p1.y,rN+3,0,6.3);x.stroke();
+  if(HP.l>=.55){var w2=(HP.l-.55)/.45;x.strokeStyle="rgba(51,255,190,"+((1-w2)*.9).toFixed(2)+")";x.lineWidth=1.6;x.beginPath();x.arc(p2.x,p2.y,rN+3+w2*12,0,6.3);x.stroke();
+   x.strokeStyle="rgba(51,255,190,"+(.8*fd).toFixed(2)+")";x.lineWidth=1.2;x.beginPath();x.arc(p2.x,p2.y,rN+3,0,6.3);x.stroke()}
+  x.restore()}
+ function bridge(g,dt){BRt-=dt;if(!BR&&BRt<=0&&!HP)BR={c:CO[0],l:0};
   if(!BR)return;BR.l+=dt/2.6;if(BR.l>=1){G+=1.2;BR=null;BRt=4.5+Math.random()*2.5;return}
   {/* Bitcoin llega desde fuera por el puente de THORChain y entra en el portal */
    var s0={x:W-10,y:6},e0={x:g.dx,y:g.dy-g.dh*.08},cc={x:(s0.x+e0.x)/2+g.dw*.2,y:Math.min(s0.y,e0.y)-g.dh*.05},u0=Math.min(1,BR.l*1.25),al0=BR.l>.8?(1-BR.l)/.2:Math.min(1,BR.l*5),
@@ -1630,9 +1651,7 @@ function tickRun(){if(tkOn||!window.requestAnimationFrame)return;tkOn=true;var b
   var cg=x.createRadialGradient(vx,vy,0,vx,vy,g.dw*.55);cg.addColorStop(0,"rgba(255,255,255,"+(.55+.35*gk)+")");cg.addColorStop(1,"rgba(255,255,255,0)");x.fillStyle=cg;x.beginPath();x.arc(vx,vy,g.dw*.55,0,6.3);x.fill();x.restore();
   arch(g,7);var rimg=x.createLinearGradient(0,g.top,0,g.top+g.dh);rimg.addColorStop(0,"#d08bff");rimg.addColorStop(.5,"#7c8cff");rimg.addColorStop(1,"#22e3d0");x.strokeStyle=rimg;x.lineWidth=3;x.shadowColor="rgba(160,110,255,.95)";x.shadowBlur=12;x.stroke();x.shadowBlur=0;
   /* filo interior blanco: marca el contorno sin que se vea borroso */arch(g,7);x.strokeStyle="rgba(255,255,255,.7)";x.lineWidth=.9;x.stroke();
-  ring(g,true);nets(g,true);bridge(g,dt);
-  x.save();x.font='600 10.5px "Space Grotesk",system-ui,sans-serif';x.textAlign="right";x.textBaseline="alphabetic";x.fillStyle="rgba(170,240,225,.75)";x.fillText("Entre redes: THORChain",W-12,H-4);
-  x.fillStyle="rgba(51,255,190,.9)";x.beginPath();x.arc(W-16-x.measureText("Entre redes: THORChain").width,H-7.5,2.4,0,6.3);x.fill();x.restore();
+  ring(g,true);nets(g,true);hop(g,dt);bridge(g,dt);
   // corrientes
   x.font='600 11.5px "Space Grotesk",system-ui,sans-serif';x.textBaseline="middle";
   for(var i=0;i<n;i++){var c=SR[i][1],a=pt(g,i,0);
