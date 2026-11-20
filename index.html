@@ -1235,7 +1235,7 @@ function rPs(){
  '<div class="hrow"><label class="tg"><input type="checkbox" id="pau"'+(z.auto?" checked":"")+'>Autoswap</label><span class="dim">Operar vía <select id="pvia">'+vo+'</select></span><span class="dim">Desliz. <select id="pslp">'+sl+"</select></span></div>"+
  '<div class="sum" id="psum"></div>'+
  (p.pr==="Orca"&&window.kzSdk&&kzSdk.ready?'<button class="btn p" data-act="mkpos">Crear posición</button><div class="stat" id="pres"></div>'+
-  '<div class="dim" style="margin-top:10px">Con autoswap activado, al crear la posición Kosmara cambia antes la parte necesaria para dejar tus fondos en la proporción del rango. Firmas en tu wallet el cambio y después la posición.</div></div>'
+  '<div class="dim" style="margin-top:10px">Con autoswap activado, al crear la posición Kosmara cambia antes la parte necesaria para dejar tus fondos en la proporción del rango. Todo se firma una sola vez en tu wallet.</div></div>'
  :'<div class="stat" id="pres"></div><a class="btn p" href="'+esc(p.url)+'" target="_blank" rel="noopener">Crear posición en '+p.pr+' ↗</a></div>');
  el.hidden=false;sumPs();if(p.pr==="Orca")loadLiq(p);if(RV.open)loadOh(p);
 }
@@ -1960,6 +1960,20 @@ document.addEventListener("input",function(e){var t=e.target,n=t.getAttribute&&t
    (espera a que se confirme) y después abre la posición. La wallet pide firma en cada paso. */
 async function waitSig(sig){for(var i=0;i<30;i++){await new Promise(function(z){setTimeout(z,2000)});try{var s=await rc("getSignatureStatuses",[[sig]]),v=s&&s.value&&s.value[0];
  if(v&&v.err)throw new Error("La red rechazó el cambio");if(v&&(v.confirmationStatus==="confirmed"||v.confirmationStatus==="finalized"))return true}catch(e){if(/rechaz/.test(e.message))throw e}}return false}
+/* Autoswap + posición en una transacción: instrucciones del cambio de Jupiter (con la comisión de Kosmara)
+   seguidas de las de Orca. Las cantidades de la posición usan el mínimo garantizado del cambio. */
+async function swapOpenOne(p,c,pay,oth,amt){
+ var q=await jj("v1/quote?inputMint="+pay.m+"&outputMint="+oth.m+"&amount="+amt+"&slippageBps="+Math.round(ST.slip*100)+"&maxAccounts=24"+(ST.via==="Jupiter"?"":"&dexes="+encodeURIComponent(await dexFor(ST.via))));
+ var fee=0;try{fee=await jfeeLamports(pay.m,oth.m,amt,q)}catch(e){fee=0}
+ var si=await jj("v1/swap-instructions",{quoteResponse:q,userPublicKey:S.pk,wrapAndUnwrapSol:true,dynamicComputeUnitLimit:false,dynamicSlippage:false});
+ var pre=[].concat(si.setupInstructions||[],[si.swapInstruction],si.cleanupInstruction?[si.cleanupInstruction]:[],si.otherInstructions||[]);
+ if(fee>0){var d=new Uint8Array(12),dv=new DataView(d.buffer);dv.setUint32(0,2,true);dv.setBigUint64(4,BigInt(Math.floor(fee)),true);
+  pre.push({programId:"11111111111111111111111111111111",accounts:[{pubkey:S.pk,isSigner:true,isWritable:true},{pubkey:JFEE_TO,isSigner:false,isWritable:true}],data:u8b(d)})}
+ var gas=function(tk){return tk.m===SOLM?.02+(fee/1e9):0};
+ var bPay=(S.bal[pay.m]||0)-gas(pay)-c.swapIn,bOth=(S.bal[oth.m]||0)-gas(oth)+(+q.otherAmountThreshold||0)/Math.pow(10,oth.d);
+ var wantPay=c.payB?c.aB:c.aA,wantOth=c.payB?c.aA:c.aB,aPay=Math.max(0,Math.min(wantPay,bPay))*.995,aOth=Math.max(0,Math.min(wantOth,bOth))*.995;
+ var o=await kzSdk.swapAndOpen({rpc:rpcUrl(),pool:p.id,owner:S.pk,amountA:c.payB?aOth:aPay,amountB:c.payB?aPay:aOth,decA:p.A.d,decB:p.B.d,lower:c.pa,upper:c.pb,slipBps:Math.round(ST.slip*100),provider:S.sw,pre:pre,alts:si.addressLookupTableAddresses||[]});
+ if(fee>0)window.kzLastFee=fee;return o}
 async function mkPos(){
  var p=S.pools[S.sel],c=pcalc(),r=function(h){$("pres").innerHTML=h},bt=document.querySelector('[data-act="mkpos"]');
  if(!(await needSol()))return r("Elige una wallet de Solana para continuar.");if(!(c.a>0))return r("Introduce una cantidad.");
@@ -1970,6 +1984,12 @@ async function mkPos(){
   var short=function(){return m.a<c.aA*.9||m.b<c.aB*.9};
   if(short()&&ST.auto&&c.swapIn>0){
    var pay=c.payB?p.B:p.A,oth=c.payB?p.A:p.B,amt=Math.floor(c.swapIn*Math.pow(10,pay.d));
+   /* Primero, todo en una sola transacción (una firma, como Orca). Si no cabe, se hace en dos pasos. */
+   if(kzSdk.swapAndOpen){try{
+    r("Preparando el cambio y la posición…");
+    var one=await swapOpenOne(p,c,pay,oth,amt);
+    r((one.confirmed?"Posición creada.":"Transacción enviada; aún sin confirmar.")+' <a class="lk" href="https://solscan.io/tx/'+esc(one.signature)+'" target="_blank" rel="noopener">Ver transacción ↗</a> · <a class="lk" href="https://solscan.io/token/'+esc(one.positionMint)+'" target="_blank" rel="noopener">Ver NFT ↗</a>');kzCelebrate(2);loadBal();loadPos();return}
+   catch(e1){if(!e1.kzBig)throw e1}}
    r("Paso 1 de 2: cambiando "+f(c.swapIn,6)+" "+esc(pay.s)+" por "+esc(oth.s)+". Firma en tu wallet…");
    var sg=await execSwap(ST.via,pay.m,oth.m,amt,ST.slip);
    r("Paso 1 de 2: esperando a que se confirme el cambio…");
@@ -2010,7 +2030,7 @@ async function loadPos(){var ow=hSol();if(!ow||!(window.kzSdk&&kzSdk.ready))retu
  try{if(p.on)p.on("accountChanged",function(k){if(k&&S.wid===w.id)go(k)})}catch(e){}
 })();
 window.addEventListener("kzsdk",function(){loadPos();if(S.sel&&!$("ps").hidden)rPs()});
-try{var kzM=document.createElement("script");kzM.type="module";kzM.src="./sdk/kz-sdk.js?v=7";document.head.appendChild(kzM)}catch(e){}
+try{var kzM=document.createElement("script");kzM.type="module";kzM.src="./sdk/kz-sdk.js?v=8";document.head.appendChild(kzM)}catch(e){}
 
 window.kzP=400;
 rRoad();rHome();rPf();rWallet();rLot();rNet("eth");rNet("bsc");loadNet("eth").then(function(){loadNet("bsc")});loadAave();

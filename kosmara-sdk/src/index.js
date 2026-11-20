@@ -15,6 +15,8 @@ import {
   appendTransactionMessageInstructions,
   partiallySignTransactionMessageWithSigners,
   getTransactionEncoder,
+  fetchAddressesForLookupTables,
+  compressTransactionMessageUsingAddressLookupTables,
 } from "@solana/kit";
 
 // El SDK de Orca usa Buffer.from() de Node en dos funciones (posiciones agrupadas).
@@ -172,19 +174,27 @@ async function sendIxs(o, instructions) {
   const rpc = createSolanaRpc(o.rpc);
   const payer = o.signer || createNoopSigner(address(o.owner));
   const blockhash = (await rpc.getLatestBlockhash().send()).value;
+  // Tablas de direcciones (las que da Jupiter): comprimen las cuentas para que todo quepa en una transaccion.
+  const altMap = o.alts && o.alts.length ? await fetchAddressesForLookupTables(o.alts.map((a) => address(a)), rpc) : null;
   const build = async (ixs) => {
-    const message = pipe(
+    let message = pipe(
       createTransactionMessage({ version: 0 }),
       (m) => setTransactionMessageFeePayerSigner(payer, m),
       (m) => setTransactionMessageLifetimeUsingBlockhash(blockhash, m),
       (m) => appendTransactionMessageInstructions(ixs, m),
     );
+    if (altMap) message = compressTransactionMessageUsingAddressLookupTables(message, altMap);
     const partial = await partiallySignTransactionMessageWithSigners(message);
     return new Uint8Array(getTransactionEncoder().encode(partial));
   };
-  let bytes = await build([budgetIx(3, PRIORITY_MICROLAMPORTS, 8)].concat(instructions));
-  if (bytes.length > MAX_TX_BYTES) bytes = await build(instructions);
-  if (bytes.length > MAX_TX_BYTES) throw new Error("La transacción es demasiado grande (" + bytes.length + " bytes)");
+  const head = (o.cuLimit ? [budgetIx(2, o.cuLimit, 4)] : []);
+  let bytes = await build(head.concat([budgetIx(3, PRIORITY_MICROLAMPORTS, 8)], instructions));
+  if (bytes.length > MAX_TX_BYTES) bytes = await build(head.concat(instructions));
+  if (bytes.length > MAX_TX_BYTES) {
+    const e = new Error("La transacción es demasiado grande (" + bytes.length + " bytes)");
+    e.kzBig = true;
+    throw e;
+  }
 
   const sim = await rpcCall(o.rpc, "simulateTransaction", [b64(bytes), { encoding: "base64", sigVerify: false, replaceRecentBlockhash: true, commitment: "confirmed" }]);
   const sv = sim && (sim.value || sim);
@@ -204,6 +214,46 @@ async function sendIxs(o, instructions) {
   }
   const confirmed = await confirm(rpc, signature);
   return { signature, confirmed };
+}
+
+// Instruccion en formato JSON de Jupiter -> formato de @solana/kit. La wallet del usuario firma como "signer".
+function jupIx(ix, signer) {
+  const raw = atob(ix.data);
+  const data = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) data[i] = raw.charCodeAt(i);
+  return {
+    programAddress: address(ix.programId),
+    accounts: ix.accounts.map((a) => {
+      const role = (a.isSigner ? 2 : 0) + (a.isWritable ? 1 : 0);
+      const meta = { address: address(a.pubkey), role };
+      if (a.isSigner && a.pubkey === String(signer.address)) meta.signer = signer;
+      return meta;
+    }),
+    data,
+  };
+}
+
+/**
+ * Autoswap + abrir posicion en UNA sola transaccion (una sola firma, como Orca).
+ * o = los mismos datos que openPosition (amountA/amountB = lo que habra DESPUES del cambio)
+ *     + pre: instrucciones de Jupiter en JSON (cambio y comision) + alts: tablas de direcciones de Jupiter.
+ * Si no cabe en una transaccion lanza un error con kzBig = true y la web lo hace en dos pasos.
+ */
+async function swapAndOpen(o) {
+  if (!o || !o.provider || !o.owner) throw new Error("Conecta tu wallet primero");
+  const tokenMaxA = toUnits(o.amountA, o.decA);
+  const tokenMaxB = toUnits(o.amountB, o.decB);
+  if (tokenMaxA <= 0n && tokenMaxB <= 0n) throw new Error("Introduce una cantidad");
+  if (!(o.lower > 0) || !(o.upper > o.lower)) throw new Error("Rango de precios no válido");
+  const rpc = createSolanaRpc(o.rpc);
+  const signer = createNoopSigner(address(o.owner));
+  const res = await openPositionInstructions(rpc, address(o.pool), { tokenMaxA, tokenMaxB }, o.lower, o.upper, {
+    slippageToleranceBps: Math.max(1, Math.round(o.slipBps || 100)),
+    funder: signer,
+  });
+  const pre = (o.pre || []).map((ix) => jupIx(ix, signer));
+  const out = await sendIxs(Object.assign({}, o, { signer, cuLimit: o.cuLimit || 1000000 }), pre.concat(res.instructions));
+  return Object.assign(out, { positionMint: String(res.positionMint) });
 }
 
 /**
@@ -669,5 +719,5 @@ async function positions(o) {
   return out.filter(Boolean);
 }
 
-window.kzSdk = { ready: true, version: "0.5.1", openPosition, positions, closePosition, harvest, livePrices };
+window.kzSdk = { ready: true, version: "0.6.0", openPosition, swapAndOpen, positions, closePosition, harvest, livePrices };
 window.dispatchEvent(new Event("kzsdk"));
