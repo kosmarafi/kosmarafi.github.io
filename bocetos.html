@@ -35,7 +35,7 @@ var F='"Space Grotesk",system-ui,sans-serif';
 function setup(id,draw){var cv=document.getElementById(id),x=cv.getContext("2d"),W=0,H=0,t0=0;
  function size(){var D=Math.min(2,window.devicePixelRatio||1);W=cv.clientWidth;H=cv.clientHeight;cv.width=W*D;cv.height=H*D;x.setTransform(D,0,0,D,0,0)}
  size();window.addEventListener("resize",size);
- (function loop(ts){var dt=t0?Math.min(.05,(ts-t0)/1000):0;t0=ts;x.clearRect(0,0,W,H);draw(x,W,H,dt,ts/1000);requestAnimationFrame(loop)})(performance.now())}
+ (function loop(ts){var dt=t0?Math.min(.05,(ts-t0)/1000):0;t0=ts;x.clearRect(0,0,W,H);if(W>10&&H>10){try{draw(x,W,H,dt,ts/1000)}catch(e){}}requestAnimationFrame(loop)})(performance.now())}
 function logo(x,im,cx,cy,r,al,ring){x.save();x.globalAlpha=al;x.fillStyle="#0d1424";x.beginPath();x.arc(cx,cy,r+1.5,0,6.3);x.fill();x.strokeStyle=ring||"rgba(255,255,255,.55)";x.lineWidth=1;x.stroke();
  x.beginPath();x.arc(cx,cy,r,0,6.3);x.clip();if(im.complete&&im.naturalWidth)x.drawImage(im,cx-r,cy-r,r*2,r*2);x.restore()}
 function label(x,t,cx,cy,al,col,align){x.save();x.globalAlpha=al;x.font="600 10.5px "+F;x.textAlign=align||"center";x.textBaseline="top";x.shadowColor="rgba(0,0,0,.85)";x.shadowBlur=5;x.fillStyle=col||"#ecebff";x.fillText(t,cx,cy);x.restore()}
@@ -73,21 +73,21 @@ function mkP(){var P=[];SR.forEach(function(s,i){for(var k=0;k<3;k++)P.push({s:i
 /* ===== 3 · Metro ===== */
 (function(){var TR=[];
  setup("c3",function(x,W,H,dt,T){var s=Math.min(W/358,H/236),ox=(W-358*s)/2,oy=(H-236*s)/2;function X(v){return ox+v*s}function Y(v){return oy+v*s}
-  var hub=[150,118],n=SR.length,lines=[];
-  /* líneas de protocolos: entran desde la izquierda y bajan en 45° hasta el intercambiador */
-  for(var i=0;i<n;i++){var y=20+i*33,dy=y-hub[1],bx=hub[0]-Math.abs(dy)-14;lines.push({c:SR[i][1],p:[[22,y],[bx,y],[hub[0]-14,hub[1]],[hub[0],hub[1]]],n:SR[i][0]})}
+  var hub=[178,118],n=SR.length,lines=[];
+  /* líneas de protocolos: nombre a la izquierda, tramo recto y bajada en 45° hasta el intercambiador */
+  for(var i=0;i<n;i++){var y=20+i*33,dy=y-hub[1],bx=Math.max(66,hub[0]-Math.abs(dy)-14);lines.push({c:SR[i][1],p:[[66,y],[bx,y],[hub[0]-14,hub[1]+(dy>0?1:dy<0?-1:0)*0],[hub[0],hub[1]]],n:SR[i][0]})}
   /* ramas hacia las redes */
-  var br=[{c:"208,139,255",p:[[150,118],[200,68],[330,68]],st:[0,11,12,6]},{c:"120,200,255",p:[[150,118],[330,118]],st:[1,3,4,9,10]},{c:"255,170,120",p:[[150,118],[200,168],[330,168]],st:[2,5,8,13,7]}];
+  var br=[{c:"208,139,255",p:[[178,118],[228,68],[330,68]],st:[0,11,12,6]},{c:"120,200,255",p:[[178,118],[330,118]],st:[1,3,4,9,10]},{c:"255,170,120",p:[[178,118],[228,168],[330,168]],st:[2,5,8,13,7]}];
   function plen(p){var L=0;for(var i=1;i<p.length;i++)L+=Math.hypot(p[i][0]-p[i-1][0],p[i][1]-p[i-1][1]);return L}
   function at(p,u){var L=plen(p)*u;for(var i=1;i<p.length;i++){var sl=Math.hypot(p[i][0]-p[i-1][0],p[i][1]-p[i-1][1]);if(L<=sl){var f=L/sl;return[p[i-1][0]+(p[i][0]-p[i-1][0])*f,p[i-1][1]+(p[i][1]-p[i-1][1])*f]}L-=sl}return p[p.length-1]}
   function path(p,col,w,dash){x.beginPath();x.moveTo(X(p[0][0]),Y(p[0][1]));for(var i=1;i<p.length;i++)x.lineTo(X(p[i][0]),Y(p[i][1]));x.strokeStyle=col;x.lineWidth=w*s;x.lineJoin="round";x.lineCap="round";x.setLineDash(dash||[]);x.stroke();x.setLineDash([])}
-  lines.forEach(function(l){path(l.p,"rgba("+l.c+",.9)",3);x.font=(600)+" "+(10.5*s)+"px "+F;x.textAlign="left";x.textBaseline="bottom";x.fillStyle="#c9cadb";x.fillText(l.n,X(22),Y(l.p[0][1]-4))});
+  lines.forEach(function(l){path(l.p,"rgba("+l.c+",.9)",3);x.fillStyle="rgb("+l.c+")";x.beginPath();x.arc(X(66),Y(l.p[0][1]),3.2*s,0,6.3);x.fill();x.font="600 "+(10.5*s)+"px "+F;x.textAlign="right";x.textBaseline="middle";x.fillStyle="#c9cadb";x.fillText(l.n,X(58),Y(l.p[0][1]))});
   br.forEach(function(b){path(b.p,"rgba("+b.c+",.9)",3.4)});
   /* THORChain: línea discontinua que une el final de las ramas y sube a Bitcoin */
   var th=[[345,168],[345,118],[345,68],[345,22]];path(th,"rgba(51,255,190,.95)",2.2,[5*s,4*s]);
   x.font="700 "+(9.5*s)+"px "+F;x.textAlign="right";x.textBaseline="middle";x.fillStyle="rgba(150,255,220,.95)";x.fillText("THORChain",X(330),Y(22));
   /* estaciones */
-  br.forEach(function(b){var y=b.p[b.p.length-1][1];b.st.forEach(function(k,i){var sx=212+i*(118/(b.st.length-1||1));logo(x,NW[k].im,X(sx),Y(y),7.5*s,1)})});
+  br.forEach(function(b){var y=b.p[b.p.length-1][1];b.st.forEach(function(k,i){var sx=240+i*(88/(b.st.length-1||1));logo(x,NW[k].im,X(sx),Y(y),7.5*s,1)})});
   logo(x,BTC,X(345),Y(22),8*s,1,"rgba(247,147,26,.95)");
   /* intercambiador Kosmara */
   x.fillStyle="#0d1424";x.strokeStyle="#fff";x.lineWidth=3*s;x.beginPath();x.arc(X(hub[0]),Y(hub[1]),13*s,0,6.3);x.fill();x.stroke();
