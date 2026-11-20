@@ -6,7 +6,7 @@ await pg.waitForTimeout(15000);
 console.log("DIAG", await pg.evaluate(() => JSON.stringify({ ok: window.kzOK, log: window.kzLog, pc: typeof posCard, rcx: typeof rc, v: window.kzSdk && kzSdk.version, so: typeof swapOpenOne, src: [...document.scripts].map(s => s.src).filter(Boolean) })));
 const out = await pg.evaluate(async () => {
   const log = []; const rc = kzTest.rc, swapOpenOne = kzTest.swapOpenOne;
-  const USDC = "EPjFWWd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+  const USDC = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
   let owner = null;
   for (const w of ["5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9", "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM", "2ojv9BAiHUrvsm9gxDe7fJSzbNZSJcxZvf8dqmWGHG8S"]) {
     const bal = await rc("getBalance", [w]); const ta = await rc("getTokenAccountsByOwner", [w, { mint: USDC }, { encoding: "jsonParsed" }]);
