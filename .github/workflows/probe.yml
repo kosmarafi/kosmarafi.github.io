@@ -6,4 +6,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: npm i playwright@1 >/dev/null 2>&1 && npx playwright install --with-deps chromium >/dev/null 2>&1
-      - run: sleep 60 && node .github/probe.mjs
+      - run: sleep 5 && node .github/probe.mjs

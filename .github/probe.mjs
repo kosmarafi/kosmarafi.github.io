@@ -10,7 +10,7 @@ const out = await pg.evaluate(async () => {
   for (let i = 0; i < 200 && !(window.kzRay && kzRay.ready); i++) await new Promise(z => setTimeout(z, 100));
   log.push("kzRay " + (window.kzRay && kzRay.version));
   const lst = await (await fetch("https://api-v3.raydium.io/pools/info/list?poolType=concentrated&poolSortField=liquidity&sortType=desc&pageSize=20&page=1")).json();
-  const pools = lst.data.data.filter(p => p.mintA.symbol === "WSOL" && p.mintB.symbol === "USDC").slice(0, 2);
+  log.push("n " + lst.data.data.length + " " + lst.data.data.slice(0,5).map(p=>p.mintA.symbol+"/"+p.mintB.symbol).join(","));const pools = lst.data.data.filter(p => p.mintA.address === "So11111111111111111111111111111111111111112" && p.mintB.address === "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v").slice(0, 2);
   for (const p of pools) {
     log.push("pool " + p.id + " " + p.mintA.symbol + "/" + p.mintB.symbol + " price " + p.price + " fee " + p.feeRate);
     try {
