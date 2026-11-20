@@ -159,7 +159,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
 .bar button.mid svg{width:26px;height:26px}
 .bar button.mid.on .c{background:#3a3217;border-color:#FFD60A}
 .rg{position:relative;height:8px;border-radius:99px;background:rgba(34,214,138,.35);margin:10px 0}
-.rg i{position:absolute;top:-4px;width:6px;height:16px;border-radius:3px;background:#fff;transition:left .6s ease}.rg.out{background:rgba(255,99,99,.45)}.rg em{position:absolute;top:50%;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;background:#fff;opacity:.85;transform:rotate(45deg);border-radius:2px;box-shadow:0 0 0 2px rgba(0,0,0,.25)}@media (prefers-reduced-motion:reduce){.rg i{transition:none}}
+.pbm{position:absolute;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;padding:0;border:0;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:left .6s ease}.pbm.c{z-index:2}.pbm:focus-visible{outline:2px solid #fff;outline-offset:-4px;border-radius:8px}.rg .pbm i{position:static;display:block;width:6px;height:16px;border-radius:3px;background:#fff}.pbtip{position:absolute;bottom:22px;z-index:5;min-width:190px;padding:10px 14px;border-radius:12px;background:rgba(14,30,27,.96);border:1px solid rgba(255,255,255,.12);box-shadow:0 8px 24px rgba(0,0,0,.35);display:flex;flex-direction:column;gap:4px;white-space:nowrap;pointer-events:none}.pbtip b{font-size:17px}.pbtip small{font-size:12px;font-weight:600}.rg.out{background:rgba(255,99,99,.45)}.rg em{display:block;width:11px;height:11px;background:#fff;opacity:.85;transform:rotate(45deg);border-radius:2px;box-shadow:0 0 0 2px rgba(0,0,0,.25)}@media (prefers-reduced-motion:reduce){.pbm{transition:none}}
 .pos{background:rgba(0,0,0,.32);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:10px}
 
 *{-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
@@ -1794,9 +1794,22 @@ function posBar(p){
  var pct=function(v){if(!(p.price>0))return "";var x=(v/p.price-1)*100;return (x>=0?"+":"−")+f(Math.abs(x),2)+"%"};
  return '<div class="srow" style="justify-content:space-between;margin-top:10px"><span class="tag '+(inR?"":"o")+'">'+(inR?"Dentro del rango":"Fuera de rango")+'</span><span class="num" title="Precio actual">'+fp(p.price)+(p.symA?' <small class="dim">'+esc(p.symA)+"/"+esc(p.symB)+"</small>":"")+'</span></div>'+
   '<div class="srow" style="justify-content:space-between;margin-top:8px"><b class="num '+(inR?"up":"dn")+'">'+(lo<1e-9?"0":fp(lo))+'</b><b class="num '+(inR?"up":"dn")+'">'+(hi>1e12?"∞":fp(hi))+"</b></div>"+
-  '<div class="rg'+(inR?"":" out")+'">'+(p.entry>0&&!full?'<em style="left:'+pos(p.entry)+'%" title="Precio de entrada '+fp(p.entry)+'"></em>':"")+'<i style="left:calc('+pos(p.price)+'% - 3px)" title="Precio actual"></i></div>'+
+  '<div class="rg'+(inR?"":" out")+'">'+(p.entry>0&&!full?'<button class="pbm d" style="left:'+pos(p.entry)+'%" data-pbt="e" data-mint="'+esc(p.mint)+'" aria-label="Ver precio de entrada"><em></em></button>':"")+
+  '<button class="pbm c" style="left:'+pos(p.price)+'%" data-pbt="c" data-mint="'+esc(p.mint)+'" aria-label="Ver precio actual"><i></i></button>'+pbTip(p,pos)+'</div>'+
   (full?"":'<div class="srow dim" style="justify-content:space-between;margin-top:2px"><span>'+pct(lo)+'</span><span>'+pct(hi)+"</span></div>");
 }
+/* Pestaña al tocar el rombo (precio de entrada) o la línea (precio actual), como en Orca. */
+function pbTip(p,pos){
+ if(!S.pbTip||S.pbTip.m!==p.mint)return "";var e=S.pbTip.k==="e",v=e?p.entry:p.price;if(!(v>0))return "";
+ var x=pos(v),al=x<25?"left:0":x>75?"right:0":"left:"+x+"%;transform:translateX(-50%)";
+ return '<div class="pbtip" role="status" style="'+al+'"><span class="dim">'+(e?"Precio de entrada promedio":"Precio actual")+'</span><b>'+f(v,v>=1?6:8)+' <small>'+esc(p.symB||"")+" por "+esc(p.symA||"")+"</small></b></div>";
+}
+document.addEventListener("click",function(e){
+ var t=e.target.closest&&e.target.closest("[data-pbt]"),prev=S.pbTip;
+ if(t){var m=t.getAttribute("data-mint"),k=t.getAttribute("data-pbt");S.pbTip=prev&&prev.m===m&&prev.k===k?null:{m:m,k:k}}
+ else if(prev)S.pbTip=null;else return;
+ [prev&&prev.m,S.pbTip&&S.pbTip.m].forEach(function(m){var p=m&&S.positions.filter(function(x){return x.mint===m})[0],el=p&&$("pb_"+m);if(el)el.innerHTML=posBar(p)});
+});
 var PB_T=null;
 async function posLive(){
  clearTimeout(PB_T);PB_T=setTimeout(posLive,6000);
