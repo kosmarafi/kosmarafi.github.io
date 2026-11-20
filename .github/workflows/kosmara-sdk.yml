@@ -31,10 +31,9 @@ jobs:
             echo "== core quotes"
             grep -rn -A8 -E "(type|interface) (CollectFeesQuote|CollectRewardsQuote|CollectRewardQuote)\b" node_modules/@orca-so/whirlpools-core/dist/ --include=*.d.ts | head -n 60 || true
             echo "== raydium"
-            node -e "console.log(require('./node_modules/@raydium-io/raydium-sdk-v2/package.json').version)" || true
-            grep -rhoE "(class|function|const) (TickUtils|PoolUtils|TickUtil|PoolUtil|ClmmPoolUtils|SqrtPriceMath|LiquidityMath)\b" node_modules/@raydium-io/raydium-sdk-v2/lib/*.d.ts node_modules/@raydium-io/raydium-sdk-v2/lib/raydium/clmm/utils/*.d.ts 2>/dev/null | sort -u | head -20 || true
-            grep -rhoE "static (getPriceAndTick|getLiquidityAmountOutFromAmountIn|priceToTickIndex|getTickWithPriceAndTickspacing)[^;]{0,200}" node_modules/@raydium-io/raydium-sdk-v2/lib --include=*.d.ts 2>/dev/null | head -8 || true
-            grep -oE "export \{[^}]{0,3000}" node_modules/@raydium-io/raydium-sdk-v2/lib/index.d.ts | tr ',' '\n' | grep -iE "tick|pool|txversion|raydium" | head -30 || true
+            node --input-type=module -e "import * as R from '@raydium-io/raydium-sdk-v2'; console.log(Object.keys(R).filter(k=>/tick|pool|math|clmm|txversion/i.test(k)).join(' '))" 2>&1 | head -c 3000 || true
+            echo
+            for f in $(grep -rlE "static getPriceAndTick|static getLiquidityAmountOutFromAmountIn" node_modules/@raydium-io/raydium-sdk-v2/lib --include=*.d.ts | head -4); do echo "-- $f"; grep -nE "^declare class|static getPriceAndTick|static getLiquidityAmountOutFromAmountIn|static getTickPrice|static priceToTick" $f | head -12; done
             echo "== orca meta"
             curl -s https://api.orca.so/v2/solana/pools/Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE | head -c 5000
             echo "== whirlpool fields"
