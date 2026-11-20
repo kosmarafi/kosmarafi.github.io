@@ -5,7 +5,7 @@ await pg.goto("https://kosmarafi.github.io/?t=" + Date.now(), { waitUntil: "load
 await pg.waitForTimeout(15000);
 console.log("DIAG", await pg.evaluate(() => JSON.stringify({ ok: window.kzOK, log: window.kzLog, pc: typeof posCard, rcx: typeof rc, v: window.kzSdk && kzSdk.version, so: typeof swapOpenOne, src: [...document.scripts].map(s => s.src).filter(Boolean) })));
 const out = await pg.evaluate(async () => {
-  const log = []; const rc = kzTest.rc, swapOpenOne = kzTest.swapOpenOne;
+  const log = []; const of = window.fetch; window.fetch = async (u, o) => { const r = await of(u, o); try { if (o && o.body && /simulateTransaction/.test(o.body)) { const j = await r.clone().json(); window.simLogs = (j.result && j.result.value && j.result.value.logs) || [] } } catch (e) {} return r }; const rc = kzTest.rc, swapOpenOne = kzTest.swapOpenOne;
   const USDC = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
   let owner = null;
   for (const w of ["5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9", "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM", "2ojv9BAiHUrvsm9gxDe7fJSzbNZSJcxZvf8dqmWGHG8S"]) {
@@ -19,14 +19,14 @@ const out = await pg.evaluate(async () => {
   const P = await (await fetch("https://lite-api.jup.ag/price/v3?ids=" + SOLM)).json();
   const px = +P[SOLM].usdPrice;
   S.bal = { [SOLM]: 3, [USDC]: 50 };
-  for (const [name, payB, swapIn] of [["paga USDC", true, 10], ["paga SOL", false, 10 / px]]) {
+  for (const [name, payB, swapIn] of [["paga USDC", true, 10]]) {
     const p = { id: "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE", A: { m: SOLM, d: 9, s: "SOL" }, B: { m: USDC, d: 6, s: "USDC" } };
     const c = { payB, swapIn, aA: 10 / px, aB: 10, pa: px * 0.95, pb: px * 1.05 };
     if (!payB) S.bal = { [SOLM]: 3, [USDC]: 0 }; else S.bal = { [SOLM]: 0.05, [USDC]: 50 };
     for (const via of ["Jupiter", "Orca"]) {
       ST.via = via; ST.slip = 1;
       try { await swapOpenOne(p, c, payB ? p.B : p.A, payB ? p.A : p.B, Math.floor(swapIn * (payB ? 1e6 : 1e9))); log.push(name + " " + via + ": sin parar?") }
-      catch (e) { log.push(name + " " + via + ": " + (e.kzBig ? "[GRANDE] " : "") + e.message.slice(0, 300)) }
+      catch (e) { log.push(name + " " + via + ": " + (e.kzBig ? "[GRANDE] " : "") + e.message.slice(0, 200)); if (via === "Jupiter") log.push((window.simLogs || []).slice(0, 60).join("\n")) }
     }
   }
   return log;
