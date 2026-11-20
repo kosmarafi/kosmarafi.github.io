@@ -1596,7 +1596,7 @@ function tickRun(){if(tkOn||!window.requestAnimationFrame)return;tkOn=true;var b
    x.globalAlpha=al0;x.shadowColor="rgba(247,147,26,1)";x.shadowBlur=14;x.fillStyle="#0d1424";x.beginPath();x.arc(bx0,by0,r0+1.5,0,6.3);x.fill();x.shadowBlur=0;
    x.save();x.beginPath();x.arc(bx0,by0,r0,0,6.3);x.clip();if(BR.c.im.complete&&BR.c.im.naturalWidth)x.drawImage(BR.c.im,bx0-r0,by0-r0,r0*2,r0*2);x.restore();
    x.font='700 10.5px "Space Grotesk",system-ui,sans-serif';x.textAlign="right";x.textBaseline="middle";x.shadowColor="rgba(0,0,0,.9)";x.shadowBlur=6;x.fillStyle="rgba(255,225,180,"+al0.toFixed(2)+")";
-   if(u0<.75)x.fillText(BR.c.n+" vía THORChain",bx0-r0-6,by0);x.restore();return}
+   if(u0<.75)x.fillText(BR.c.n+" - THORChain",bx0-r0-6,by0);x.restore();return}
   var n2=NW.length,p1=orb(g,ROT+BR.a/n2*6.283),p2=orb(g,ROT+BR.b/n2*6.283),cx2=(p1.x+p2.x)/2,cy2=Math.min(p1.y,p2.y)-g.dh*.62,
    al=Math.sin(Math.PI*Math.min(1,BR.l*1.4))*(BR.l>.7?(1-BR.l)/.3:1),gr=x.createLinearGradient(p1.x,p1.y,p2.x,p2.y);
   gr.addColorStop(0,"rgba(0,204,255,"+al.toFixed(2)+")");gr.addColorStop(1,"rgba(51,255,153,"+al.toFixed(2)+")");
