@@ -3,7 +3,7 @@
 // La web firma y envia los bytes que devuelve buildOpen (simula antes, firma con la wallet y envia por su RPC).
 import "./buffer-shim.js";
 import { Connection, PublicKey } from "@solana/web3.js";
-import { Raydium, TxVersion, TickUtils, PoolUtils } from "@raydium-io/raydium-sdk-v2";
+import { Raydium, TxVersion, TickUtil, PoolUtils } from "@raydium-io/raydium-sdk-v2";
 import Decimal from "decimal.js";
 import BN from "bn.js";
 
@@ -35,8 +35,9 @@ async function buildOpen(o) {
   const data = await raydium.api.fetchPoolById({ ids: o.pool });
   const poolInfo = data && data[0];
   if (!poolInfo || poolInfo.type !== "Concentrated") throw new Error("Este pool de Raydium no es de liquidez concentrada");
-  const t1 = TickUtils.getPriceAndTick({ poolInfo, price: new Decimal(o.lower), baseIn: true }).tick;
-  const t2 = TickUtils.getPriceAndTick({ poolInfo, price: new Decimal(o.upper), baseIn: true }).tick;
+  const tk = (p) => TickUtil.getPriceAndTick({ price: new Decimal(p), mintADecimals: poolInfo.mintA.decimals, mintBDecimals: poolInfo.mintB.decimals, zeroForOne: true, tickSpacing: poolInfo.config.tickSpacing }).tick;
+  const t1 = tk(o.lower);
+  const t2 = tk(o.upper);
   const tickLower = Math.min(t1, t2);
   const tickUpper = Math.max(t1, t2);
   if (tickLower === tickUpper) throw new Error("Rango de precios demasiado estrecho para este pool");
