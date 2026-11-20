@@ -2,7 +2,8 @@ import { chromium } from "playwright";
 const b = await chromium.launch(); const pg = await b.newPage();
 pg.on("pageerror", e => console.log("PAGEERR", e.message));
 await pg.goto("https://kosmarafi.github.io/?t=" + Date.now(), { waitUntil: "load" });
-await pg.waitForFunction(() => window.kzSdk && kzSdk.version === "0.6.0" && typeof swapOpenOne === "function", null, { timeout: 120000 });
+await pg.waitForTimeout(15000);
+console.log("DIAG", await pg.evaluate(() => JSON.stringify({ v: window.kzSdk && kzSdk.version, so: typeof swapOpenOne, src: [...document.scripts].map(s => s.src).filter(Boolean) })));
 const out = await pg.evaluate(async () => {
   const log = [];
   const USDC = "EPjFWWd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
