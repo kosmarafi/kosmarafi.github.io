@@ -2,7 +2,7 @@ import { chromium } from "playwright";
 const b = await chromium.launch(); const pg = await b.newPage();
 pg.on("pageerror", e => console.log("PAGEERR", e.message));
 await pg.goto("https://kosmarafi.github.io/?t=" + Date.now(), { waitUntil: "load" });
-await pg.waitForFunction(() => window.kzSdk && kzSdk.version === "0.5.0", null, { timeout: 90000 });
+await pg.waitForFunction(() => window.kzSdk && kzSdk.version === "0.5.1", null, { timeout: 90000 });
 const r = await pg.evaluate(async () => {
   const RPC = "https://mainnet.helius-rpc.com/?api-key=d69a3929-b7b3-4523-8dea-9d82a0bcfd36";
   const ps = await kzSdk.positions({ rpc: RPC, owner: "8AMfcuNiwoQH8xKiytkujH5JVjiskER8eRTK7XAfhQ21" });

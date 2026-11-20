@@ -4,5 +4,6 @@ jobs:
   p:
     runs-on: ubuntu-latest
     steps:
-      - run: |
-          for w in 5m 15m 30m 1h 4h 8h 24h 7d 30d 365d 1y; do echo "$w $(curl -s -o /dev/null -w '%{http_code}' "https://api.orca.so/v2/solana/pools/J7mEHdBtAKGUsfiGnk3bL9cRVxqqcqx4HTxXb4wNnrsk?stats=$w")"; done
+      - uses: actions/checkout@v4
+      - run: npm i playwright@1 >/dev/null 2>&1 && npx playwright install --with-deps chromium >/dev/null 2>&1
+      - run: sleep 120 && node .github/probe.mjs

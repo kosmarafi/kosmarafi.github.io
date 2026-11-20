@@ -239,7 +239,9 @@ const YIELD_WINDOWS = ["5m", "15m", "30m", "1h", "4h", "8h", "24h", "7d", "30d",
 
 async function poolMeta(addr) {
   try {
-    const r = await fetch("https://api.orca.so/v2/solana/pools/" + addr + "?stats=" + YIELD_WINDOWS.join(","));
+    // La API de Orca da estadisticas hasta 30d; 365d se proyecta. Si la peticion con periodos falla, se pide sin ellos.
+    let r = await fetch("https://api.orca.so/v2/solana/pools/" + addr + "?stats=" + YIELD_WINDOWS.filter((k) => k !== "365d").join(","));
+    if (!r.ok) r = await fetch("https://api.orca.so/v2/solana/pools/" + addr);
     if (!r.ok) return null;
     const j = await r.json();
     const d = j && j.data ? j.data : j;
@@ -667,5 +669,5 @@ async function positions(o) {
   return out.filter(Boolean);
 }
 
-window.kzSdk = { ready: true, version: "0.5.0", openPosition, positions, closePosition, harvest, livePrices };
+window.kzSdk = { ready: true, version: "0.5.1", openPosition, positions, closePosition, harvest, livePrices };
 window.dispatchEvent(new Event("kzsdk"));
