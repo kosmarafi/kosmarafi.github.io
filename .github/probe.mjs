@@ -1,2 +1,2 @@
-const M="Fm9pH8Z1ysUSji8aFyfHdFezkcDtwTKfjWuQNHipGRJc",W="8AMfcuNiwoQH8xKiytkujH5JVjiskER8eRTK7XAfhQ21";
-for(const u of [`positions?addresses=${M}`,`positions?address=${M}`,`positions?addresses=${W}`,`positions/${M}`,`positions?wallets=${W}`,`positions?owners=${W}`,`positions?wallet=${W}&addresses=${W}`]){const r=await fetch("https://api.orca.so/v2/solana/"+u);console.log("==",u,r.status,(await r.text()).slice(0,3000))}
+const P="J7mEHdBtAKGUsfiGnk3bL9cRVxqqcqx4HTxXb4wNnrsk";
+for(const u of [`pools/${P}?stats=5m,1h,4h`,`pools/${P}?statsWindows=1h`,`pools?addresses=${P}&stats=1h,5m`,`pools/${P}/stats`,`pools/${P}/candles?interval=1h`,`pools/${P}/stats?window=1h`,`pools/${P}?include=stats1h`]){const r=await fetch("https://api.orca.so/v2/solana/"+u);const t=await r.text();const m=t.match(/"stats":\{.{0,900}/);console.log("==",u,r.status,m?m[0]:t.slice(0,300))}
