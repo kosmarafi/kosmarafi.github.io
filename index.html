@@ -1234,10 +1234,9 @@ function rPs(){
  '<label for="pa">Cantidad de depósito</label><div class="box"><div class="srow"><select id="ppay"><option value="A"'+(z.pay==="A"?" selected":"")+">"+esc(p.A.s)+'</option><option value="B"'+(z.pay==="B"?" selected":"")+">"+esc(p.B.s)+'</option></select><input id="pa" class="num" type="number" inputmode="decimal" min="0" step="any" value="'+esc(z.amt)+'" placeholder="0.0"></div><div class="dim" id="pbal" style="margin-top:6px"></div></div>'+
  '<div class="hrow"><label class="tg"><input type="checkbox" id="pau"'+(z.auto?" checked":"")+'>Autoswap</label><span class="dim">Operar vía <select id="pvia">'+vo+'</select></span><span class="dim">Desliz. <select id="pslp">'+sl+"</select></span></div>"+
  '<div class="sum" id="psum"></div>'+
- '<button class="btn p" style="background:rgba(255,255,255,.1);color:#fff" data-act="autoswap">Hacer autoswap (real)</button><div class="stat" id="pres"></div>'+
- (p.pr==="Orca"&&window.kzSdk&&kzSdk.ready?'<button class="btn p" data-act="mkpos">Crear posición aquí (NFT a tu wallet)</button>':"")+
- '<a class="btn p" href="'+esc(p.url)+'" target="_blank" rel="noopener">Crear posición en '+p.pr+' ↗</a>'+
- '<div class="dim" style="margin-top:10px">El autoswap deja tus fondos en la proporción del rango. La posición (NFT) la crea el protocolo al depositar; el contrato propio de Kosmara llegará después. Dato de DFlow: entra dentro de la opción Jupiter.</div></div>';
+ (p.pr==="Orca"&&window.kzSdk&&kzSdk.ready?'<button class="btn p" data-act="mkpos">Crear posición</button><div class="stat" id="pres"></div>'+
+  '<div class="dim" style="margin-top:10px">Con autoswap activado, al crear la posición Kosmara cambia antes la parte necesaria para dejar tus fondos en la proporción del rango. Firmas en tu wallet el cambio y después la posición.</div></div>'
+ :'<div class="stat" id="pres"></div><a class="btn p" href="'+esc(p.url)+'" target="_blank" rel="noopener">Crear posición en '+p.pr+' ↗</a></div>');
  el.hidden=false;sumPs();if(p.pr==="Orca")loadLiq(p);if(RV.open)loadOh(p);
 }
 async function autoswap(){
@@ -1957,16 +1956,32 @@ document.addEventListener("click",function(e){var wv=e.target.closest("[data-wv]
 document.addEventListener("input",function(e){var t=e.target,n=t.getAttribute&&t.getAttribute("data-nq");if(!n)return;var st=NS[n];st.q=t.value;st.lim=3;st.foc=true;rNet(n);clearTimeout(nT);if(t.value.trim().length>=2)nT=setTimeout(function(){loadNet(n,t.value.trim())},700)});
 
 /* ---------- SDK de Orca (sdk/kz-sdk.js, compilado aparte) ---------- */
+/* Crear posición: si falta uno de los dos tokens y el autoswap está activado, primero hace el cambio
+   (espera a que se confirme) y después abre la posición. La wallet pide firma en cada paso. */
+async function waitSig(sig){for(var i=0;i<30;i++){await new Promise(function(z){setTimeout(z,2000)});try{var s=await rc("getSignatureStatuses",[[sig]]),v=s&&s.value&&s.value[0];
+ if(v&&v.err)throw new Error("La red rechazó el cambio");if(v&&(v.confirmationStatus==="confirmed"||v.confirmationStatus==="finalized"))return true}catch(e){if(/rechaz/.test(e.message))throw e}}return false}
 async function mkPos(){
- var p=S.pools[S.sel],c=pcalc(),r=function(h){$("pres").innerHTML=h};
+ var p=S.pools[S.sel],c=pcalc(),r=function(h){$("pres").innerHTML=h},bt=document.querySelector('[data-act="mkpos"]');
  if(!(await needSol()))return r("Elige una wallet de Solana para continuar.");if(!(c.a>0))return r("Introduce una cantidad.");
- await loadBal();
- var bA=(S.bal[p.A.m]||0)-(p.A.m===SOLM?.02:0),bB=(S.bal[p.B.m]||0)-(p.B.m===SOLM?.02:0),aA=Math.min(c.aA,Math.max(0,bA)),aB=Math.min(c.aB,Math.max(0,bB));
- if(aA<c.aA*.9||aB<c.aB*.9)return r("Te falta "+(aA<c.aA*.9?p.A.s:p.B.s)+" en la wallet para este rango. Pulsa primero el autoswap y vuelve a intentarlo.");
- if(!confirm("Vas a abrir una posición REAL en Orca ("+p.A.s+"/"+p.B.s+").\nHasta "+f(aA,6)+" "+p.A.s+" + "+f(aB,6)+" "+p.B.s+".\nEl NFT llegará a tu wallet. Revisa la transacción en tu wallet antes de aprobar."))return;
- try{r("Preparando la posición…");var o=await kzSdk.openPosition({rpc:rpcUrl(),pool:p.id,owner:S.pk,amountA:aA,amountB:aB,decA:p.A.d,decB:p.B.d,lower:c.pa,upper:c.pb,slipBps:Math.round(ST.slip*100),provider:S.sw});
+ if(bt){if(bt.disabled)return;bt.disabled=true}
+ try{
+  await loadBal();
+  var fit=function(){var bA=(S.bal[p.A.m]||0)-(p.A.m===SOLM?.02:0),bB=(S.bal[p.B.m]||0)-(p.B.m===SOLM?.02:0);return{a:Math.min(c.aA,Math.max(0,bA)),b:Math.min(c.aB,Math.max(0,bB))}},m=fit();
+  var short=function(){return m.a<c.aA*.9||m.b<c.aB*.9};
+  if(short()&&ST.auto&&c.swapIn>0){
+   var pay=c.payB?p.B:p.A,oth=c.payB?p.A:p.B,amt=Math.floor(c.swapIn*Math.pow(10,pay.d));
+   r("Paso 1 de 2: cambiando "+f(c.swapIn,6)+" "+esc(pay.s)+" por "+esc(oth.s)+". Firma en tu wallet…");
+   var sg=await execSwap(ST.via,pay.m,oth.m,amt,ST.slip);
+   r("Paso 1 de 2: esperando a que se confirme el cambio…");
+   if(!(await waitSig(sg)))throw new Error("El cambio no se confirmó a tiempo. Revisa tu wallet y vuelve a intentarlo.");
+   await loadBal();m=fit();
+  }
+  if(short())throw new Error("Te falta "+(m.a<c.aA*.9?p.A.s:p.B.s)+" en la wallet para este rango."+(ST.auto?"":" Activa el autoswap para que Kosmara lo cambie por ti."));
+  r((sg?"Paso 2 de 2: ":"")+"Preparando la posición. Firma en tu wallet…");
+  var o=await kzSdk.openPosition({rpc:rpcUrl(),pool:p.id,owner:S.pk,amountA:m.a,amountB:m.b,decA:p.A.d,decB:p.B.d,lower:c.pa,upper:c.pb,slipBps:Math.round(ST.slip*100),provider:S.sw});
   r((o.confirmed?"Posición creada.":"Transacción enviada; aún sin confirmar.")+' <a class="lk" href="https://solscan.io/tx/'+esc(o.signature)+'" target="_blank" rel="noopener">Ver transacción ↗</a> · <a class="lk" href="https://solscan.io/token/'+esc(o.positionMint)+'" target="_blank" rel="noopener">Ver NFT ↗</a>');kzCelebrate(2);loadBal();loadPos()}
  catch(e){r('<span class="dn">'+esc(fe(e))+"</span>")}
+ finally{if(bt)bt.disabled=false}
 }
 async function posAct(kind,mint){
  var p=S.positions.filter(function(x){return x.mint===mint})[0],el=$("pa_"+mint),r=function(h){if(el)el.innerHTML=h};if(!p)return;
