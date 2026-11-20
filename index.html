@@ -1585,13 +1585,13 @@ function tickRun(){if(tkOn||!window.requestAnimationFrame)return;tkOn=true;var b
  SR.forEach(function(s,i){for(var k=0;k<4;k++)P.push({s:i,t:(k/4+i*.137)%1,v:.07+((i*7+k*3)%5)*.012})});
  for(var m=0;m<14;m++)M.push({x:Math.random(),y:Math.random(),v:.08+Math.random()*.14,r:.6+Math.random()*1.4,c:SR[m%SR.length][1]});
  function size(){D=Math.min(2,window.devicePixelRatio||1);W=cv.clientWidth;H=cv.clientHeight;cv.width=W*D;cv.height=H*D;x.setTransform(D,0,0,D,0,0)}
- function geo(){var dh=H*.74,dw=Math.min(dh*.46,W*.3),rx=dw*.8+18,dx=W-Math.max(dw/2+10,H*.31+4,rx+14),dy=H/2;return{dh:dh,dw:dw,dx:dx,dy:dy,l:dx-dw/2,top:dy-dh/2,rx:rx,ry:Math.max(14,dh*.12)}}
+ function geo(){var dh=H*.74,dw=Math.min(dh*.46,W*.3),rx=Math.min(dw*.9+40,W*.34),dx=W-Math.max(dw/2+10,H*.31+4,rx+16),dy=H/2;return{dh:dh,dw:dw,dx:dx,dy:dy,l:dx-dw/2,top:dy-dh/2,rx:rx,ry:Math.max(22,dh*.17)}}
  /* Punto del anillo: elipse inclinada alrededor del centro del portal; d>0 = por delante */
  function orb(g,a){var ph=-.26,cx=g.dx,cy=g.dy+g.dh*.08,ca=Math.cos(a),sa=Math.sin(a);return{x:cx+g.rx*ca*Math.cos(ph)-g.ry*sa*Math.sin(ph),y:cy+g.rx*ca*Math.sin(ph)+g.ry*sa*Math.cos(ph),d:sa}}
  function ring(g,front){x.beginPath();for(var s=0;s<=48;s++){var a=front?s/48*Math.PI:Math.PI+s/48*Math.PI,o=orb(g,a);s?x.lineTo(o.x,o.y):x.moveTo(o.x,o.y)}
   x.strokeStyle=front?"rgba(190,175,255,.38)":"rgba(190,175,255,.16)";x.lineWidth=front?1.3:1;x.stroke()}
  function nets(g,front){var n=NW.length,lb=null;for(var k=0;k<n;k++){var a=ROT+k/n*6.283,o=orb(g,a);if((o.d>0)!==front)continue;
-   var sc=.72+.38*(o.d+1)/2,r=Math.max(6,g.dw*.11)*sc,al=front?.95:.5+.3*(o.d+1);
+   var sc=.7+.4*(o.d+1)/2,r=Math.max(7.5,g.dw*.1)*sc,al=front?.95:.5+.3*(o.d+1);
    x.save();x.globalAlpha=al;x.shadowColor="rgba(124,92,255,.8)";x.shadowBlur=front?10:0;x.fillStyle="#0d1424";x.beginPath();x.arc(o.x,o.y,r+1.5,0,6.3);x.fill();x.shadowBlur=0;
    x.beginPath();x.arc(o.x,o.y,r,0,6.3);x.clip();var im=NW[k].im;if(im.complete&&im.naturalWidth)x.drawImage(im,o.x-r,o.y-r,r*2,r*2);x.restore();
    if(front&&o.d>.93)lb={o:o,r:r,n:NW[k].n,a:Math.min(1,(o.d-.93)/.05)}}
