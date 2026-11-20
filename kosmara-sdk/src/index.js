@@ -1,7 +1,7 @@
 // Kosmara SDK: abre posiciones en Orca Whirlpools y lee las posiciones de una wallet.
 // Se compila con Vite a ../sdk/kz-sdk.js y lo carga la web (index.html) como modulo.
 // La web llama a window.kzSdk.openPosition / positions / closePosition / harvest.
-import { openPositionInstructions, fetchPositionsForOwner, closePositionInstructions, harvestPositionInstructions } from "@orca-so/whirlpools";
+import { openPositionInstructions, fetchPositionsForOwner, closePositionInstructions, harvestPositionInstructions, setNativeMintWrappingStrategy } from "@orca-so/whirlpools";
 import { fetchAllWhirlpool } from "@orca-so/whirlpools-client";
 import {
   createSolanaRpcFromTransport,
@@ -247,10 +247,18 @@ async function swapAndOpen(o) {
   if (!(o.lower > 0) || !(o.upper > o.lower)) throw new Error("Rango de precios no válido");
   const rpc = createSolanaRpc(o.rpc);
   const signer = createNoopSigner(address(o.owner));
-  const res = await openPositionInstructions(rpc, address(o.pool), { tokenMaxA, tokenMaxB }, o.lower, o.upper, {
-    slippageToleranceBps: Math.max(1, Math.round(o.slipBps || 100)),
-    funder: signer,
-  });
+  // SOL envuelto en la cuenta asociada (la misma que usa Jupiter) en vez de una cuenta temporal con su propia firma:
+  // ahorra ~100 bytes, que es lo que hace falta para que el cambio y la posicion quepan juntos.
+  let res;
+  setNativeMintWrappingStrategy("ata");
+  try {
+    res = await openPositionInstructions(rpc, address(o.pool), { tokenMaxA, tokenMaxB }, o.lower, o.upper, {
+      slippageToleranceBps: Math.max(1, Math.round(o.slipBps || 100)),
+      funder: signer,
+    });
+  } finally {
+    setNativeMintWrappingStrategy("keypair");
+  }
   const pre = (o.pre || []).map((ix) => jupIx(ix, signer));
   const out = await sendIxs(Object.assign({}, o, { signer, cuLimit: o.cuLimit || 1000000 }), pre.concat(res.instructions));
   return Object.assign(out, { positionMint: String(res.positionMint) });
@@ -719,5 +727,5 @@ async function positions(o) {
   return out.filter(Boolean);
 }
 
-window.kzSdk = { ready: true, version: "0.6.0", openPosition, swapAndOpen, positions, closePosition, harvest, livePrices };
+window.kzSdk = { ready: true, version: "0.6.1", openPosition, swapAndOpen, positions, closePosition, harvest, livePrices };
 window.dispatchEvent(new Event("kzsdk"));
