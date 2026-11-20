@@ -4,5 +4,5 @@ jobs:
   p:
     runs-on: ubuntu-latest
     steps:
-      - run: |
-          for u in "pools/search?q=ANT&size=5" "pools?token=ANT&size=5" "tokens/search?q=ANT"; do echo "== $u"; curl -s "https://api.orca.so/v2/solana/$u" | head -c 3000; echo; done
+      - uses: actions/checkout@v4
+      - run: node .github/probe.mjs
