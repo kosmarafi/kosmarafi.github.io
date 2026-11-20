@@ -1,5 +1,5 @@
 
-added 64 packages, and audited 65 packages in 10s
+added 64 packages, and audited 65 packages in 8s
 
 4 packages are looking for funding
   run `npm fund` for details
@@ -19,6 +19,6 @@ transforming...
 [32m✓[39m 54 modules transformed.
 rendering chunks...
 computing gzip size...
-[2m../sdk/[22m[36mkz-sdk.js  [39m[1m[2m372.46 kB[22m[1m[22m[2m │ gzip: 127.77 kB[22m
-[32m✓ built in 709ms[39m
+[2m../sdk/[22m[36mkz-sdk.js  [39m[1m[2m372.87 kB[22m[1m[22m[2m │ gzip: 127.89 kB[22m
+[32m✓ built in 674ms[39m
 BUILD OK
