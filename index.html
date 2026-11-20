@@ -816,7 +816,7 @@ async function evSwitch(id){var c=CH[id],hx="0x"+Number(id).toString(16),cur=awa
  catch(e){if((e.code===4902||/unrecognized|not added|unknown chain/i.test(e.message||""))&&c&&c.metamask){var m=c.metamask;await S.ev.request({method:"wallet_addEthereumChain",params:[{chainId:hx,chainName:m.chainName||c.name,nativeCurrency:m.nativeCurrency,rpcUrls:m.rpcUrls,blockExplorerUrls:m.blockExplorerUrls}]})}else throw e}}
 async function eSwap(){
  var id=SW.net;try{if(!(await needEvm()))return;eres("Calculando precio actual…");var pv=EV.sel||"LI.FI",q;try{q=pv==="KyberSwap"?await qKyber():await qLifi(S.eaddr)}catch(z){EV.res=await evQuoteAll(S.eaddr);q=EV.res[0];pv=q.p}EV.sel=pv;EV.q=q;
-  var to=evT(id,EV.to[id]);if(!confirm("Vas a firmar un swap REAL en "+chN(id)+":\n"+EV.amt+" "+q.fr.symbol+" por unos "+f(q.out,6)+" "+to.symbol+" (mínimo "+f(q.min,6)+").\nRuta: "+q.p+(q.via!==q.p?" ("+q.via+")":"")+". Revisa los detalles en tu wallet antes de aprobar."))return eres("");
+  var to=evT(id,EV.to[id]);
   eres("Cambiando tu wallet a "+esc(chN(id))+"…");await evSwitch(id);
   if(q.fr.address!==NAT&&q.appr){var al=BigInt(await ecall(q.fr.address,"0xdd62ed3e"+h32(S.eaddr)+h32(q.appr))||"0x0");
    if(al<q.amt){if(al>0n){eres("Reiniciando el permiso del token…");await waitRc(await esend({to:q.fr.address,data:"0x095ea7b3"+h32(q.appr)+h32(0n)}))}
@@ -967,7 +967,7 @@ async function xSwap(){
  var fr=XS.AM[XS.from],to=XS.AM[XS.to];
  try{if(!(await needEvm()))return;
   xres("Calculando precio actual…");var q=await tcQuote();XS.q=q;var e=$("xq");if(e)e.innerHTML=xqHtml();
-  if(!confirm("Vas a firmar un swap REAL entre redes:\n"+XS.amt+" "+fr.s+" ("+TCN[fr.c]+") por unos "+f(q.out,6)+" "+to.s+" ("+TCN[to.c]+").\nDestino: "+XS.dest.trim()+"\nRevisa los detalles en tu wallet antes de aprobar."))return xres("");
+  
   xres("Cambiando tu wallet a "+TCN[fr.c]+"…");await evmChain(fr.c);
   var dec=18;if(fr.tok){dec=parseInt(await ecall(fr.tok,"0x313ce567"),16);if(!(dec>=0))throw new Error("No pude leer los decimales del token.")}
   var amt=toU(XS.amt,dec),h;if(!(amt>0n))throw new Error("Cantidad no válida.");
@@ -1024,7 +1024,7 @@ async function quoteAll(){
 async function doSwap(){
  var a=parseFloat(SW.amt),fr=TM[SW.from],to=TM[SW.to],r=SW.res.filter(function(x){return x.v===SW.sel&&!x.err})[0];
  if(!(await needSol()))return toast("Elige una wallet de Solana para continuar.");if(!r)return sres("Primero busca las mejores rutas.");
- if(!confirm("Vas a firmar un swap REAL:\n"+f(a,6)+" "+fr.s+" por unos "+f(r.out,6)+" "+to.s+" vía "+r.v+"."+(JFEE_BPS>0?"\nIncluye la comisión de Kosmara ("+f(JFEE_BPS/100,2)+" %), que se paga en SOL.":"")+"\nRevisa los detalles en tu wallet antes de aprobar."))return;
+ 
  try{sres("Esperando tu firma en la wallet…");var sg=await execSwap(r.v,fr.m,to.m,Math.floor(a*Math.pow(10,fr.d)),SW.slip);
   kzCelebrate();sres('Swap enviado'+(window.kzLastFee?" · comisión de Kosmara: "+f(kzLastFee/1e9,6)+" SOL":"")+'. <a class="lk" href="https://solscan.io/tx/'+esc(sg)+'" target="_blank" rel="noopener">Ver en Solscan ↗</a>');SW.amt="";SW.res=[];loadBal().then(rSwap)}
  catch(e){sres('<span class="dn">'+esc(fe(e))+"</span>")}
