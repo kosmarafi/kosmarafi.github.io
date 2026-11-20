@@ -10,7 +10,7 @@ await pg.evaluate(() => {
   S.positions = [{ pair: "ANT/USDC", fee: "0.04", price: 91.944, lo: 89.7453, hi: 94.0826, usd: 157.11, amtA: 0.83, amtB: 80.45, symA: "ANT", symB: "USDC", pnl: 1.25, pnlPct: 0.8, harv: 0, pend: 0.28, est: { "24h": 7.53 }, entry: 91.177171, dur: "55m", mint: "X", pool: "Y" }];
   rPf(); document.getElementById("pb_X").closest(".pos").scrollIntoView();
 });
-await pg.tap('[data-pbt="e"]');
+await pg.evaluate(() => document.querySelector("[data-pbt=e]").click());
 await pg.waitForTimeout(500);
 console.log("TIP", await pg.evaluate(() => document.querySelector(".pbtip")?.innerText));
 const el = await pg.$(".pos");
