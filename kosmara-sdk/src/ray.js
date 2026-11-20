@@ -63,11 +63,8 @@ async function buildOpen(o) {
     baseAmount = maxB;
     otherMax = maxA;
   }
-  // margen de deslizamiento sobre el otro token, sin pasar de lo que hay
-  const r2 = await PoolUtils.getLiquidityAmountOutFromAmountIn({ poolInfo, slippage: 0, inputA: base === "MintA", tickUpper, tickLower, amount: baseAmount, add: true, amountHasFee: true, epochInfo });
-  const needOther = new BN((base === "MintA" ? r2.amountSlippageB : r2.amountSlippageA).amount.toString());
-  let withSlip = needOther.muln(Math.round((1 + slip) * 10000)).divn(10000);
-  if (withSlip.gt(otherMax)) withSlip = otherMax;
+  // Maximo del otro token: lo que hay disponible (el programa solo toma lo necesario para el rango).
+  const withSlip = otherMax;
 
   const res = await raydium.clmm.openPositionFromBase({
     poolInfo,
@@ -85,4 +82,4 @@ async function buildOpen(o) {
   return { bytes: tx.serialize(), nftMint: res.extInfo && res.extInfo.nftMint ? res.extInfo.nftMint.toBase58() : "" };
 }
 
-window.kzRay = { ready: true, version: "0.1.0", buildOpen };
+window.kzRay = { ready: true, version: "0.1.1", buildOpen };

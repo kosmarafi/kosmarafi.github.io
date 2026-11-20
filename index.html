@@ -1974,7 +1974,7 @@ async function waitSig(sig){for(var i=0;i<30;i++){await new Promise(function(z){
    Prepara la transacción, se simula, la firma la wallet y se envía por nuestro RPC, igual que el resto. */
 var RAYP=null;
 function rayLoad(){if(window.kzRay&&kzRay.ready)return Promise.resolve(kzRay);if(RAYP)return RAYP;
- RAYP=new Promise(function(ok,ko){var s=document.createElement("script");s.type="module";s.src="./sdk/kz-ray.js?v=2";s.onerror=function(){RAYP=null;ko(new Error("No se pudo cargar el módulo de Raydium"))};
+ RAYP=new Promise(function(ok,ko){var s=document.createElement("script");s.type="module";s.src="./sdk/kz-ray.js?v=3";s.onerror=function(){RAYP=null;ko(new Error("No se pudo cargar el módulo de Raydium"))};
   document.head.appendChild(s);var n=0,iv=setInterval(function(){if(window.kzRay&&kzRay.ready){clearInterval(iv);ok(kzRay)}else if(++n>150){clearInterval(iv);RAYP=null;ko(new Error("El módulo de Raydium tarda demasiado en cargar"))}},100)});return RAYP}
 async function rayOpen(p,c,m){
  var R=await rayLoad(),b=await R.buildOpen({rpc:rpcUrl(),owner:S.pk,pool:p.id,lower:c.pa,upper:c.pb,amountA:m.a,amountB:m.b,decA:p.A.d,decB:p.B.d,slipBps:Math.round(ST.slip*100)});

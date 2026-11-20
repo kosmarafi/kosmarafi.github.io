@@ -15,7 +15,8 @@ const out = await pg.evaluate(async () => {
     log.push("pool " + p.id + " " + p.mintA.symbol + "/" + p.mintB.symbol + " price " + p.price + " fee " + p.feeRate);
     try {
       const t0 = Date.now();
-      const r = await kzRay.buildOpen({ rpc: RPC, owner: "2ojv9BAiHUrvsm9gxDe7fJSzbNZSJcxZvf8dqmWGHG8S", pool: p.id, lower: p.price * .95, upper: p.price * 1.05, amountA: 0.01, amountB: 2, decA: 9, decB: 6, slipBps: 100 });
+      const r = await kzRay.buildOpen({ rpc: RPC, owner: "2ojv9BAiHUrvsm9gxDe7fJSzbNZSJcxZvf8dqmWGHG8S", pool: p.id, lower: p.price * .95, upper: p.price * 1.05, amountA: 0.01, amountB: 2, // USDC de sobra
+ decA: 9, decB: 6, slipBps: 100 });
       log.push("bytes " + r.bytes.length + " nft " + r.nftMint + " t " + (Date.now() - t0) + "ms");
       let bin = ""; r.bytes.forEach(c => bin += String.fromCharCode(c));
       const sim = await call("simulateTransaction", [btoa(bin), { encoding: "base64", sigVerify: false, replaceRecentBlockhash: true, commitment: "confirmed" }]);
