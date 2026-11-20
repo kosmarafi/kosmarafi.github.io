@@ -1589,7 +1589,8 @@ function tickRun(){if(tkOn||!window.requestAnimationFrame)return;tkOn=true;var b
  var HP=null,HPt=2.5;
  function hop(g,dt){HPt-=dt;var n=NW.length;
   if(!HP&&HPt<=0&&!BR){var fr=[];for(var q=0;q<n;q++)if(orb(g,ROT+q/n*6.283+.4).d>.2)fr.push(q);
-   if(fr.length>=3){var k1=fr[0],k2=fr[fr.length-1];if(Math.random()<.5){k1=fr[fr.length-1];k2=fr[0]}HP={a:k1,b:k2,l:0}}}
+   if(fr.length>=3){/* de la red más a la izquierda a la más a la derecha (o al revés): la ruta cruza todo el frente */var xs=fr.map(function(q){return orb(g,ROT+q/n*6.283+.4).x}),lo=0,hi=0;xs.forEach(function(v,i){if(v<xs[lo])lo=i;if(v>xs[hi])hi=i});
+    var k1=fr[lo],k2=fr[hi];if(Math.random()<.5){k1=fr[hi];k2=fr[lo]}HP={a:k1,b:k2,l:0}}}
   if(!HP)return;HP.l+=dt/2.2;if(HP.l>=1){HP=null;HPt=3.2+Math.random()*1.8;return}
   var p1=orb(g,ROT+HP.a/n*6.283),p2=orb(g,ROT+HP.b/n*6.283),cx3=(p1.x+p2.x)/2,cy3=Math.min(p1.y,p2.y)-g.ry*1.6-Math.abs(p2.x-p1.x)*.12,
    tr=Math.min(1,HP.l/.55),fd=HP.l>.75?(1-HP.l)/.25:1,B=function(u){return{x:(1-u)*(1-u)*p1.x+2*(1-u)*u*cx3+u*u*p2.x,y:(1-u)*(1-u)*p1.y+2*(1-u)*u*cy3+u*u*p2.y}};
