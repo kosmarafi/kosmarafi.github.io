@@ -417,6 +417,26 @@ function duration(sec) {
   return d ? d + "d " + h + "h" : h ? h + "h " + m + "m" : Math.max(1, m) + "m";
 }
 
+// Escala de decimales de cada pool ya leido, para refrescar precios sin volver a cargarlo todo.
+const POOLSCALE = {};
+
+/**
+ * Precio actual de los pools indicados (token B por token A), leido directamente de la cuenta del pool.
+ * o = { rpc, pools: [direccion] } -> { direccion: precio }
+ */
+async function livePrices(o) {
+  const addrs = (o.pools || []).filter((a) => POOLSCALE[a] != null);
+  if (!addrs.length) return {};
+  const rpc = createSolanaRpc(o.rpc);
+  const ws = await fetchAllWhirlpool(rpc, addrs.map((a) => address(a)));
+  const out = {};
+  ws.forEach((w) => {
+    const sp = Number(w.data.sqrtPrice) / 18446744073709551616;
+    out[String(w.address)] = sp * sp * POOLSCALE[String(w.address)];
+  });
+  return out;
+}
+
 function short(a) {
   a = String(a);
   return a.slice(0, 4) + "…" + a.slice(-4);
@@ -486,6 +506,7 @@ async function positions(o) {
     const symB = tB.symbol || STABLES[mB] || short(mB);
 
     const scale = Math.pow(10, dA - dB);
+    POOLSCALE[String(d.whirlpool)] = scale;
     const sp = Number(w.sqrtPrice) / 18446744073709551616; // Q64.64
     const sa = Math.pow(1.0001, d.tickLowerIndex / 2);
     const sb = Math.pow(1.0001, d.tickUpperIndex / 2);
@@ -642,5 +663,5 @@ async function positions(o) {
   return out.filter(Boolean);
 }
 
-window.kzSdk = { ready: true, version: "0.3.0", openPosition, positions, closePosition, harvest };
+window.kzSdk = { ready: true, version: "0.4.0", openPosition, positions, closePosition, harvest, livePrices };
 window.dispatchEvent(new Event("kzsdk"));

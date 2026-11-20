@@ -159,7 +159,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
 .bar button.mid svg{width:26px;height:26px}
 .bar button.mid.on .c{background:#3a3217;border-color:#FFD60A}
 .rg{position:relative;height:8px;border-radius:99px;background:rgba(34,214,138,.35);margin:10px 0}
-.rg i{position:absolute;top:-4px;width:6px;height:16px;border-radius:3px;background:#fff}
+.rg i{position:absolute;top:-4px;width:6px;height:16px;border-radius:3px;background:#fff;transition:left .6s ease}.rg.out{background:rgba(255,99,99,.45)}.rg em{position:absolute;top:50%;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;background:#fff;opacity:.85;transform:rotate(45deg);border-radius:2px;box-shadow:0 0 0 2px rgba(0,0,0,.25)}@media (prefers-reduced-motion:reduce){.rg i{transition:none}}
 .pos{background:rgba(0,0,0,.32);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:10px}
 
 *{-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
@@ -1786,12 +1786,29 @@ if(window.MutationObserver&&document.body&&document.createTreeWalker)new Mutatio
 })();
 
 /* ---------- portafolio (como el de Orca; las posiciones se rellenarán con el SDK) ---------- */
+/* Barra de rango como la de Orca: precio actual (línea blanca, en directo), precio de entrada (rombo)
+   y cuánto falta en % hasta cada extremo del rango. */
+function posBar(p){
+ var lo=p.lo,hi=p.hi,full=lo<1e-9&&hi>1e12,inR=p.price>=lo&&p.price<=hi,span=(hi-lo)||1;
+ var pos=function(v){return full?50:Math.max(0,Math.min(100,(v-lo)/span*100))};
+ var pct=function(v){if(!(p.price>0))return "";var x=(v/p.price-1)*100;return (x>=0?"+":"−")+f(Math.abs(x),2)+"%"};
+ return '<div class="srow" style="justify-content:space-between;margin-top:10px"><span class="tag '+(inR?"":"o")+'">'+(inR?"Dentro del rango":"Fuera de rango")+'</span><span class="num" title="Precio actual">'+fp(p.price)+(p.symA?' <small class="dim">'+esc(p.symA)+"/"+esc(p.symB)+"</small>":"")+'</span></div>'+
+  '<div class="srow" style="justify-content:space-between;margin-top:8px"><b class="num '+(inR?"up":"dn")+'">'+(lo<1e-9?"0":fp(lo))+'</b><b class="num '+(inR?"up":"dn")+'">'+(hi>1e12?"∞":fp(hi))+"</b></div>"+
+  '<div class="rg'+(inR?"":" out")+'">'+(p.entry>0&&!full?'<em style="left:'+pos(p.entry)+'%" title="Precio de entrada '+fp(p.entry)+'"></em>':"")+'<i style="left:calc('+pos(p.price)+'% - 3px)" title="Precio actual"></i></div>'+
+  (full?"":'<div class="srow dim" style="justify-content:space-between;margin-top:2px"><span>'+pct(lo)+'</span><span>'+pct(hi)+"</span></div>");
+}
+var PB_T=null;
+async function posLive(){
+ clearTimeout(PB_T);PB_T=setTimeout(posLive,15000);
+ if(document.hidden||!S.positions.length||!(window.kzSdk&&kzSdk.livePrices)||!$("pfList")||!$("pfList").offsetParent)return;
+ try{var P=await kzSdk.livePrices({rpc:rpcUrl(),pools:S.positions.map(function(p){return p.pool})});
+  S.positions.forEach(function(p){var v=P[p.pool];if(v>0){p.price=v;var el=$("pb_"+p.mint);if(el)el.innerHTML=posBar(p)}})}catch(e){}
+}
+document.addEventListener("visibilitychange",function(){if(!document.hidden)posLive()});
 function posCard(p){
- var inR=p.price>=p.lo&&p.price<=p.hi,pc=Math.max(0,Math.min(100,(p.price-p.lo)/((p.hi-p.lo)||1)*100));
  var r=function(a,b){return '<div class="row" style="margin-top:6px"><span class="dim" style="font-size:13px">'+a+'</span><span class="v"><b>'+b+"</b></span></div>"};
  return '<div class="pos"><div class="srow" style="justify-content:space-between"><b style="font-size:17px">'+esc(p.pair)+'</b><span class="tag o">'+esc(p.fee)+'%</span></div>'+
-  '<div class="srow" style="justify-content:space-between;margin-top:10px"><span class="tag '+(inR?"":"o")+'">'+(inR?"Dentro del rango":"Fuera de rango")+'</span><span class="num">'+fp(p.price)+'</span></div>'+
-  '<div class="srow" style="justify-content:space-between;margin-top:8px"><b class="num up">'+(p.lo<1e-9?"0":fp(p.lo))+'</b><b class="num up">'+(p.hi>1e12?"∞":fp(p.hi))+'</b></div><div class="rg"><i style="left:calc('+pc+'% - 3px)"></i></div>'+
+  '<div id="pb_'+esc(p.mint||"")+'">'+posBar(p)+"</div>"+
   (p.symA?r("Tokens",f(p.amtA,4)+" "+esc(p.symA)+" + "+f(p.amtB,4)+" "+esc(p.symB)):"")+r("Saldo",usd(p.usd))+
   r("PNL total",p.pnl==null?"—":'<span class="'+(p.pnl>=0?"up":"dn")+'">'+(p.pnl>=0?"+":"−")+usd(Math.abs(p.pnl))+(p.pnlPct!=null?" ("+(p.pnl>=0?"+":"−")+f(Math.abs(p.pnlPct),2)+"%)":"")+"</span>")+
   r("Rendimiento cosechado",usd(p.harv))+r("Rendimiento pendiente",usd(p.pend))+
@@ -1928,14 +1945,14 @@ async function posAct(kind,mint){
  catch(e){r('<span class="dn">'+esc(fe(e))+"</span>")}
 }
 document.addEventListener("click",function(e){var t=e.target.closest&&e.target.closest("[data-pact]");if(t&&!t.disabled)posAct(t.getAttribute("data-pact"),t.getAttribute("data-mint"))});
-async function loadPos(){var ow=hSol();if(!ow||!(window.kzSdk&&kzSdk.ready))return;try{var P=await kzSdk.positions({rpc:rpcUrl(),owner:ow});if(ow!==hSol())return;S.positions=P;S.posOk=true;S.posErr=""}catch(e){S.posErr=fe(e)}rPf()}
+async function loadPos(){var ow=hSol();if(!ow||!(window.kzSdk&&kzSdk.ready))return;try{var P=await kzSdk.positions({rpc:rpcUrl(),owner:ow});if(ow!==hSol())return;S.positions=P;S.posOk=true;S.posErr=""}catch(e){S.posErr=fe(e)}rPf();posLive()}
 (function(){var id=LS("kz_w");if(id==="-")return;id=id||"ph";var w=WID(id);if(!w)return;var p=solGet(w);if(!p)return;
  var go=function(k){if(k)solOn(w,k.toString())};
  if(id==="ph")solConnect(p,true).then(go).catch(function(){});else if(p.isConnected&&p.publicKey)go(p.publicKey);
  try{if(p.on)p.on("accountChanged",function(k){if(k&&S.wid===w.id)go(k)})}catch(e){}
 })();
 window.addEventListener("kzsdk",function(){loadPos();if(S.sel&&!$("ps").hidden)rPs()});
-try{var kzM=document.createElement("script");kzM.type="module";kzM.src="./sdk/kz-sdk.js?v=4";document.head.appendChild(kzM)}catch(e){}
+try{var kzM=document.createElement("script");kzM.type="module";kzM.src="./sdk/kz-sdk.js?v=5";document.head.appendChild(kzM)}catch(e){}
 
 window.kzP=400;
 rRoad();rHome();rPf();rWallet();rLot();rNet("eth");rNet("bsc");loadNet("eth").then(function(){loadNet("bsc")});loadAave();
