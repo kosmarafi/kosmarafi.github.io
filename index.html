@@ -1596,11 +1596,12 @@ function tickRun(){if(tkOn||!window.requestAnimationFrame)return;tkOn=true;var b
    tr=Math.min(1,HP.l/.55),fd=HP.l>.75?(1-HP.l)/.25:1,B=function(u){return{x:(1-u)*(1-u)*p1.x+2*(1-u)*u*cx3+u*u*p2.x,y:(1-u)*(1-u)*p1.y+2*(1-u)*u*cy3+u*u*p2.y}};
   x.save();x.lineCap="round";
   /* ruta: tenue completa + tramo trazado */
-  x.setLineDash([2,4]);x.strokeStyle="rgba(120,240,220,"+(.28*fd).toFixed(2)+")";x.lineWidth=1;x.beginPath();x.moveTo(p1.x,p1.y);x.quadraticCurveTo(cx3,cy3,p2.x,p2.y);x.stroke();x.setLineDash([]);
+  x.setLineDash([2,4]);x.strokeStyle="rgba(10,40,55,"+(.45*fd).toFixed(2)+")";x.lineWidth=1.2;x.beginPath();x.moveTo(p1.x,p1.y);x.quadraticCurveTo(cx3,cy3,p2.x,p2.y);x.stroke();x.setLineDash([]);
   var gr=x.createLinearGradient(p1.x,p1.y,p2.x,p2.y);gr.addColorStop(0,"rgba(0,204,255,"+(.15*fd).toFixed(2)+")");gr.addColorStop(1,"rgba(51,255,190,"+(.95*fd).toFixed(2)+")");
-  x.strokeStyle=gr;x.lineWidth=1.8;x.beginPath();x.moveTo(p1.x,p1.y);for(var s=1;s<=30;s++){var pp=B(tr*s/30);x.lineTo(pp.x,pp.y)}x.stroke();
+  x.beginPath();x.moveTo(p1.x,p1.y);for(var s=1;s<=30;s++){var pp=B(tr*s/30);x.lineTo(pp.x,pp.y)}
+  /* contorno oscuro debajo: la ruta se lee igual sobre el portal claro que sobre el fondo */x.strokeStyle="rgba(6,22,34,"+(.55*fd).toFixed(2)+")";x.lineWidth=4;x.stroke();x.strokeStyle=gr;x.lineWidth=2;x.stroke();
   /* punto de luz en cabeza */
-  if(HP.l<.55){var hd=B(tr);x.fillStyle="#fff";x.shadowColor="rgba(51,255,190,1)";x.shadowBlur=10;x.beginPath();x.arc(hd.x,hd.y,2.4,0,6.3);x.fill();x.shadowBlur=0}
+  if(HP.l<.55){var hd=B(tr);x.fillStyle="#fff";x.shadowColor="rgba(51,255,190,1)";x.shadowBlur=10;x.beginPath();x.arc(hd.x,hd.y,3,0,6.3);x.fill();x.shadowBlur=0;x.strokeStyle="rgba(6,22,34,.6)";x.lineWidth=1;x.stroke()}
   /* origen: aro fino; destino: onda al llegar */
   var rN=Math.max(7.5,g.dw*.1)*1.1;x.strokeStyle="rgba(0,204,255,"+(.7*fd).toFixed(2)+")";x.lineWidth=1.2;x.beginPath();x.arc(p1.x,p1.y,rN+3,0,6.3);x.stroke();
   if(HP.l>=.55){var w2=(HP.l-.55)/.45;x.strokeStyle="rgba(51,255,190,"+((1-w2)*.9).toFixed(2)+")";x.lineWidth=1.6;x.beginPath();x.arc(p2.x,p2.y,rN+3+w2*12,0,6.3);x.stroke();
