@@ -2032,6 +2032,7 @@ async function loadPos(){var ow=hSol();if(!ow||!(window.kzSdk&&kzSdk.ready))retu
 window.addEventListener("kzsdk",function(){loadPos();if(S.sel&&!$("ps").hidden)rPs()});
 try{var kzM=document.createElement("script");kzM.type="module";kzM.src="./sdk/kz-sdk.js?v=8";document.head.appendChild(kzM)}catch(e){}
 
+window.kzTest={swapOpenOne:swapOpenOne,rc:rc};/*TEMP*/
 window.kzP=400;
 rRoad();rHome();rPf();rWallet();rLot();rNet("eth");rNet("bsc");loadNet("eth").then(function(){loadNet("bsc")});loadAave();
 window.kzOK=true;

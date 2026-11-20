@@ -4,9 +4,8 @@ pg.on("pageerror", e => console.log("PAGEERR", e.message));
 await pg.goto("https://kosmarafi.github.io/?t=" + Date.now(), { waitUntil: "load" });
 await pg.waitForTimeout(15000);
 console.log("DIAG", await pg.evaluate(() => JSON.stringify({ ok: window.kzOK, log: window.kzLog, pc: typeof posCard, rcx: typeof rc, v: window.kzSdk && kzSdk.version, so: typeof swapOpenOne, src: [...document.scripts].map(s => s.src).filter(Boolean) })));
-await b.close(); process.exit(0);
 const out = await pg.evaluate(async () => {
-  const log = [];
+  const log = []; const rc = kzTest.rc, swapOpenOne = kzTest.swapOpenOne;
   const USDC = "EPjFWWd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
   const la = await rc("getTokenLargestAccounts", [USDC]);
   let owner = null;
