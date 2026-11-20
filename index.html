@@ -1048,7 +1048,7 @@ var SRC={
   n:function(p){var st=(p.stats&&(p.stats["24h"]||p.stats["1d"]))||{},y=st.yieldOverTvl!=null?st.yieldOverTvl:p.yieldOverTvl;return mk("Orca",p.address,tk(p.tokenA),tk(p.tokenB),p.price,p.tvlUsdc!=null?p.tvlUsdc:p.tvl,st.volume!=null?st.volume:p.volume24h,y!=null?y*36500:null,p.feeRate!=null?p.feeRate/1e4:null,"https://www.orca.so/pools/"+p.address)}},
  Raydium:{u:function(q){return q?null:["https://api-v3.raydium.io/pools/info/list?poolType=concentrated&poolSortField=liquidity&sortType=desc&pageSize=100&page=1","https://api-v3.raydium.io/pools/info/list?poolType=all&poolSortField=default&sortType=desc&pageSize=100&page=1"]},
   r:function(j){return (j.data&&j.data.data)||j.data||[]},
-  n:function(p){var d=p.day||{};return mk("Raydium",p.id,tk(p.mintA),tk(p.mintB),p.price,p.tvl,d.volume,d.apr,p.feeRate!=null?p.feeRate*100:null,"https://raydium.io/clmm/create-position/?pool_id="+p.id)}},
+  n:function(p){var d=p.day||{},o=mk("Raydium",p.id,tk(p.mintA),tk(p.mintB),p.price,p.tvl,d.volume,d.apr,p.feeRate!=null?p.feeRate*100:null,"https://raydium.io/clmm/create-position/?pool_id="+p.id);if(o)o.clmm=p.type==="Concentrated";return o}},
  Jupiter:{h:function(){return S.key?{"x-api-key":S.key}:{}},
   u:function(q){return q?null:"https://api.jup.ag/lend/v1/earn/tokens"},
   r:function(j){return Array.isArray(j)?j:j.data||[]},
@@ -1234,8 +1234,8 @@ function rPs(){
  '<label for="pa">Cantidad de depósito</label><div class="box"><div class="srow"><select id="ppay"><option value="A"'+(z.pay==="A"?" selected":"")+">"+esc(p.A.s)+'</option><option value="B"'+(z.pay==="B"?" selected":"")+">"+esc(p.B.s)+'</option></select><input id="pa" class="num" type="number" inputmode="decimal" min="0" step="any" value="'+esc(z.amt)+'" placeholder="0.0"></div><div class="dim" id="pbal" style="margin-top:6px"></div></div>'+
  '<div class="hrow"><label class="tg"><input type="checkbox" id="pau"'+(z.auto?" checked":"")+'>Autoswap</label><span class="dim">Operar vía <select id="pvia">'+vo+'</select></span><span class="dim">Desliz. <select id="pslp">'+sl+"</select></span></div>"+
  '<div class="sum" id="psum"></div>'+
- (p.pr==="Orca"&&window.kzSdk&&kzSdk.ready?'<button class="btn p" data-act="mkpos">Crear posición</button><div class="stat" id="pres"></div>'+
-  '<div class="dim" style="margin-top:10px">Con autoswap activado, al crear la posición Kosmara cambia antes la parte necesaria para dejar tus fondos en la proporción del rango. Todo se firma una sola vez en tu wallet.</div></div>'
+ ((p.pr==="Orca"&&window.kzSdk&&kzSdk.ready)||(p.pr==="Raydium"&&p.clmm)?'<button class="btn p" data-act="mkpos">Crear posición</button><div class="stat" id="pres"></div>'+
+  '<div class="dim" style="margin-top:10px">Con autoswap activado, al crear la posición Kosmara cambia antes la parte necesaria para dejar tus fondos en la proporción del rango. '+(p.pr==="Raydium"?"En Raydium firmas el cambio y después la posición.":"Todo se firma una sola vez en tu wallet.")+'</div></div>'
  :'<div class="stat" id="pres"></div><a class="btn p" href="'+esc(p.url)+'" target="_blank" rel="noopener">Crear posición en '+p.pr+' ↗</a></div>');
  el.hidden=false;sumPs();if(p.pr==="Orca")loadLiq(p);if(RV.open)loadOh(p);
 }
@@ -1970,6 +1970,18 @@ document.addEventListener("input",function(e){var t=e.target,n=t.getAttribute&&t
    (espera a que se confirme) y después abre la posición. La wallet pide firma en cada paso. */
 async function waitSig(sig){for(var i=0;i<30;i++){await new Promise(function(z){setTimeout(z,2000)});try{var s=await rc("getSignatureStatuses",[[sig]]),v=s&&s.value&&s.value[0];
  if(v&&v.err)throw new Error("La red rechazó el cambio");if(v&&(v.confirmationStatus==="confirmed"||v.confirmationStatus==="finalized"))return true}catch(e){if(/rechaz/.test(e.message))throw e}}return false}
+/* Raydium (pools concentrados): el módulo se descarga solo la primera vez que hace falta (pesa ~330 KB comprimido).
+   Prepara la transacción, se simula, la firma la wallet y se envía por nuestro RPC, igual que el resto. */
+var RAYP=null;
+function rayLoad(){if(window.kzRay&&kzRay.ready)return Promise.resolve(kzRay);if(RAYP)return RAYP;
+ RAYP=new Promise(function(ok,ko){var s=document.createElement("script");s.type="module";s.src="./sdk/kz-ray.js?v=1";s.onerror=function(){RAYP=null;ko(new Error("No se pudo cargar el módulo de Raydium"))};
+  document.head.appendChild(s);var n=0,iv=setInterval(function(){if(window.kzRay&&kzRay.ready){clearInterval(iv);ok(kzRay)}else if(++n>150){clearInterval(iv);RAYP=null;ko(new Error("El módulo de Raydium tarda demasiado en cargar"))}},100)});return RAYP}
+async function rayOpen(p,c,m){
+ var R=await rayLoad(),b=await R.buildOpen({rpc:rpcUrl(),owner:S.pk,pool:p.id,lower:c.pa,upper:c.pb,amountA:m.a,amountB:m.b,decA:p.A.d,decB:p.B.d,slipBps:Math.round(ST.slip*100)});
+ var sim=await rc("simulateTransaction",[u8b(b.bytes),{encoding:"base64",sigVerify:false,replaceRecentBlockhash:true,commitment:"confirmed"}]),sv=sim&&(sim.value||sim);
+ if(sv&&sv.err){var lg=(sv.logs||[]).filter(function(l){return /rror|failed/.test(l)}).slice(-2).join(" · ");throw new Error("La simulación falló, no se ha enviado nada. "+(lg||JSON.stringify(sv.err)))}
+ var tx=solanaWeb3.VersionedTransaction.deserialize(b.bytes),st=await S.sw.signTransaction(tx),sig=await rc("sendTransaction",[u8b(st.serialize()),{encoding:"base64",skipPreflight:false,preflightCommitment:"confirmed",maxRetries:3}]);
+ var ok=await waitSig(sig);return{signature:sig,confirmed:ok,positionMint:b.nftMint}}
 /* Autoswap + posición en una transacción: instrucciones del cambio de Jupiter (con la comisión de Kosmara)
    seguidas de las de Orca. Las cantidades de la posición usan el mínimo garantizado del cambio. */
 async function swapOpenOne(p,c,pay,oth,amt){
@@ -1998,7 +2010,7 @@ async function mkPos(){
   if(short()&&ST.auto&&c.swapIn>0){
    var pay=c.payB?p.B:p.A,oth=c.payB?p.A:p.B,amt=Math.floor(c.swapIn*Math.pow(10,pay.d));
    /* Primero, todo en una sola transacción (una firma, como Orca). Si no cabe, se hace en dos pasos. */
-   if(kzSdk.swapAndOpen){try{
+   if(p.pr==="Orca"&&kzSdk.swapAndOpen){try{
     r("Preparando el cambio y la posición…");
     var one=await swapOpenOne(p,c,pay,oth,amt);
     r((one.confirmed?"Posición creada.":"Transacción enviada; aún sin confirmar.")+' <a class="lk" href="https://solscan.io/tx/'+esc(one.signature)+'" target="_blank" rel="noopener">Ver transacción ↗</a> · <a class="lk" href="https://solscan.io/token/'+esc(one.positionMint)+'" target="_blank" rel="noopener">Ver NFT ↗</a>');kzCelebrate(2);loadBal();loadPos();return}
@@ -2011,7 +2023,7 @@ async function mkPos(){
   }
   if(short())throw new Error("Te falta "+(m.a<c.aA*.9?p.A.s:p.B.s)+" en la wallet para este rango."+(ST.auto?"":" Activa el autoswap para que Kosmara lo cambie por ti."));
   r((sg?"Paso 2 de 2: ":"")+"Preparando la posición. Firma en tu wallet…");
-  var o=await kzSdk.openPosition({rpc:rpcUrl(),pool:p.id,owner:S.pk,amountA:m.a,amountB:m.b,decA:p.A.d,decB:p.B.d,lower:c.pa,upper:c.pb,slipBps:Math.round(ST.slip*100),provider:S.sw});
+  var o=p.pr==="Raydium"?await rayOpen(p,c,m):await kzSdk.openPosition({rpc:rpcUrl(),pool:p.id,owner:S.pk,amountA:m.a,amountB:m.b,decA:p.A.d,decB:p.B.d,lower:c.pa,upper:c.pb,slipBps:Math.round(ST.slip*100),provider:S.sw});
   r((o.confirmed?"Posición creada.":"Transacción enviada; aún sin confirmar.")+' <a class="lk" href="https://solscan.io/tx/'+esc(o.signature)+'" target="_blank" rel="noopener">Ver transacción ↗</a> · <a class="lk" href="https://solscan.io/token/'+esc(o.positionMint)+'" target="_blank" rel="noopener">Ver NFT ↗</a>');kzCelebrate(2);loadBal();loadPos()}
  catch(e){r('<span class="dn">'+esc(fe(e))+"</span>")}
  finally{if(bt)bt.disabled=false}
