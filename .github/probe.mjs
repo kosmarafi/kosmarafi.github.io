@@ -19,7 +19,7 @@ const out = await pg.evaluate(async () => {
   const P = await (await fetch("https://lite-api.jup.ag/price/v3?ids=" + SOLM)).json();
   const px = +P[SOLM].usdPrice;
   S.bal = { [SOLM]: 3, [USDC]: 50 };
-  for (const [name, payB, swapIn] of [["paga USDC", true, 2], ["paga SOL", false, 2 / px]]) {
+  for (const [name, payB, swapIn] of []) {
     const p = { id: "Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE", A: { m: SOLM, d: 9, s: "SOL" }, B: { m: USDC, d: 6, s: "USDC" } };
     const c = { payB, swapIn, aA: 2 / px, aB: 2, pa: px * 0.95, pb: px * 1.05 };
     if (!payB) S.bal = { [SOLM]: 3, [USDC]: 0 }; else S.bal = { [SOLM]: 0.05, [USDC]: 4 };
@@ -29,6 +29,13 @@ const out = await pg.evaluate(async () => {
       catch (e) { log.push(name + " " + via + ": " + (e.kzBig ? "[GRANDE] " : "") + e.message.slice(0, 200)); if (via === "Jupiter" && !/STOP_OK|GRANDE/.test(e.message)) log.push((window.simLogs || []).filter(l => !/consumed|success$/.test(l)).slice(-30).join("\n")) }
     }
   }
+  const pm = (await (await fetch("https://api.orca.so/v2/solana/pools/J7mEHdBtAKGUsfiGnk3bL9cRVxqqcqx4HTxXb4wNnrsk")).json()).data;
+  const pA = { m: pm.tokenMintA, d: pm.tokenA.decimals, s: pm.tokenA.symbol }, pB = { m: pm.tokenMintB, d: pm.tokenB.decimals, s: pm.tokenB.symbol };
+  const pr = +pm.price; log.push("ANT pool " + pA.s + "/" + pB.s + " " + pr);
+  S.bal = { [SOLM]: 0.05, [pB.m]: 4 };
+  for (const via of ["Jupiter", "Orca"]) { ST.via = via;
+    try { await swapOpenOne({ id: "J7mEHdBtAKGUsfiGnk3bL9cRVxqqcqx4HTxXb4wNnrsk", A: pA, B: pB }, { payB: true, swapIn: 2, aA: 2 / pr, aB: 2, pa: pr * 0.97, pb: pr * 1.03 }, pB, pA, 2e6); log.push("ANT " + via + " sin parar?") }
+    catch (e) { log.push("ANT " + via + ": " + (e.kzBig ? "[GRANDE] " : "") + e.message.slice(0, 200)) } }
   return log;
 });
 console.log(out.join("\n"));
