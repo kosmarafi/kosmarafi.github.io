@@ -1585,7 +1585,7 @@ function tickRun(){if(tkOn||!window.requestAnimationFrame)return;tkOn=true;var b
  /* THORChain como puente: cada poco, un arco de luz une dos redes del anillo por encima del portal */
  var BR=null,BRt=1.2;
  function bridge(g,dt){BRt-=dt;if(!BR&&BRt<=0){/* solo redes que estén por delante, para que el puente se vea entero */var n=NW.length,fr=[];for(var q=0;q<n;q++)if(orb(g,ROT+q/n*6.283+.25).d>.15)fr.push(q);
-   if(fr.length>=2){var i1=Math.floor(Math.random()*fr.length),i2=(i1+1+Math.floor(Math.random()*(fr.length-1)))%fr.length;if(Math.abs(fr[i1]-fr[i2])>=2)BR={a:fr[i1],b:fr[i2],l:0}}}
+   if(fr.length>=2){/* de una red a la más alejada en horizontal: el puente cruza el portal de lado a lado */var k1=fr[Math.floor(Math.random()*fr.length)],x1=orb(g,ROT+k1/n*6.283).x,k2=k1,dx2=0;fr.forEach(function(q2){var dd=Math.abs(orb(g,ROT+q2/n*6.283).x-x1);if(dd>dx2){dx2=dd;k2=q2}});if(k2!==k1&&dx2>g.dw*.8)BR={a:k1,b:k2,l:0}}}
   if(!BR)return;BR.l+=dt/2.6;if(BR.l>=1){BR=null;BRt=1.4+Math.random()*1.6;return}
   var n2=NW.length,p1=orb(g,ROT+BR.a/n2*6.283),p2=orb(g,ROT+BR.b/n2*6.283),cx2=(p1.x+p2.x)/2,cy2=Math.min(p1.y,p2.y)-g.dh*.62,
    al=Math.sin(Math.PI*Math.min(1,BR.l*1.4))*(BR.l>.7?(1-BR.l)/.3:1),gr=x.createLinearGradient(p1.x,p1.y,p2.x,p2.y);
