@@ -1,0 +1,12 @@
+import { chromium } from "playwright";
+const b = await chromium.launch(); const pg = await b.newPage({ viewport: { width: 400, height: 820 }, deviceScaleFactor: 1.5 });
+pg.on("pageerror", e => console.log("PAGEERR", e.message));
+await pg.goto("https://kosmarafi.github.io/?kzdl=ph&t=" + Date.now(), { waitUntil: "load" });
+await pg.waitForFunction(() => typeof rConn === "function" && rConn.toString().includes("wchip"), null, { timeout: 60000 });
+await pg.waitForTimeout(5000);
+console.log("URL", pg.url(), "CLASS", await pg.evaluate(() => document.documentElement.className));
+await pg.evaluate(() => { document.querySelectorAll("[id*=splash],.splash").forEach(e => e.remove()); S.pk = "8AMfcuNiwoQH8xKiytkujH5JVjiskER8eRTK7XAfhQ21"; S.wid = "ph"; S.wname = "Phantom"; rConn(); });
+console.log("BTN", await pg.evaluate(() => document.getElementById("bConn").outerHTML.slice(0, 300)));
+await pg.waitForTimeout(500);
+await pg.screenshot({ path: "shot.png" });
+await b.close();

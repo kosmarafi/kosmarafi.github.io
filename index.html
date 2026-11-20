@@ -38,7 +38,7 @@ button,.btn{font:inherit;font-weight:700;cursor:pointer}
 .btn:hover{background:rgba(255,255,255,.13)}
 .btn.p{display:block;width:100%;padding:14px;font-size:16px;background:rgb(var(--tc));color:#000;border:0;border-radius:14px;margin-top:10px}
 .btn.sm{padding:7px 11px;font-size:13px}
-.ywallet{background:#FFD60A;color:#000;border:0;border-radius:12px;padding:10px 16px;white-space:nowrap}.ywallet:hover{background:#ffe14d}
+.ywallet{background:#FFD60A;color:#000;border:0;border-radius:12px;padding:10px 16px;white-space:nowrap}.ywallet:hover{background:#ffe14d}.wchip{display:inline-flex;align-items:center;gap:10px;background:rgba(20,22,30,.82);color:#c9cad6;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:7px 14px 7px 8px;white-space:nowrap;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:15px;letter-spacing:.02em;cursor:pointer}.wchip:hover{background:rgba(32,35,46,.9)}.wc-i{position:relative;display:inline-flex;width:30px;height:30px;flex:none}.wc-i .wl{width:30px!important;height:30px!important;min-width:0;border-radius:50%!important;overflow:hidden;display:flex;align-items:center;justify-content:center;margin:0}.wc-i .wl img,.wc-i .wl svg{width:100%;height:100%;object-fit:cover;border-radius:0}.wc-dot{position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:50%;background:#22d68a;border:2px solid #14161e}
 h1{margin:6px 0 8px;font-size:clamp(28px,7.5vw,48px);line-height:1.04;letter-spacing:-.035em}
 h1 em{font-style:normal;background:linear-gradient(180deg,#b7a6ff,#2dd4bf);-webkit-background-clip:text;background-clip:text;color:transparent}
 .lead{color:#b4b5c6;max-width:46ch;margin:0 0 12px}
@@ -124,7 +124,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
 .logo{display:flex;align-items:center}.logo img{display:block;height:48px;width:auto}
 .wbtn.mm .wl{background:#fff;border-radius:9px;padding:4px}.wbtn.ph .wl svg{border-radius:8px}
 
-.g{padding-bottom:120px}
+.g{padding-bottom:120px}html.kzdl .g{padding-bottom:170px}html.kzdl .bar{padding-bottom:50px}html.kzdl .toast{bottom:130px}
 .bar{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;align-items:flex-end;justify-content:space-around;background:rgba(12,12,17,.96);border-top:1px solid var(--line);padding:5px 6px calc(2px + min(env(safe-area-inset-bottom,0px),4px));-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
 .bar a,.bar .barb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:#9a9bab;font-size:10px;font-weight:600;text-decoration:none;background:none;border:0;padding:4px 0}
 .bar svg{width:24px;height:24px;display:block}
@@ -473,6 +473,10 @@ option{background:#133b39}
 .k{color:rgb(var(--tc));color:color-mix(in srgb,rgb(var(--tc)) 52%,#fff);text-shadow:0 1px 8px rgba(0,20,18,.4)}
 .ibar{background:linear-gradient(90deg,rgba(45,212,191,.16),rgba(240,200,120,.14));border-color:rgba(45,212,191,.35)}
 </style>
+<script>/* Abierta desde Kosmara en el navegador de Phantom (enlace con kzdl=ph): ahí la página ocupa también la zona
+de los botones del móvil, así que se sube la barra de abajo. Si entras directo desde Phantom no lleva la marca y no cambia. */
+(function(){try{var q=new URLSearchParams(location.search);if(q.get("kzdl")){sessionStorage.setItem("kzdl","1");q.delete("kzdl");history.replaceState(null,"",location.pathname+(q.toString()?"?"+q:"")+location.hash)}
+if(sessionStorage.getItem("kzdl"))document.documentElement.classList.add("kzdl")}catch(e){}})();</script>
 </head>
 <body>
 <div class="g">
@@ -1262,7 +1266,7 @@ var MOB=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent),EIP={},SVGI={ph:"<
 function here(){return location.href.split("#")[0]}
 var WL=[
  {id:"ph",n:"Phantom",c:"#AB9FF2",ws:/phantom/i,sol:function(){return window.phantom&&window.phantom.solana},rd:/phantom/i,lg:function(e){return !!e.isPhantom},
-  dl:function(u){return "https://phantom.app/ul/browse/"+encodeURIComponent(u)+"?ref="+encodeURIComponent(location.origin)},site:"https://phantom.com"},
+  dl:function(u){return "https://phantom.app/ul/browse/"+encodeURIComponent(u+(u.indexOf("?")<0?"?":"&")+"kzdl=ph")+"?ref="+encodeURIComponent(location.origin)},site:"https://phantom.com"},
  {id:"tw",n:"Trust Wallet",sn:"Trust",c:"#0500FF",ws:/trust/i,sol:function(){return window.trustwallet&&window.trustwallet.solana},
   ev:function(){return window.trustwallet&&window.trustwallet.ethereum},rd:/trust/i,lg:function(e){return !!(e.isTrust||e.isTrustWallet)},
   dl:function(u){return "https://link.trustwallet.com/open_url?coin_id=501&url="+encodeURIComponent(u)},site:"https://trustwallet.com"},
@@ -1336,7 +1340,12 @@ function rSheet(){
  $("wsheet").innerHTML=h;
 }
 function openSheet(){S.sheetOpen=true;S.wv="main";try{window.dispatchEvent(new Event("eip6963:requestProvider"))}catch(e){}rSheet();$("sheet").hidden=false}
-function rConn(){if(window.rBurger)rBurger();$("bConn").textContent=S.pk?S.wname+" "+short(S.pk):S.eaddr?S.ename+" "+short(S.eaddr):"Conectar wallet"}
+/* Botón de wallet: sin conectar, botón amarillo; conectada, chip como el de Orca con el logo de la wallet,
+   un punto verde y la dirección recortada (8AMf...hQ21). */
+function rConn(){if(window.rBurger)rBurger();var b=$("bConn"),a=S.pk||S.eaddr,w=a&&WID(S.pk?S.wid:S.eid);
+ if(!a){b.className="ywallet";b.textContent="Conectar wallet";b.removeAttribute("aria-label");return}
+ b.className="wchip";b.setAttribute("aria-label",(w?w.n:(S.pk?S.wname:S.ename))+" conectada: "+a+". Tocar para gestionar");
+ b.innerHTML='<span class="wc-i">'+(w?wIcon(w):"")+'<i class="wc-dot"></i></span><span class="wc-a">'+esc(a.slice(0,4)+"..."+a.slice(-4))+"</span>"}
 async function solConnect(p,silent){var r=await p.connect(silent?{onlyIfTrusted:true}:undefined),k=(r&&r.publicKey)||p.publicKey;if(!k)throw new Error("La wallet no devolvió ninguna dirección.");return k.toString()}
 /* Misma interfaz para todas las wallets de Solana: si no firman y envían a la vez, firmamos y enviamos por RPC. */
 function solWrap(p){return{p:p,
