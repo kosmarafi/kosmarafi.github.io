@@ -26,7 +26,7 @@ const out = await pg.evaluate(async () => {
     for (const via of ["Jupiter", "Orca"]) {
       ST.via = via; ST.slip = 1;
       try { await swapOpenOne(p, c, payB ? p.B : p.A, payB ? p.A : p.B, Math.floor(swapIn * (payB ? 1e6 : 1e9))); log.push(name + " " + via + ": sin parar?") }
-      catch (e) { log.push(name + " " + via + ": " + (e.kzBig ? "[GRANDE] " : "") + e.message.slice(0, 200)); if (via === "Jupiter") log.push((window.simLogs || []).filter(l => !/consumed|success$/.test(l)).slice(-30).join("\n")) }
+      catch (e) { log.push(name + " " + via + ": " + (e.kzBig ? "[GRANDE] " : "") + e.message.slice(0, 200)); if (via === "Jupiter" && !/STOP_OK|GRANDE/.test(e.message)) log.push((window.simLogs || []).filter(l => !/consumed|success$/.test(l)).slice(-30).join("\n")) }
     }
   }
   return log;

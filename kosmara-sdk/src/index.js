@@ -4,6 +4,14 @@
 import { openPositionInstructions, fetchPositionsForOwner, closePositionInstructions, harvestPositionInstructions, setNativeMintWrappingStrategy } from "@orca-so/whirlpools";
 import { fetchAllWhirlpool } from "@orca-so/whirlpools-client";
 import {
+  findAssociatedTokenPda,
+  getCreateAssociatedTokenIdempotentInstruction,
+  getSyncNativeInstruction,
+  getCloseAccountInstruction,
+  TOKEN_PROGRAM_ADDRESS,
+} from "@solana-program/token";
+import { getTransferSolInstruction } from "@solana-program/system";
+import {
   createSolanaRpcFromTransport,
   createDefaultRpcTransport,
   address,
@@ -247,10 +255,25 @@ async function swapAndOpen(o) {
   if (!(o.lower > 0) || !(o.upper > o.lower)) throw new Error("Rango de precios no válido");
   const rpc = createSolanaRpc(o.rpc);
   const signer = createNoopSigner(address(o.owner));
-  // SOL envuelto en la cuenta asociada (la misma que usa Jupiter) en vez de una cuenta temporal con su propia firma:
-  // ahorra ~100 bytes, que es lo que hace falta para que el cambio y la posicion quepan juntos.
+  // Si el pool lleva SOL, el SOL se maneja en UNA cuenta envuelta (wSOL) compartida por el cambio y la posicion:
+  // se envuelve lo necesario al principio, Jupiter y Orca usan esa cuenta, y al final se cierra (lo que sobre vuelve a SOL).
+  // Asi no hay cuentas temporales con firma propia y todo cabe en una transaccion.
+  const WSOL = "So11111111111111111111111111111111111111112";
+  const w = (await fetchAllWhirlpool(rpc, [address(o.pool)]))[0].data;
+  const solSide = String(w.tokenMintA) === WSOL ? "A" : String(w.tokenMintB) === WSOL ? "B" : null;
+  let wrapPre = [];
+  let wrapPost = [];
+  if (solSide) {
+    const [ata] = await findAssociatedTokenPda({ owner: signer.address, tokenProgram: TOKEN_PROGRAM_ADDRESS, mint: address(WSOL) });
+    const maxSol = solSide === "A" ? tokenMaxA : tokenMaxB;
+    let wrap = BigInt(Math.floor(o.solIn || 0)) + (maxSol > BigInt(Math.floor(o.solOut || 0)) ? maxSol - BigInt(Math.floor(o.solOut || 0)) : 0n);
+    wrapPre.push(getCreateAssociatedTokenIdempotentInstruction({ payer: signer, ata, owner: signer.address, mint: address(WSOL) }));
+    if (wrap > 0n) wrapPre.push(getTransferSolInstruction({ source: signer, destination: ata, amount: wrap }));
+    wrapPre.push(getSyncNativeInstruction({ account: ata }));
+    wrapPost.push(getCloseAccountInstruction({ account: ata, destination: signer.address, owner: signer }));
+  }
   let res;
-  setNativeMintWrappingStrategy("ata");
+  setNativeMintWrappingStrategy(solSide ? "none" : "keypair");
   try {
     res = await openPositionInstructions(rpc, address(o.pool), { tokenMaxA, tokenMaxB }, o.lower, o.upper, {
       slippageToleranceBps: Math.max(1, Math.round(o.slipBps || 100)),
@@ -260,7 +283,7 @@ async function swapAndOpen(o) {
     setNativeMintWrappingStrategy("keypair");
   }
   const pre = (o.pre || []).map((ix) => jupIx(ix, signer));
-  const out = await sendIxs(Object.assign({}, o, { signer, cuLimit: o.cuLimit || 1000000 }), pre.concat(res.instructions));
+  const out = await sendIxs(Object.assign({}, o, { signer, cuLimit: o.cuLimit || 1000000 }), wrapPre.concat(pre, res.instructions, wrapPost));
   return Object.assign(out, { positionMint: String(res.positionMint) });
 }
 
@@ -727,5 +750,5 @@ async function positions(o) {
   return out.filter(Boolean);
 }
 
-window.kzSdk = { ready: true, version: "0.6.1", openPosition, swapAndOpen, positions, closePosition, harvest, livePrices };
+window.kzSdk = { ready: true, version: "0.6.2", openPosition, swapAndOpen, positions, closePosition, harvest, livePrices };
 window.dispatchEvent(new Event("kzsdk"));

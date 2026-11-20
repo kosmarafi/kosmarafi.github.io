@@ -1968,14 +1968,14 @@ async function swapOpenOne(p,c,pay,oth,amt){
 async function swapOpenTry(p,c,pay,oth,amt,via){
  var q=await jj("v1/quote?inputMint="+pay.m+"&outputMint="+oth.m+"&amount="+amt+"&slippageBps="+Math.round(ST.slip*100)+"&maxAccounts=20"+(via==="Jupiter"?"":"&dexes="+encodeURIComponent(await dexFor(via))));
  var fee=0;try{fee=await jfeeLamports(pay.m,oth.m,amt,q)}catch(e){fee=0}
- var si=await jj("v1/swap-instructions",{quoteResponse:q,userPublicKey:S.pk,wrapAndUnwrapSol:true,dynamicComputeUnitLimit:false,dynamicSlippage:false});
+ var hasSol=p.A.m===SOLM||p.B.m===SOLM,si=await jj("v1/swap-instructions",{quoteResponse:q,userPublicKey:S.pk,wrapAndUnwrapSol:!hasSol,dynamicComputeUnitLimit:false,dynamicSlippage:false});
  var pre=[].concat(si.setupInstructions||[],[si.swapInstruction],si.cleanupInstruction?[si.cleanupInstruction]:[],si.otherInstructions||[]);
  if(fee>0){var d=new Uint8Array(12),dv=new DataView(d.buffer);dv.setUint32(0,2,true);dv.setBigUint64(4,BigInt(Math.floor(fee)),true);
   pre.push({programId:"11111111111111111111111111111111",accounts:[{pubkey:S.pk,isSigner:true,isWritable:true},{pubkey:JFEE_TO,isSigner:false,isWritable:true}],data:u8b(d)})}
  var gas=function(tk){return tk.m===SOLM?.02+(fee/1e9):0};
  var bPay=(S.bal[pay.m]||0)-gas(pay)-c.swapIn,bOth=(S.bal[oth.m]||0)-gas(oth)+(+q.otherAmountThreshold||0)/Math.pow(10,oth.d);
  var wantPay=c.payB?c.aB:c.aA,wantOth=c.payB?c.aA:c.aB,aPay=Math.max(0,Math.min(wantPay,bPay))*.995,aOth=Math.max(0,Math.min(wantOth,bOth))*.995;
- var o=await kzSdk.swapAndOpen({rpc:rpcUrl(),pool:p.id,owner:S.pk,amountA:c.payB?aOth:aPay,amountB:c.payB?aPay:aOth,decA:p.A.d,decB:p.B.d,lower:c.pa,upper:c.pb,slipBps:Math.round(ST.slip*100),provider:S.sw,pre:pre,alts:si.addressLookupTableAddresses||[]});
+ var o=await kzSdk.swapAndOpen({rpc:rpcUrl(),pool:p.id,owner:S.pk,amountA:c.payB?aOth:aPay,amountB:c.payB?aPay:aOth,decA:p.A.d,decB:p.B.d,lower:c.pa,upper:c.pb,slipBps:Math.round(ST.slip*100),provider:S.sw,pre:pre,alts:si.addressLookupTableAddresses||[],solIn:pay.m===SOLM?amt:0,solOut:oth.m===SOLM?(+q.otherAmountThreshold||0):0});
  if(fee>0)window.kzLastFee=fee;return o}
 async function mkPos(){
  var p=S.pools[S.sel],c=pcalc(),r=function(h){$("pres").innerHTML=h},bt=document.querySelector('[data-act="mkpos"]');
@@ -2033,7 +2033,7 @@ async function loadPos(){var ow=hSol();if(!ow||!(window.kzSdk&&kzSdk.ready))retu
  try{if(p.on)p.on("accountChanged",function(k){if(k&&S.wid===w.id)go(k)})}catch(e){}
 })();
 window.addEventListener("kzsdk",function(){loadPos();if(S.sel&&!$("ps").hidden)rPs()});
-try{var kzM=document.createElement("script");kzM.type="module";kzM.src="./sdk/kz-sdk.js?v=9";document.head.appendChild(kzM)}catch(e){}
+try{var kzM=document.createElement("script");kzM.type="module";kzM.src="./sdk/kz-sdk.js?v=10";document.head.appendChild(kzM)}catch(e){}
 
 window.kzTest={swapOpenOne:swapOpenOne,rc:rc};/*TEMP*/
 window.kzP=400;
