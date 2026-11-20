@@ -235,9 +235,11 @@ async function harvest(o) {
   return sendIxs(Object.assign({}, o, { signer }), res.instructions);
 }
 
+const YIELD_WINDOWS = ["5m", "15m", "30m", "1h", "4h", "8h", "24h", "7d", "30d", "365d"];
+
 async function poolMeta(addr) {
   try {
-    const r = await fetch("https://api.orca.so/v2/solana/pools/" + addr);
+    const r = await fetch("https://api.orca.so/v2/solana/pools/" + addr + "?stats=" + YIELD_WINDOWS.join(","));
     if (!r.ok) return null;
     const j = await r.json();
     const d = j && j.data ? j.data : j;
@@ -605,31 +607,33 @@ async function positions(o) {
       if (dep > 0 && usd != null) pnl = usd + (wd || 0) + (harv || 0) + (pend || 0) - dep;
     }
 
-    // Rendimiento estimado por periodo (como el selector de Orca): comisiones del pool en esa ventana,
-    // la parte de los LP, en proporcion a tu liquidez y sobre el valor de tu posicion.
-    // 24h, 7d y 30d son datos reales del pool; 1h sale de las 24h y 365d proyecta los 30d.
+    // Rendimiento estimado por periodo, con la misma formula que Orca:
+    // (volumen del periodo x comision base del pool + recompensas del periodo) x tu parte de la liquidez activa / tu saldo.
+    // Los periodos vienen de la API de Orca (5m ... 365d); si falta alguno se deduce del mas cercano.
     let est = null;
     let est24 = null;
     try {
       const st = meta.stats || {};
       const lp = Number(w.liquidity);
       const inRange = sp > sa && sp < sb;
-      const share = (fees) => (usd > 0 && fees > 0 && lp > 0 ? ((fees * (1 - Number(w.protocolFeeRate) / 10000) * (L / lp)) / usd) * 100 : null);
-      const f24 = st["24h"] && +st["24h"].fees;
-      const f7 = st["7d"] && +st["7d"].fees;
-      const f30 = st["30d"] && +st["30d"].fees;
-      if (inRange) {
-        est = {
-          "1h": share(f24 / 24),
-          "24h": share(f24),
-          "7d": share(f7),
-          "30d": share(f30),
-          "365d": share((f30 * 365) / 30),
-        };
-        est24 = est["24h"];
-      } else {
+      if (!inRange) {
         est = { out: true };
         est24 = 0;
+      } else if (usd > 0 && lp > 0) {
+        const rate = Number(w.feeRate) / 1e6;
+        const share = L / lp;
+        const earn = (x) => (x ? ((+x.volume || 0) * rate + (+x.rewards || 0)) * share : null);
+        const HRS = { "5m": 1 / 12, "15m": 0.25, "30m": 0.5, "1h": 1, "4h": 4, "8h": 8, "24h": 24, "7d": 168, "30d": 720, "365d": 8760 };
+        est = {};
+        YIELD_WINDOWS.forEach((k) => {
+          let v = earn(st[k]);
+          if (v == null) {
+            const base = st["30d"] ? ["30d", earn(st["30d"])] : st["24h"] ? ["24h", earn(st["24h"])] : null;
+            if (base && base[1] != null) v = (base[1] * HRS[k]) / HRS[base[0]];
+          }
+          est[k] = v == null ? null : (v / usd) * 100;
+        });
+        est24 = est["24h"];
       }
     } catch (e) {}
 
@@ -663,5 +667,5 @@ async function positions(o) {
   return out.filter(Boolean);
 }
 
-window.kzSdk = { ready: true, version: "0.4.0", openPosition, positions, closePosition, harvest, livePrices };
+window.kzSdk = { ready: true, version: "0.5.0", openPosition, positions, closePosition, harvest, livePrices };
 window.dispatchEvent(new Event("kzsdk"));

@@ -1786,7 +1786,7 @@ if(window.MutationObserver&&document.body&&document.createTreeWalker)new Mutatio
 })();
 
 /* ---------- portafolio (como el de Orca; las posiciones se rellenarán con el SDK) ---------- */
-/* Barra de rango como la de Orca: precio actual (línea blanca, en directo), precio de entrada (rombo)
+/* Barra de rango como la de Orca: precio actual (línea blanca, en directo cada 6 s), precio de entrada (rombo)
    y cuánto falta en % hasta cada extremo del rango. */
 function posBar(p){
  var lo=p.lo,hi=p.hi,full=lo<1e-9&&hi>1e12,inR=p.price>=lo&&p.price<=hi,span=(hi-lo)||1;
@@ -1799,7 +1799,7 @@ function posBar(p){
 }
 var PB_T=null;
 async function posLive(){
- clearTimeout(PB_T);PB_T=setTimeout(posLive,15000);
+ clearTimeout(PB_T);PB_T=setTimeout(posLive,6000);
  if(document.hidden||!S.positions.length||!(window.kzSdk&&kzSdk.livePrices)||!$("pfList")||!$("pfList").offsetParent)return;
  try{var P=await kzSdk.livePrices({rpc:rpcUrl(),pools:S.positions.map(function(p){return p.pool})});
   S.positions.forEach(function(p){var v=P[p.pool];if(v>0){p.price=v;var el=$("pb_"+p.mint);if(el)el.innerHTML=posBar(p)}})}catch(e){}
@@ -1817,9 +1817,9 @@ function posCard(p){
   (p.mint&&S.pk&&hSol()===S.pk?'<div class="srow" style="gap:8px;margin-top:12px"><button class="btn" style="flex:1" data-pact="harv" data-mint="'+esc(p.mint)+'"'+(p.pend>0?"":" disabled")+'>Cobrar rendimiento</button><button class="btn p" style="flex:1;margin:0" data-pact="close" data-mint="'+esc(p.mint)+'">Cerrar posición</button></div><div class="stat" id="pa_'+esc(p.mint)+'"></div>':"")+
   (p.mint?'<a class="lk" style="display:block;margin-top:8px" href="https://solscan.io/token/'+esc(p.mint)+'" target="_blank" rel="noopener">Ver NFT de la posición ↗</a>':"")+"</div>";
 }
-/* Selector de periodo del rendimiento estimado (como Orca). 24H, 7D y 30D usan las comisiones reales del pool;
-   1H sale de las 24H y 365D proyecta los últimos 30D. */
-var YP=[["1h","1H"],["24h","24H"],["7d","7D"],["30d","30D"],["365d","365D"]];
+/* Selector de periodo del rendimiento estimado, con los mismos periodos y la misma fórmula que Orca
+   (volumen del periodo × comisión del pool + recompensas, en proporción a tu liquidez). */
+var YP=[["5m","5m"],["15m","15m"],["30m","30m"],["1h","1H"],["4h","4H"],["8h","8H"],["24h","24H"],["7d","7D"],["30d","30D"],["365d","365D"]];
 function ypCur(){var v=LS("kz_yp");return YP.some(function(k){return k[0]===v})?v:"24h"}
 function ypVal(p){var e=p.est;if(!e)return p.est24==null?"—":f(p.est24,3)+"%";if(e.out)return '<span class="dim" style="font-size:13px">Fuera de rango, no genera</span>';
  var v=e[ypCur()];if(v==null)return "—";return f(v,v<1?3:2)+'%<small class="dim" style="display:block;font-weight:400">≈ '+usd(p.usd*v/100)+"</small>"}
@@ -1952,7 +1952,7 @@ async function loadPos(){var ow=hSol();if(!ow||!(window.kzSdk&&kzSdk.ready))retu
  try{if(p.on)p.on("accountChanged",function(k){if(k&&S.wid===w.id)go(k)})}catch(e){}
 })();
 window.addEventListener("kzsdk",function(){loadPos();if(S.sel&&!$("ps").hidden)rPs()});
-try{var kzM=document.createElement("script");kzM.type="module";kzM.src="./sdk/kz-sdk.js?v=5";document.head.appendChild(kzM)}catch(e){}
+try{var kzM=document.createElement("script");kzM.type="module";kzM.src="./sdk/kz-sdk.js?v=6";document.head.appendChild(kzM)}catch(e){}
 
 window.kzP=400;
 rRoad();rHome();rPf();rWallet();rLot();rNet("eth");rNet("bsc");loadNet("eth").then(function(){loadNet("bsc")});loadAave();
