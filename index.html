@@ -506,7 +506,7 @@ Se detecta de dos formas: la marca kzdl=ph del enlace, o que la página ocupe ca
 <div id="kmenu" hidden role="dialog" aria-modal="true" aria-label="Menú"><div class="mpan"></div></div>
 <div class="view on" data-view="home">
 <header class="all hz">
-<canvas id="door" role="img" aria-label="Orca, Raydium, Jupiter, Kamino, Uniswap, Curve y PancakeSwap confluyen en el portal de Kosmara, rodeado por un anillo con sus 14 redes unidas por THORChain, que además trae Bitcoin, Litecoin y Dogecoin: Solana, Ethereum, BNB Chain, Base, Arbitrum, Avalanche, HyperEVM, Robinhood Chain, Polygon, Optimism, Unichain, Monad, Sonic y Linea"></canvas>
+<canvas id="door" role="img" aria-label="Orca, Raydium, Jupiter, Kamino, Uniswap, Curve y PancakeSwap confluyen en el portal de Kosmara, rodeado por un anillo con sus 14 redes unidas por THORChain, que además trae Bitcoin: Solana, Ethereum, BNB Chain, Base, Arbitrum, Avalanche, HyperEVM, Robinhood Chain, Polygon, Optimism, Unichain, Monad, Sonic y Linea"></canvas>
 <div><h1><span><i>La sencillez</i></span><span><i>de un único</i></span><span><i>universo</i></span></h1>
 <p class="lead">Pools de liquidez, swaps en 14 redes y todo tu portafolio en un solo sitio. Tus fondos no salen de tu wallet: cada operación la firmas tú.</p>
 <div class="hz-cta"><button class="btn hz-go" data-v="pools">Explorar pools</button><button class="btn hz-alt" data-v="swap">Cambiar tokens</button></div>
@@ -1580,7 +1580,7 @@ function tickRun(){if(tkOn||!window.requestAnimationFrame)return;tkOn=true;var b
 (function(){
  var cv=$("door");if(!cv||!cv.getContext)return;var x=cv.getContext("2d"),W=0,H=0,D=1,raf=0,t0=0,still=false,F=[],G=0,M=[];
  var SR=[["Orca","20,241,149"],["Raydium","20,241,149"],["Jupiter","20,241,149"],["Kamino","20,241,149"],["Uniswap","140,158,255"],["Curve","140,158,255"],["PancakeSwap","243,186,47"]],P=[];
- var NW=[["solana","Solana"],["ethereum","Ethereum"],["bsc","BNB Chain"],["base","Base"],["arbitrum","Arbitrum"],["avalanche","Avalanche"],["hyperevm","HyperEVM"],["robinhood","Robinhood Chain"],["polygon","Polygon"],["optimism","Optimism"],["unichain","Unichain"],["monad","Monad"],["sonic","Sonic"],["linea","Linea"]].map(function(n){var im=new Image();im.src="./chains/"+n[0]+".svg";return{im:im,n:n[1]}}),ROT=0,WP=[],CO=[["bitcoin","Bitcoin"],["litecoin","Litecoin"],["dogecoin","Dogecoin"],["bitcoin","Bitcoin"]].map(function(n){var im=new Image();im.src="./chains/"+n[0]+".svg";return{im:im,n:n[1]}}),BRn=0;
+ var NW=[["solana","Solana"],["ethereum","Ethereum"],["bsc","BNB Chain"],["base","Base"],["arbitrum","Arbitrum"],["avalanche","Avalanche"],["hyperevm","HyperEVM"],["robinhood","Robinhood Chain"],["polygon","Polygon"],["optimism","Optimism"],["unichain","Unichain"],["monad","Monad"],["sonic","Sonic"],["linea","Linea"]].map(function(n){var im=new Image();im.src="./chains/"+n[0]+".svg";return{im:im,n:n[1]}}),ROT=0,WP=[],CO=[["bitcoin","Bitcoin"]].map(function(n){var im=new Image();im.src="./chains/"+n[0]+".svg";return{im:im,n:n[1]}}),BRn=0;
  for(var w=0;w<70;w++)WP.push({a:Math.random()*6.283,z:Math.random(),v:.25+Math.random()*.5});
  /* THORChain como puente: cada poco, un arco de luz une dos redes del anillo por encima del portal */
  var BR=null,BRt=1.2;
