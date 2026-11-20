@@ -1,6 +1,6 @@
 npm warn deprecated uuid@8.3.2: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
 
-added 362 packages, and audited 363 packages in 25s
+added 362 packages, and audited 363 packages in 23s
 
 21 packages are looking for funding
   run `npm fund` for details
@@ -24,12 +24,12 @@ transforming...
 rendering chunks...
 computing gzip size...
 [2m../sdk/[22m[36mkz-sdk.js  [39m[1m[2m413.93 kB[22m[1m[22m[2m │ gzip: 134.86 kB[22m
-[32m✓ built in 1.19s[39m
+[32m✓ built in 1.44s[39m
 [36mvite v5.4.21 [32mbuilding for production...[36m[39m
 transforming...
 [32m✓[39m 329 modules transformed.
 rendering chunks...
 computing gzip size...
-[2m../sdk/[22m[36mkz-ray.js  [39m[1m[33m1,371.31 kB[39m[22m[2m │ gzip: 326.68 kB[22m
-[32m✓ built in 2.70s[39m
+[2m../sdk/[22m[36mkz-ray.js  [39m[1m[33m1,371.37 kB[39m[22m[2m │ gzip: 326.70 kB[22m
+[32m✓ built in 2.97s[39m
 BUILD OK

@@ -1038,7 +1038,7 @@ $g.write = function(e, t, n, r, i, o) {
     throw new Error("BigInt not supported");
   }
 })(yt);
-globalThis.Buffer || (globalThis.Buffer = yt.Buffer);
+(!globalThis.Buffer || !globalThis.Buffer.concat || !globalThis.Buffer.alloc) && (globalThis.Buffer = yt.Buffer);
 globalThis.process || (globalThis.process = { env: {} });
 const Iu = typeof globalThis == "object" && "crypto" in globalThis ? globalThis.crypto : void 0;
 /*! noble-hashes - MIT License (c) 2022 Paul Miller (paulmillr.com) */
