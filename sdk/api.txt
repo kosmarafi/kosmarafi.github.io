@@ -111,41 +111,22 @@ node_modules/@orca-so/whirlpools-core/dist/nodejs/orca_whirlpools_core_js_bindin
 node_modules/@orca-so/whirlpools-core/dist/nodejs/orca_whirlpools_core_js_bindings.d.ts-794-}
 node_modules/@orca-so/whirlpools-core/dist/nodejs/orca_whirlpools_core_js_bindings.d.ts-795-
 == raydium
-0.2.85-alpha
-static getPriceAndTick({ price, mintADecimals, mintBDecimals, zeroForOne, tickSpacing, }: {
-static getLiquidityAmountOutFromAmountIn({ poolInfo, inputA, tickLower, tickUpper, amount, slippage, add, epochInfo, amountHasFee, }: {
- g as ApiClmmPoolsItemStatistics
- b as ApiPoolInfoV4
- a2 as ApiStakePool
- c as ApiStakePoolInfo
- o as ApiV3PoolInfoBaseItem
- p as ApiV3PoolInfoConcentratedItem
- l as ApiV3PoolInfoCountItem
- s as ApiV3PoolInfoItem
- q as ApiV3PoolInfoStandardItem
- r as ApiV3PoolInfoStandardItemCpmm
- b2 as FarmPoolInfoV6
- b8 as FarmPoolKeys
- u as FetchPoolParams
- m as PoolFarmRewardInfo
- t as PoolFetchType
- G as PoolKeys
- n as PoolRewardInfoItem
- a5 as PoolTipInterface
- P as PoolsApiReturn
- CREATE_CPMM_POOL_AUTH
- CREATE_CPMM_POOL_FEE_ACC
- CREATE_CPMM_POOL_PROGRAM
- LIQUIDITY_POOL_PROGRAM_ID_V5_MODEL
- TxVersion 
- jsonInfo2PoolKeys
- L as LaunchpadPoolInitParam
- c as Raydium
- a as RaydiumApiBatchRequestParams
- b as RaydiumConstructorParams
- R as RaydiumLoadParams
+CLMM_LOCK_AUTH_ID CLMM_LOCK_PROGRAM_ID CLMM_PROGRAM_ID CREATE_CPMM_POOL_AUTH CREATE_CPMM_POOL_FEE_ACC CREATE_CPMM_POOL_PROGRAM Clmm ClmmConfigLayout ClmmInstrument CpmmPoolInfoLayout EXTENSION_TICKARRAY_BITMAP_SIZE LIQUIDITY_POOL_PROGRAM_ID_V5_MODEL LaunchpadPool LaunchpadPoolInitParam LimitOrderMath LiquidityMathUtil MAX_TICK MAX_TICK_SPACING MIN_TICK MathLaunch POOL_LOCK_ID_SEED POOL_OBSERVATION_SEED POOL_REWARD_VAULT_SEED POOL_SEED POOL_TICK_ARRAY_BITMAP_SEED POOL_VAULT_SEED POOL_VESTING_SEED PoolFee PoolFetchType PoolInfoLayout PoolStatusBitFlag PoolStatusBitIndex PoolUtil PoolUtils SqrtPriceMath SwapMathUtil TICK_ARRAY_BITMAP_SIZE TICK_ARRAY_SEED TICK_ARRAY_SIZE TICK_ARRAY_SIZE_USIZE TICK_TO_SQRT_PRICE_FACTORS TickArrayBitmapExtensionLayout TickArrayBitmapUtil TickArrayLayout TickArrayUtil TickLayout TickUtil TxVersion checkPoolToAmm clmmComputeInfoToApiInfo createPoolFeeLayout createPoolV4InstructionV2 createPoolV4Layout fetchTickArrays getAssociatedLedgerPoolAccount getAssociatedPoolKeys getCpmmPdaPoolId getCreatePoolKeys getLaunchpadPoolMintAProgram getLaunchpadPoolMintBProgram getLaunchpadPoolMintProgram getOrderTick getPdaCustomizablePoolV2Id getPdaLaunchpadPoolId getPdaPoolAuthority getPdaPoolId getPdaPoolRewardVaultId getPdaPoolVaultId getPdaTickArrayAddress initPoolLayout jsonInfo2PoolKeys makeCreateCpmmPoolInInstruction makeCreateCpmmPoolV2InInstruction makeInitPoolInstructionV4 mockV3CreatePoolInfo poolLpAuthority poolTypeV6 simulatePoolInfoInstruction toAmmComputePoolInfo updateFarmPoolInfo
+
+-- node_modules/@raydium-io/raydium-sdk-v2/lib/raydium/clmm/libraries/pool.d.ts
+28:declare class PoolFee {
+31:declare class DynamicFeeInfo {
+55:declare class PoolUtil {
+77:declare class PoolUtils {
+180:    static getLiquidityAmountOutFromAmountIn({ poolInfo, inputA, tickLower, tickUpper, amount, slippage, add, epochInfo, amountHasFee, }: {
+-- node_modules/@raydium-io/raydium-sdk-v2/lib/raydium/clmm/libraries/tickArrayUtil.d.ts
+13:declare class TickArrayBitmapUtil {
+47:declare class TickArrayUtil {
+86:declare class TickUtil {
+125:    static priceToTick(price: Decimal, decimalsA: number, decimalsB: number): number;
+128:    static getPriceAndTick({ price, mintADecimals, mintBDecimals, zeroForOne, tickSpacing, }: {
 == orca meta
-{"data":{"address":"Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE","whirlpoolsConfig":"2LecshUwdy9xi7meFgHtFJQNSKk4KdTrcpvaB56dP2NQ","whirlpoolBump":[255],"tickSpacing":4,"tickSpacingSeed":[4,0],"feeRate":400,"protocolFeeRate":1300,"liquidity":"240767034464937","sqrtPrice":"4846637491493406852","tickCurrentIndex":-26734,"protocolFeeOwedA":"103342278","protocolFeeOwedB":"6359466","tokenMintA":"So11111111111111111111111111111111111111112","tokenVaultA":"EUuUbDcafPrmVTD5M6qoJAoyyNbihBhugADAxRMn5he9","feeGrowthGlobalA":"13690005468332127209","tokenMintB":"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v","tokenVaultB":"2WLWEuKDgkDUccTpbwYp1GToYktiSB1cXvreHUwiSUVP","feeGrowthGlobalB":"1735450311910761353","rewardLastUpdatedTimestamp":"2026-11-20T17:33:18Z","updatedAt":"2026-11-20T17:33:18.954134Z","updatedSlot":471822435,"writeVersion":7974685120,"hasWarning":false,"poolType":"whirlpool","tokenA":{"address":"So11111111111111111111111111111111111111112","programId":"TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA","imageUrl":"https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png","name":"Solana","symbol":"SOL","decimals":9,"tags":[]},"tokenB":{"address":"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v","programId":"TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA","imageUrl":"https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png","name":"USD Coin","symbol":"USDC","decimals":6,"tags":[]},"price":"69.03059710821621401000","tvlUsdc":"17164636.7738009311908300","yieldOverTvl":"0.00291619903573807000","tokenBalanceA":"222349650348576","tokenBalanceB":"1819507186271","stats":{"24h":{"volume":"125138743.02138100","fees":"50058.1288136001469413","rewards":"0","yieldOverTvl":"0.00292053775345132000","volumeDelta":"0.5126371396947280","feesDelta":"0.51277267003213637845","rewardsDelta":null,"yieldOverTvlDelta":"0.608724863404085371148484750769824714","tvlDelta":"-0.05829532461473273632","priceDelta":"-0.066016672822222077763610833560006000"},"7d":{"volume":"671240759.09956200","fees":"268509.56299841096513606000","rewards":"0","yieldOverTvl":"0.0156388125322707","volumeDelta":"0.2958261413011500","feesDelta":"0.296290298582476455706100","rewardsDelta":null,"yieldOverTvlDelta":"0.295928092206453029431900","tvlDelta":null,"priceDelta":null},"30d":{"volume":"2695528997.0503","fees":"1078131.139758186311154367813500","rewards":"0","yieldOverTvl":"0.0628014197420283","volumeDelta":null,"feesDelta":null,"rewardsDelta":null,"yieldOverTvlDelta":null,"tvlDelta":null,"priceDelta":null}},"rewards":[{"mint":"orcaEKTdK7LKz57vaAYr9QeNsVEPfiu6QeMU1kektZE","vault":"21yVeQh9dMDFxcgAxo7pSKBiBUeb2UmHgrf9fobEX4x9","authority":"DXnB9N9JLH5c9AYdKMGHQyspewSsvhFnwLK1tz1iPmZw","emissions_per_second_x64":"0","growth_global_x64":"4903944807059099939","active":false,"emissionsPerSecond":"0"}],"lockedLiquidityPercent":[{"name":"Whirlpool-Locked","locked_percentage":"0.000001014","lockedPercentage":"0.000001014"}],"addressLookupTable":"3TcUvdbG2NckrLorL9NGNSRRYYZUkqr5cD11pXqzPzj7","feeTierIndex":4,"adaptiveFeeEnabled":false,"adaptiveFee":null,"tradeEnableTimestamp":"1970-01-01T00:00:00Z","priceHistory7d":["75.52446689718853194000","73.07044260677756877000","71.02684746343118735000","71.38039489751876722000","71.5846373537149443","71.27169918905039455000","72.92911816178005387000","72.27408854057235052000","75.36996335477456987000","73.7807192404861776","74.48903730847663748000","73.90988157872829868000","72.15436916381769224000","69.03368247679229766000"]},"meta":{"cursor":null}}== whirlpool fields
+{"data":{"address":"Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE","whirlpoolsConfig":"2LecshUwdy9xi7meFgHtFJQNSKk4KdTrcpvaB56dP2NQ","whirlpoolBump":[255],"tickSpacing":4,"tickSpacingSeed":[4,0],"feeRate":400,"protocolFeeRate":1300,"liquidity":"243890072345064","sqrtPrice":"4852136305045274624","tickCurrentIndex":-26711,"protocolFeeOwedA":"254003160","protocolFeeOwedB":"20504213","tokenMintA":"So11111111111111111111111111111111111111112","tokenVaultA":"EUuUbDcafPrmVTD5M6qoJAoyyNbihBhugADAxRMn5he9","feeGrowthGlobalA":"13690083176637144276","tokenMintB":"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v","tokenVaultB":"2WLWEuKDgkDUccTpbwYp1GToYktiSB1cXvreHUwiSUVP","feeGrowthGlobalB":"1735457590272486550","rewardLastUpdatedTimestamp":"2026-11-20T17:37:17Z","updatedAt":"2026-11-20T17:37:18.469417Z","updatedSlot":471823559,"writeVersion":7977396753,"hasWarning":false,"poolType":"whirlpool","tokenA":{"address":"So11111111111111111111111111111111111111112","programId":"TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA","imageUrl":"https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png","name":"Solana","symbol":"SOL","decimals":9,"tags":[]},"tokenB":{"address":"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v","programId":"TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA","imageUrl":"https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png","name":"USD Coin","symbol":"USDC","decimals":6,"tags":[]},"price":"69.18732503176829772000","tvlUsdc":"17194288.1583349291849600","yieldOverTvl":"0.00290213489009388000","tokenBalanceA":"221304721121208","tokenBalanceB":"1892340426749","stats":{"24h":{"volume":"124750358.93657900","fees":"49909.1931214118281713","rewards":"0","yieldOverTvl":"0.0029080303473467","volumeDelta":"0.4992189331074380","feesDelta":"0.49954650089386294878","rewardsDelta":null,"yieldOverTvlDelta":"0.592568841143583475890112294491685055","tvlDelta":"-0.05666855861815003732","priceDelta":"-0.063751141560413385252345967163817000"},"7d":{"volume":"671462798.76052500","fees":"268487.15285796833612606000","rewards":"0","yieldOverTvl":"0.0156421236509234","volumeDelta":"0.2970625588533070","feesDelta":"0.296125840281245852865000","rewardsDelta":null,"yieldOverTvlDelta":"0.298385255532909090185900","tvlDelta":null,"priceDelta":null},"30d":{"volume":"2695704834.5665","fees":"1078101.095456402125520367813500","rewards":"0","yieldOverTvl":"0.0628147163367599","volumeDelta":null,"feesDelta":null,"rewardsDelta":null,"yieldOverTvlDelta":null,"tvlDelta":null,"priceDelta":null}},"rewards":[{"mint":"orcaEKTdK7LKz57vaAYr9QeNsVEPfiu6QeMU1kektZE","vault":"21yVeQh9dMDFxcgAxo7pSKBiBUeb2UmHgrf9fobEX4x9","authority":"DXnB9N9JLH5c9AYdKMGHQyspewSsvhFnwLK1tz1iPmZw","emissions_per_second_x64":"0","growth_global_x64":"4903944807059099939","active":false,"emissionsPerSecond":"0"}],"lockedLiquidityPercent":[{"name":"Whirlpool-Locked","locked_percentage":"0.000001013","lockedPercentage":"0.000001013"}],"addressLookupTable":"3TcUvdbG2NckrLorL9NGNSRRYYZUkqr5cD11pXqzPzj7","feeTierIndex":4,"adaptiveFeeEnabled":false,"adaptiveFee":null,"tradeEnableTimestamp":"1970-01-01T00:00:00Z","priceHistory7d":["75.52446689718853194000","73.07044260677756877000","71.02684746343118735000","71.38039489751876722000","71.5846373537149443","71.27169918905039455000","72.92911816178005387000","72.27408854057235052000","75.36996335477456987000","73.7807192404861776","74.48903730847663748000","73.90988157872829868000","72.15436916381769224000","69.03368247679229766000"]},"meta":{"cursor":null}}== whirlpool fields
 692:type Whirlpool = {
 693-    discriminator: ReadonlyUint8Array;
 694-    whirlpoolsConfig: Address;
