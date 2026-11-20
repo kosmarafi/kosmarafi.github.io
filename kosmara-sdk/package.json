@@ -3,11 +3,18 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "scripts": { "build": "vite build" },
+  "scripts": {
+    "build": "vite build && vite build -c vite.ray.config.js"
+  },
   "dependencies": {
     "@orca-so/whirlpools": "^8.0.1",
     "@orca-so/whirlpools-client": "^7.0.0",
-    "@solana/kit": "^5.5.1"
+    "@solana/kit": "^5.5.1",
+    "@raydium-io/raydium-sdk-v2": "latest",
+    "@solana/web3.js": "^1.98.0",
+    "buffer": "^6.0.3",
+    "decimal.js": "^10.4.3",
+    "bn.js": "^5.2.1"
   },
   "devDependencies": {
     "vite": "^5.4.0",
