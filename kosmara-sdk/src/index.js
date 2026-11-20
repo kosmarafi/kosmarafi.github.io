@@ -584,14 +584,31 @@ async function positions(o) {
       if (dep > 0 && usd != null) pnl = usd + (wd || 0) + (harv || 0) + (pend || 0) - dep;
     }
 
-    // Rendimiento estimado en 24 h: comisiones del pool (parte de los LP) en proporcion a tu liquidez.
+    // Rendimiento estimado por periodo (como el selector de Orca): comisiones del pool en esa ventana,
+    // la parte de los LP, en proporcion a tu liquidez y sobre el valor de tu posicion.
+    // 24h, 7d y 30d son datos reales del pool; 1h sale de las 24h y 365d proyecta los 30d.
+    let est = null;
     let est24 = null;
     try {
-      const fees24 = meta.stats && meta.stats["24h"] && +meta.stats["24h"].fees;
+      const st = meta.stats || {};
       const lp = Number(w.liquidity);
       const inRange = sp > sa && sp < sb;
-      if (usd > 0 && fees24 > 0 && lp > 0) {
-        est24 = inRange ? ((fees24 * (1 - Number(w.protocolFeeRate) / 10000) * (L / lp)) / usd) * 100 : 0;
+      const share = (fees) => (usd > 0 && fees > 0 && lp > 0 ? ((fees * (1 - Number(w.protocolFeeRate) / 10000) * (L / lp)) / usd) * 100 : null);
+      const f24 = st["24h"] && +st["24h"].fees;
+      const f7 = st["7d"] && +st["7d"].fees;
+      const f30 = st["30d"] && +st["30d"].fees;
+      if (inRange) {
+        est = {
+          "1h": share(f24 / 24),
+          "24h": share(f24),
+          "7d": share(f7),
+          "30d": share(f30),
+          "365d": share((f30 * 365) / 30),
+        };
+        est24 = est["24h"];
+      } else {
+        est = { out: true };
+        est24 = 0;
       }
     } catch (e) {}
 
@@ -614,6 +631,7 @@ async function positions(o) {
       pendA: pendA / Math.pow(10, dA),
       pendB: pendB / Math.pow(10, dB),
       pendRew,
+      est,
       est24,
       entry,
       dur,
@@ -624,5 +642,5 @@ async function positions(o) {
   return out.filter(Boolean);
 }
 
-window.kzSdk = { ready: true, version: "0.2.0", openPosition, positions, closePosition, harvest };
+window.kzSdk = { ready: true, version: "0.3.0", openPosition, positions, closePosition, harvest };
 window.dispatchEvent(new Event("kzsdk"));

@@ -27,7 +27,7 @@ body:before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradi
 .b{position:relative;isolation:isolate;overflow:hidden;border-radius:22px;padding:18px;border:1px solid rgba(var(--tc),.34);background-color:rgba(12,12,16,.88);background-image:linear-gradient(180deg,rgba(var(--tc),.30) 0%,rgba(var(--tc),.10) 42%,rgba(var(--tc),0) 80%);box-shadow:0 0 30px rgba(var(--tc),.12)}
 .k{font-size:13px;font-weight:700;color:rgb(var(--tc));letter-spacing:.02em;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .k small{font-weight:500;color:var(--dim)}
-.dim{color:var(--dim);font-size:12px}.up{color:var(--up)}.dn{color:var(--dn)}
+.dim{color:var(--dim);font-size:12px}.ypsel{margin-left:6px;background:rgba(255,255,255,.08);color:inherit;border:1px solid rgba(255,255,255,.14);border-radius:8px;padding:2px 6px;font:inherit;font-size:12px;font-weight:600}.ypsel option{background:#14221f;color:#fff}.up{color:var(--up)}.dn{color:var(--dn)}
 nav.top{display:flex;align-items:center;gap:14px;padding:4px 2px}
 .logo{font-weight:700;font-size:21px;letter-spacing:-.02em;white-space:nowrap}.logo i{font-style:normal;color:#7c5cff}
 .links{display:none;gap:16px;font-size:14px}.links a{color:var(--dim);text-decoration:none}.links a:hover{color:#fff}
@@ -1795,11 +1795,18 @@ function posCard(p){
   (p.symA?r("Tokens",f(p.amtA,4)+" "+esc(p.symA)+" + "+f(p.amtB,4)+" "+esc(p.symB)):"")+r("Saldo",usd(p.usd))+
   r("PNL total",p.pnl==null?"—":'<span class="'+(p.pnl>=0?"up":"dn")+'">'+(p.pnl>=0?"+":"−")+usd(Math.abs(p.pnl))+(p.pnlPct!=null?" ("+(p.pnl>=0?"+":"−")+f(Math.abs(p.pnlPct),2)+"%)":"")+"</span>")+
   r("Rendimiento cosechado",usd(p.harv))+r("Rendimiento pendiente",usd(p.pend))+
-  r("Rendimiento estimado 24h",p.est24==null?"—":f(p.est24,3)+"%")+r("Duración",esc(p.dur||"—"))+
+  r('Rendimiento estimado <select class="ypsel" data-yp aria-label="Periodo del rendimiento estimado">'+YP.map(function(k){return '<option value="'+k[0]+'"'+(k[0]===ypCur()?" selected":"")+">"+k[1]+"</option>"}).join("")+"</select>",ypVal(p))+r("Duración",esc(p.dur||"—"))+
   r("Precio entr. prom.",p.entry==null?"—":fp(p.entry))+
   (p.mint&&S.pk&&hSol()===S.pk?'<div class="srow" style="gap:8px;margin-top:12px"><button class="btn" style="flex:1" data-pact="harv" data-mint="'+esc(p.mint)+'"'+(p.pend>0?"":" disabled")+'>Cobrar rendimiento</button><button class="btn p" style="flex:1;margin:0" data-pact="close" data-mint="'+esc(p.mint)+'">Cerrar posición</button></div><div class="stat" id="pa_'+esc(p.mint)+'"></div>':"")+
   (p.mint?'<a class="lk" style="display:block;margin-top:8px" href="https://solscan.io/token/'+esc(p.mint)+'" target="_blank" rel="noopener">Ver NFT de la posición ↗</a>':"")+"</div>";
 }
+/* Selector de periodo del rendimiento estimado (como Orca). 24H, 7D y 30D usan las comisiones reales del pool;
+   1H sale de las 24H y 365D proyecta los últimos 30D. */
+var YP=[["1h","1H"],["24h","24H"],["7d","7D"],["30d","30D"],["365d","365D"]];
+function ypCur(){var v=LS("kz_yp");return YP.some(function(k){return k[0]===v})?v:"24h"}
+function ypVal(p){var e=p.est;if(!e)return p.est24==null?"—":f(p.est24,3)+"%";if(e.out)return '<span class="dim" style="font-size:13px">Fuera de rango, no genera</span>';
+ var v=e[ypCur()];if(v==null)return "—";return f(v,v<1?3:2)+'%<small class="dim" style="display:block;font-weight:400">≈ '+usd(p.usd*v/100)+"</small>"}
+document.addEventListener("change",function(e){var t=e.target;if(t&&t.hasAttribute&&t.hasAttribute("data-yp")){LS("kz_yp",t.value);rPf()}});
 function rPf(){
  var n=S.positions.length,ht=hTot(),tot=S.positions.reduce(function(a,p){return a+p.usd},0)+ht,nt=hSplit().show.length;loadHold();
  $("pfTot").innerHTML=wBar()+'<div class="row" style="margin-top:0"><span class="dim" style="font-size:14px">Valor total del portafolio</span><span class="v"><b>'+(n||nt?usd(tot):"—")+"</b>"+(nt&&n?'<small>'+usd(ht)+" en tokens · "+usd(tot-ht)+" en pools</small>":"")+"</span></div>";
@@ -1928,7 +1935,7 @@ async function loadPos(){var ow=hSol();if(!ow||!(window.kzSdk&&kzSdk.ready))retu
  try{if(p.on)p.on("accountChanged",function(k){if(k&&S.wid===w.id)go(k)})}catch(e){}
 })();
 window.addEventListener("kzsdk",function(){loadPos();if(S.sel&&!$("ps").hidden)rPs()});
-try{var kzM=document.createElement("script");kzM.type="module";kzM.src="./sdk/kz-sdk.js?v=3";document.head.appendChild(kzM)}catch(e){}
+try{var kzM=document.createElement("script");kzM.type="module";kzM.src="./sdk/kz-sdk.js?v=4";document.head.appendChild(kzM)}catch(e){}
 
 window.kzP=400;
 rRoad();rHome();rPf();rWallet();rLot();rNet("eth");rNet("bsc");loadNet("eth").then(function(){loadNet("bsc")});loadAave();
