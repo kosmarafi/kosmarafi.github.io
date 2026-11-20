@@ -9,7 +9,10 @@ await pg.evaluate(() => {
   S.positions = [{ pair: "ANT/USDC", fee: "0.04", price: 91.6654, lo: 89.7453, hi: 94.0826, usd: 156.54, amtA: 0.9419, amtB: 70.306, symA: "ANT", symB: "USDC", pnl: 0.63, pnlPct: 0.4, harv: 0, pend: 0.17, est: { "1h": 0.126, "24h": 3.02 }, entry: 91.177, dur: "28m", mint: "X", pool: "Y" }];
   rPf();
 });
-const el = await pg.$("#pfList");
+await pg.waitForTimeout(5000);
+await pg.evaluate(() => { document.querySelectorAll("[id*=splash],.splash").forEach(e => e.remove()); document.getElementById("pb_X").closest(".pos").scrollIntoView() });
+await pg.waitForTimeout(800);
+const el = await pg.evaluate(() => 1) && await pg.$(".pos");
 console.log(await pg.evaluate(() => document.getElementById("pb_X")?.innerText));
 await (el || pg).screenshot({ path: "shot.png" });
 await b.close();
