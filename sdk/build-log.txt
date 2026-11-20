@@ -1,6 +1,6 @@
 npm warn deprecated uuid@8.3.2: uuid@10 and below is no longer supported.  For ESM codebases, update to uuid@latest.  For CommonJS codebases, use uuid@11 (but be aware this version will likely be deprecated in 2028).
 
-added 362 packages, and audited 363 packages in 28s
+added 362 packages, and audited 363 packages in 25s
 
 21 packages are looking for funding
   run `npm fund` for details
@@ -24,30 +24,12 @@ transforming...
 rendering chunks...
 computing gzip size...
 [2m../sdk/[22m[36mkz-sdk.js  [39m[1m[2m413.93 kB[22m[1m[22m[2m │ gzip: 134.86 kB[22m
-[32m✓ built in 1.40s[39m
+[32m✓ built in 1.19s[39m
 [36mvite v5.4.21 [32mbuilding for production...[36m[39m
 transforming...
 [32m✓[39m 329 modules transformed.
-[31mx[39m Build failed in 1.25s
-[31merror during build:
-[31msrc/ray.js (6:29): "TickUtils" is not exported by "node_modules/@raydium-io/raydium-sdk-v2/lib/index.mjs", imported by "src/ray.js".[31m
-file: [36m/home/runner/work/kosmarafi.github.io/kosmarafi.github.io/kosmara-sdk/src/ray.js:6:29[31m
-[33m
-4: import "./buffer-shim.js";
-5: import { Connection, PublicKey } from "@solana/web3.js";
-6: import { Raydium, TxVersion, TickUtils, PoolUtils } from "@raydium-io/raydium-sdk-v2";
-                                ^
-7: import Decimal from "decimal.js";
-8: import BN from "bn.js";
-[31m
-    at getRollupError (file:///home/runner/work/kosmarafi.github.io/kosmarafi.github.io/kosmara-sdk/node_modules/rollup/dist/es/shared/parseAst.js:355:41)
-    at error (file:///home/runner/work/kosmarafi.github.io/kosmarafi.github.io/kosmara-sdk/node_modules/rollup/dist/es/shared/parseAst.js:351:42)
-    at Module.error (file:///home/runner/work/kosmarafi.github.io/kosmarafi.github.io/kosmara-sdk/node_modules/rollup/dist/es/shared/node-entry.js:18670:16)
-    at Module.traceVariable (file:///home/runner/work/kosmarafi.github.io/kosmarafi.github.io/kosmara-sdk/node_modules/rollup/dist/es/shared/node-entry.js:19107:29)
-    at ModuleScope.findVariable (file:///home/runner/work/kosmarafi.github.io/kosmarafi.github.io/kosmara-sdk/node_modules/rollup/dist/es/shared/node-entry.js:15335:39)
-    at FunctionScope.findVariable (file:///home/runner/work/kosmarafi.github.io/kosmarafi.github.io/kosmara-sdk/node_modules/rollup/dist/es/shared/node-entry.js:6316:38)
-    at FunctionBodyScope.findVariable (file:///home/runner/work/kosmarafi.github.io/kosmarafi.github.io/kosmara-sdk/node_modules/rollup/dist/es/shared/node-entry.js:6316:38)
-    at MemberExpression.bind (file:///home/runner/work/kosmarafi.github.io/kosmarafi.github.io/kosmara-sdk/node_modules/rollup/dist/es/shared/node-entry.js:8329:47)
-    at CallExpression.bind (file:///home/runner/work/kosmarafi.github.io/kosmarafi.github.io/kosmara-sdk/node_modules/rollup/dist/es/shared/node-entry.js:3265:23)
-    at CallExpression.bind (file:///home/runner/work/kosmarafi.github.io/kosmarafi.github.io/kosmara-sdk/node_modules/rollup/dist/es/shared/node-entry.js:14004:15)[39m
-BUILD FAILED
+rendering chunks...
+computing gzip size...
+[2m../sdk/[22m[36mkz-ray.js  [39m[1m[33m1,371.31 kB[39m[22m[2m │ gzip: 326.68 kB[22m
+[32m✓ built in 2.70s[39m
+BUILD OK
