@@ -7,14 +7,12 @@ console.log("DIAG", await pg.evaluate(() => JSON.stringify({ ok: window.kzOK, lo
 const out = await pg.evaluate(async () => {
   const log = []; const rc = kzTest.rc, swapOpenOne = kzTest.swapOpenOne;
   const USDC = "EPjFWWd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
-  const la = await rc("getTokenLargestAccounts", [USDC]);
   let owner = null;
-  for (const v of (la.value || la).slice(0, 15)) {
-    const ai = await rc("getAccountInfo", [v.address, { encoding: "jsonParsed" }]);
-    const ow = ai.value.data.parsed.info.owner;
-    const oi = await rc("getAccountInfo", [ow, { encoding: "base64" }]);
-    const ov = oi && oi.value;
-    if (ov && ov.owner === "11111111111111111111111111111111" && ov.lamports > 2e9) { owner = ow; break }
+  for (const w of ["5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9", "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM", "2ojv9BAiHUrvsm9gxDe7fJSzbNZSJcxZvf8dqmWGHG8S"]) {
+    const bal = await rc("getBalance", [w]); const ta = await rc("getTokenAccountsByOwner", [w, { mint: USDC }, { encoding: "jsonParsed" }]);
+    const u = (ta.value || []).reduce((x, a) => x + (a.account.data.parsed.info.tokenAmount.uiAmount || 0), 0);
+    log.push(w.slice(0, 6) + " sol " + ((bal.value || bal) / 1e9).toFixed(1) + " usdc " + u.toFixed(0));
+    if ((bal.value || bal) > 2e9 && u > 100 && !owner) owner = w;
   }
   log.push("owner " + owner);
   S.pk = owner; S.sw = { signTransaction: async () => { throw new Error("STOP_OK llega a la firma") } };
