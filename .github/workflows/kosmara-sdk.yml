@@ -31,9 +31,9 @@ jobs:
             echo "== core quotes"
             grep -rn -A8 -E "(type|interface) (CollectFeesQuote|CollectRewardsQuote|CollectRewardQuote)\b" node_modules/@orca-so/whirlpools-core/dist/ --include=*.d.ts | head -n 60 || true
             echo "== raydium"
-            node --input-type=module -e "import * as R from '@raydium-io/raydium-sdk-v2'; console.log(Object.keys(R).filter(k=>/tick|pool|math|clmm|txversion/i.test(k)).join(' '))" 2>&1 | head -c 3000 || true
+            node --input-type=module -e "import * as R from '@raydium-io/raydium-sdk-v2'; console.log(Object.keys(R).filter(k=>/position|tickarray|getpda|clmm_program|tickutil/i.test(k)).join(' '))" 2>&1 | head -c 2500 || true
             echo
-            for f in $(grep -rlE "static getPriceAndTick|static getLiquidityAmountOutFromAmountIn" node_modules/@raydium-io/raydium-sdk-v2/lib --include=*.d.ts | head -4); do echo "-- $f"; grep -nE "^declare class|static getPriceAndTick|static getLiquidityAmountOutFromAmountIn|static getTickPrice|static priceToTick" $f | head -12; done
+            for f in $(grep -rlE "static GetPositionFeesV2|getOwnerPositionInfo\(|static getTickArrayAddressByTick|static getTickOffsetInArray|static getTickArrayStartIndexByTick" node_modules/@raydium-io/raydium-sdk-v2/lib --include=*.d.ts | head -6); do echo "-- $f"; grep -nE "^declare class|static GetPositionFeesV2|getOwnerPositionInfo\(|static getTickArrayAddressByTick|static getTickOffsetInArray|static getTickArrayStartIndexByTick|getRpcClmmPoolInfos\(" $f | cut -c1-300 | head -14; done
             echo "== orca meta"
             curl -s https://api.orca.so/v2/solana/pools/Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE | head -c 5000
             echo "== whirlpool fields"
