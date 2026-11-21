@@ -1974,7 +1974,7 @@ async function waitSig(sig){for(var i=0;i<30;i++){await new Promise(function(z){
    Prepara la transacción, se simula, la firma la wallet y se envía por nuestro RPC, igual que el resto. */
 var RAYP=null;
 function rayLoad(){if(window.kzRay&&kzRay.ready)return Promise.resolve(kzRay);if(RAYP)return RAYP;
- RAYP=new Promise(function(ok,ko){var s=document.createElement("script");s.type="module";s.src="./sdk/kz-ray.js?v=4";s.onerror=function(){RAYP=null;ko(new Error("No se pudo cargar el módulo de Raydium"))};
+ RAYP=new Promise(function(ok,ko){var s=document.createElement("script");s.type="module";s.src="./sdk/kz-ray.js?v=5";s.onerror=function(){RAYP=null;ko(new Error("No se pudo cargar el módulo de Raydium"))};
   document.head.appendChild(s);var n=0,iv=setInterval(function(){if(window.kzRay&&kzRay.ready){clearInterval(iv);ok(kzRay)}else if(++n>150){clearInterval(iv);RAYP=null;ko(new Error("El módulo de Raydium tarda demasiado en cargar"))}},100)});return RAYP}
 async function rayOpen(p,c,m){
  var R=await rayLoad(),b=await R.buildOpen({rpc:rpcUrl(),owner:S.pk,pool:p.id,lower:c.pa,upper:c.pb,amountA:m.a,amountB:m.b,decA:p.A.d,decB:p.B.d,slipBps:Math.round(ST.slip*100)});
@@ -1991,7 +1991,7 @@ async function swapOpenOne(p,c,pay,oth,amt){
  /* Si con el protocolo elegido no cabe en una transacción, se reintenta con la ruta general de Jupiter (rutas más cortas). */
  try{return await swapOpenTry(p,c,pay,oth,amt,ST.via)}catch(e){if(e.kzBig&&ST.via!=="Jupiter")return await swapOpenTry(p,c,pay,oth,amt,"Jupiter");throw e}}
 async function swapOpenTry(p,c,pay,oth,amt,via){
- var q=await jj("v1/quote?inputMint="+pay.m+"&outputMint="+oth.m+"&amount="+amt+"&slippageBps="+Math.round(ST.slip*100)+"&maxAccounts=20"+(via==="Jupiter"?"":"&dexes="+encodeURIComponent(await dexFor(via))));
+ var q=await jj("v1/quote?inputMint="+pay.m+"&outputMint="+oth.m+"&amount="+amt+"&slippageBps="+Math.round(ST.slip*100)+"&maxAccounts="+(p.pr==="Raydium"?14:20)+(via==="Jupiter"?"":"&dexes="+encodeURIComponent(await dexFor(via))));
  var fee=0;try{fee=await jfeeLamports(pay.m,oth.m,amt,q)}catch(e){fee=0}
  var hasSol=p.pr==="Orca"&&(p.A.m===SOLM||p.B.m===SOLM),si=await jj("v1/swap-instructions",{quoteResponse:q,userPublicKey:S.pk,wrapAndUnwrapSol:!hasSol,dynamicComputeUnitLimit:false,dynamicSlippage:false});
  var pre=[].concat(si.setupInstructions||[],[si.swapInstruction],si.cleanupInstruction?[si.cleanupInstruction]:[],si.otherInstructions||[]);

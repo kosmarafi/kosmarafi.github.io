@@ -7,6 +7,7 @@ import { Raydium, TxVersion, TickUtil, PoolUtils, CLMM_PROGRAM_ID, PoolInfoLayou
 import Decimal from "decimal.js";
 import BN from "bn.js";
 
+const RAY_LUT = "AcL1Vo8oy1ULiavEcjSUcwfBSForXMudcZvDZy5nzJkU";
 let RAY = null;
 let RAY_OWNER = null;
 
@@ -66,7 +67,9 @@ async function buildOpen(o) {
   // Maximo del otro token: lo que hay disponible (el programa solo toma lo necesario para el rango).
   const withSlip = otherMax;
 
+  // Con cambio delante (una sola transacción): NFT de Token-2022 con los datos dentro del propio NFT, que ocupa menos.
   const res = await raydium.clmm.openPositionFromBase({
+    ...(o.pre && o.pre.length ? { nft2022: true } : {}),
     poolInfo,
     tickUpper,
     tickLower,
@@ -83,7 +86,13 @@ async function buildOpen(o) {
   if (res.signers && res.signers.length) tx.sign(res.signers);
   let bytes;
   try { bytes = tx.serialize(); } catch (e) { bytes = null; }
-  if (!bytes || bytes.length > 1232) { const er = new Error("La transacción es demasiado grande"); er.kzBig = true; throw er; }
+  if (!bytes || bytes.length > 1232) {
+    let n = 0;
+    try { n = tx.message.serialize().length + 1 + 64 * tx.message.header.numRequiredSignatures; } catch (e) {}
+    const er = new Error("La transacción es demasiado grande" + (n ? " (" + n + " bytes)" : ""));
+    er.kzBig = true;
+    throw er;
+  }
   return { bytes, nftMint };
 }
 
@@ -97,7 +106,8 @@ async function withPre(conn, tx, pre, alts, owner) {
   const cb = ComputeBudgetProgram.programId.toBase58();
   const rest = dec.instructions.filter((i) => i.programId.toBase58() !== cb);
   const jup = pre.map((ix) => new TransactionInstruction({ programId: new PublicKey(ix.programId), keys: ix.accounts.map((a) => ({ pubkey: new PublicKey(a.pubkey), isSigner: a.isSigner, isWritable: a.isWritable })), data: Buffer.from(ix.data, "base64") }));
-  for (const a of alts) { const r = await conn.getAddressLookupTable(new PublicKey(a)); if (r.value) luts.push(r.value); }
+  // tablas de Jupiter + la tabla pública de Raydium (programas y cuentas comunes)
+  for (const a of alts.concat([RAY_LUT])) { try { const r = await conn.getAddressLookupTable(new PublicKey(a)); if (r.value && !luts.some((x) => x.key.equals(r.value.key))) luts.push(r.value); } catch (e) {} }
   const ixs = [ComputeBudgetProgram.setComputeUnitLimit({ units: 1100000 }), ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 20000 })].concat(jup, rest);
   const m2 = new TransactionMessage({ payerKey: new PublicKey(owner), recentBlockhash: dec.recentBlockhash, instructions: ixs }).compileToV0Message(luts);
   return new VersionedTransaction(m2);
@@ -226,4 +236,4 @@ async function buildManage(o) {
   return { bytes: tx.serialize() };
 }
 
-window.kzRay = { ready: true, version: "0.2.0", buildOpen, positions, buildManage };
+window.kzRay = { ready: true, version: "0.2.1", buildOpen, positions, buildManage };

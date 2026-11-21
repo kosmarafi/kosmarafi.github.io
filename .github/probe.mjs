@@ -8,14 +8,14 @@ const out = await pg.evaluate(async () => {
   const call = async (m, p) => { for (let i = 0; i < 6; i++) { const r = await fetch(RPC, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: m, params: p }) }); if (r.status === 429) { await new Promise(z => setTimeout(z, 900)); continue } return await r.json() } };
   const sim = async (bytes) => { let bin = ""; bytes.forEach(c => bin += String.fromCharCode(c)); const s = await call("simulateTransaction", [btoa(bin), { encoding: "base64", sigVerify: false, replaceRecentBlockhash: true, commitment: "confirmed" }]); const v = s.result && s.result.value; return JSON.stringify(v && v.err) + " " + ((v && v.logs) || []).filter(l => /rror|failed/.test(l)).slice(-2).join(" | ") };
   const s = document.createElement("script"); s.type = "module"; s.src = "./sdk/kz-ray.js?t=" + Date.now(); document.head.appendChild(s);
-  for (let i = 0; i < 200 && !(window.kzRay && kzRay.positions); i++) await new Promise(z => setTimeout(z, 100));
+  for (let i = 0; i < 200 && !(window.kzRay && kzRay.version === "0.2.1"); i++) await new Promise(z => setTimeout(z, 100));
   log.push("kzRay " + kzRay.version);
   /* 1) una firma: cambio de Jupiter + apertura en Raydium */
   const W = "2ojv9BAiHUrvsm9gxDe7fJSzbNZSJcxZvf8dqmWGHG8S", SOL = "So11111111111111111111111111111111111111112", USDC = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", POOL = "3ucNos4NbumPLZNWztqGHNFFgkHeRMBQAVemeeomsUxv";
   const H = { "content-type": "application/json", "x-api-key": "jup_pub_fc0db5" };
   try {
     const px = 69;
-    const q = await (await fetch("https://lite-api.jup.ag/swap/v1/quote?inputMint=" + USDC + "&outputMint=" + SOL + "&amount=1000000&slippageBps=100&maxAccounts=20")).json();
+    const q = await (await fetch("https://lite-api.jup.ag/swap/v1/quote?inputMint=" + USDC + "&outputMint=" + SOL + "&amount=1000000&slippageBps=100&maxAccounts=14")).json();
     const si = await (await fetch("https://lite-api.jup.ag/swap/v1/swap-instructions", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ quoteResponse: q, userPublicKey: W, wrapAndUnwrapSol: true, dynamicComputeUnitLimit: false }) })).json();
     const pre = [].concat(si.setupInstructions || [], [si.swapInstruction], si.cleanupInstruction ? [si.cleanupInstruction] : [], si.otherInstructions || []);
     const p0 = (await (await fetch("https://api-v3.raydium.io/pools/info/ids?ids=" + POOL)).json()).data[0].price;
