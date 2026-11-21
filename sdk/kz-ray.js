@@ -15390,23 +15390,23 @@ yn.getAdapter = VS.getAdapter;
 yn.HttpStatusCode = dd;
 yn.default = yn;
 const {
-  Axios: W7,
-  AxiosError: D7,
-  CanceledError: U7,
-  isCancel: q7,
-  CancelToken: V7,
-  VERSION: z7,
-  all: H7,
-  Cancel: $7,
-  isAxiosError: G7,
-  spread: j7,
-  toFormData: Z7,
-  AxiosHeaders: X7,
-  HttpStatusCode: Y7,
-  formToJSON: J7,
-  getAdapter: Q7,
-  mergeConfig: eV,
-  create: tV
+  Axios: D7,
+  AxiosError: U7,
+  CanceledError: q7,
+  isCancel: V7,
+  CancelToken: z7,
+  VERSION: H7,
+  all: $7,
+  Cancel: G7,
+  isAxiosError: j7,
+  spread: Z7,
+  toFormData: X7,
+  AxiosHeaders: Y7,
+  HttpStatusCode: J7,
+  formToJSON: Q7,
+  getAdapter: eV,
+  mergeConfig: tV,
+  create: nV
 } = yn;
 var Fd = { exports: {} };
 /**
@@ -29591,6 +29591,7 @@ var k7 = class extends Zo {
   }
 };
 /*! noble-hashes - MIT License (c) 2022 Paul Miller (paulmillr.com) */
+const S7 = "AcL1Vo8oy1ULiavEcjSUcwfBSForXMudcZvDZy5nzJkU";
 let sd = null, vI = null;
 async function cw(e, t) {
   return sd && vI === t || (sd = await JB.load({
@@ -29603,7 +29604,7 @@ async function cw(e, t) {
   }), vI = t), sd;
 }
 const BI = (e, t) => new U(Math.floor((+e || 0) * Math.pow(10, t)).toString());
-async function S7(e) {
+async function v7(e) {
   const t = await cw(e.rpc, e.owner), n = await t.api.fetchPoolById({ ids: e.pool }), r = n && n[0];
   if (!r || r.type !== "Concentrated") throw new Error("Este pool de Raydium no es de liquidez concentrada");
   const i = (T) => gt.getPriceAndTick({ price: new se(T), mintADecimals: r.mintA.decimals, mintBDecimals: r.mintB.decimals, zeroForOne: !0, tickSpacing: r.config.tickSpacing }).tick, o = i(e.lower), s = i(e.upper), a = Math.min(o, s), u = Math.max(o, s);
@@ -29618,6 +29619,7 @@ async function S7(e) {
   } else
     m = "MintB", h = p, g = d;
   const y = g, A = await t.clmm.openPositionFromBase({
+    ...e.pre && e.pre.length ? { nft2022: !0 } : {},
     poolInfo: r,
     tickUpper: u,
     tickLower: a,
@@ -29629,7 +29631,7 @@ async function S7(e) {
     computeBudgetConfig: { units: 6e5, microLamports: 2e4 }
   }), I = A.extInfo && A.extInfo.nftMint ? A.extInfo.nftMint.toBase58() : "";
   let B = A.transaction;
-  e.pre && e.pre.length && (B = await v7(t.connection, B, e.pre, e.alts || [], e.owner)), A.signers && A.signers.length && B.sign(A.signers);
+  e.pre && e.pre.length && (B = await B7(t.connection, B, e.pre, e.alts || [], e.owner)), A.signers && A.signers.length && B.sign(A.signers);
   let S;
   try {
     S = B.serialize();
@@ -29637,27 +29639,34 @@ async function S7(e) {
     S = null;
   }
   if (!S || S.length > 1232) {
-    const T = new Error("La transacción es demasiado grande");
-    throw T.kzBig = !0, T;
+    let T = 0;
+    try {
+      T = B.message.serialize().length + 1 + 64 * B.message.header.numRequiredSignatures;
+    } catch {
+    }
+    const F = new Error("La transacción es demasiado grande" + (T ? " (" + T + " bytes)" : ""));
+    throw F.kzBig = !0, F;
   }
   return { bytes: S, nftMint: I };
 }
-async function v7(e, t, n, r, i) {
+async function B7(e, t, n, r, i) {
   const o = t.message, s = [];
   for (const h of o.addressTableLookups || []) {
     const g = await e.getAddressLookupTable(h.accountKey);
     g.value && s.push(g.value);
   }
   const a = Fo.decompile(o, { addressLookupTableAccounts: s }), u = Fa.programId.toBase58(), l = a.instructions.filter((h) => h.programId.toBase58() !== u), d = n.map((h) => new Ee({ programId: new v(h.programId), keys: h.accounts.map((g) => ({ pubkey: new v(g.pubkey), isSigner: g.isSigner, isWritable: g.isWritable })), data: Buffer.from(h.data, "base64") }));
-  for (const h of r) {
-    const g = await e.getAddressLookupTable(new v(h));
-    g.value && s.push(g.value);
-  }
+  for (const h of r.concat([S7]))
+    try {
+      const g = await e.getAddressLookupTable(new v(h));
+      g.value && !s.some((y) => y.key.equals(g.value.key)) && s.push(g.value);
+    } catch {
+    }
   const p = [Fa.setComputeUnitLimit({ units: 11e5 }), Fa.setComputeUnitPrice({ microLamports: 2e4 })].concat(d, l), m = new Fo({ payerKey: new v(i), recentBlockhash: a.recentBlockhash, instructions: p }).compileToV0Message(s);
   return new mo(m);
 }
-const QB = {}, B7 = 18446744073709552e3, Ti = (e) => BigInt(e && e.toString ? e.toString() : e || 0), T7 = (1n << 128n) - 1n, Jc = (e, t) => e - t & T7;
-async function x7(e) {
+const QB = {}, T7 = 18446744073709552e3, Ti = (e) => BigInt(e && e.toString ? e.toString() : e || 0), x7 = (1n << 128n) - 1n, Jc = (e, t) => e - t & x7;
+async function P7(e) {
   const t = {};
   try {
     const n = await (await fetch("https://lite-api.jup.ag/price/v3?ids=" + e.join(","))).json();
@@ -29673,7 +29682,7 @@ function TI(e, t) {
   const n = new Uint8Array(4);
   return new DataView(n.buffer).setInt32(0, t, !1), v.findProgramAddressSync([Buffer.from("tick_array"), new v(e).toBuffer(), Buffer.from(n)], new v(cs))[0];
 }
-async function P7(e, t, n) {
+async function _7(e, t, n) {
   const r = n.tickSpacing, i = r * 60, o = (h) => Math.floor(h / i) * i, [s, a] = [TI(t.poolId, o(t.tickLower)), TI(t.poolId, o(t.tickUpper))], u = await e.getMultipleAccountsInfo([s, a]);
   if (!u[0] || !u[1]) return null;
   const l = qu.decode(u[0].data).ticks[(t.tickLower - o(t.tickLower)) / r], d = qu.decode(u[1].data).ticks[(t.tickUpper - o(t.tickUpper)) / r], p = n.tickCurrent, m = (h, g, y, A, I) => {
@@ -29685,7 +29694,7 @@ async function P7(e, t, n) {
     b: m(Ti(n.feeGrowthGlobalX64B), Ti(l.feeGrowthOutsideX64B), Ti(d.feeGrowthOutsideX64B), Ti(t.feeGrowthInsideLastX64B), t.tokenFeesOwedB)
   };
 }
-async function _7(e) {
+async function C7(e) {
   const t = await cw(e.rpc, e.owner), n = await t.clmm.getOwnerPositionInfo({ programId: cs }) || [];
   if (!n.length) return [];
   const r = Array.from(new Set(n.map((p) => p.poolId.toBase58()))), i = await t.api.fetchPoolById({ ids: r.join(",") }), o = {};
@@ -29702,11 +29711,11 @@ async function _7(e) {
     const m = o[p];
     m && u.push(m.mintA.address, m.mintB.address);
   });
-  const l = await x7(Array.from(new Set(u))), d = [];
+  const l = await P7(Array.from(new Set(u))), d = [];
   for (const p of n) {
     const m = p.poolId.toBase58(), h = o[m], g = a[m];
     if (!h || !g) continue;
-    const y = h.mintA.decimals, A = h.mintB.decimals, I = Math.pow(10, y - A), B = Number(Ti(g.sqrtPriceX64)) / B7, S = Math.pow(1.0001, p.tickLower / 2), T = Math.pow(1.0001, p.tickUpper / 2), F = Number(Ti(p.liquidity));
+    const y = h.mintA.decimals, A = h.mintB.decimals, I = Math.pow(10, y - A), B = Number(Ti(g.sqrtPriceX64)) / T7, S = Math.pow(1.0001, p.tickLower / 2), T = Math.pow(1.0001, p.tickUpper / 2), F = Number(Ti(p.liquidity));
     let _ = 0, L = 0;
     B <= S ? _ = F * (1 / S - 1 / T) : B >= T ? L = F * (T - S) : (_ = F * (1 / B - 1 / T), L = F * (B - S));
     const N = B * B * I, M = h.mintA.address, D = h.mintB.address;
@@ -29715,7 +29724,7 @@ async function _7(e) {
     const x = (H, $) => W && G ? H / Math.pow(10, y) * W + $ / Math.pow(10, A) * G : null;
     let w = null;
     try {
-      const H = await P7(t.connection, p, g);
+      const H = await _7(t.connection, p, g);
       H && (w = x(Number(H.a), Number(H.b)));
     } catch {
     }
@@ -29757,7 +29766,7 @@ async function _7(e) {
   }
   return d;
 }
-async function C7(e) {
+async function E7(e) {
   const t = await cw(e.rpc, e.owner), n = QB[e.mint];
   if (!n) throw new Error("No encuentro esta posición de Raydium; recarga el Portafolio");
   const r = e.kind === "close", i = Math.max(1, Math.round(e.slipBps || 100)) / 1e4, o = (u) => new U(Math.floor(Math.max(0, u) * (1 - i)).toString()), s = await t.clmm.decreaseLiquidity({
@@ -29772,4 +29781,4 @@ async function C7(e) {
   }), a = s.transaction;
   return s.signers && s.signers.length && a.sign(s.signers), { bytes: a.serialize() };
 }
-window.kzRay = { ready: !0, version: "0.2.0", buildOpen: S7, positions: _7, buildManage: C7 };
+window.kzRay = { ready: !0, version: "0.2.1", buildOpen: v7, positions: C7, buildManage: E7 };
