@@ -15,14 +15,16 @@ const out = await pg.evaluate(async () => {
   const H = { "content-type": "application/json", "x-api-key": "jup_pub_fc0db5" };
   try {
     const px = 69;
-    const q = await (await fetch("https://lite-api.jup.ag/swap/v1/quote?inputMint=" + USDC + "&outputMint=" + SOL + "&amount=1000000&slippageBps=100&maxAccounts=14")).json();
+    const q = await (await fetch("https://lite-api.jup.ag/swap/v1/quote?inputMint=" + USDC + "&outputMint=" + SOL + "&amount=1000000&slippageBps=150&maxAccounts=14")).json();
     const si = await (await fetch("https://lite-api.jup.ag/swap/v1/swap-instructions", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ quoteResponse: q, userPublicKey: W, wrapAndUnwrapSol: true, dynamicComputeUnitLimit: false }) })).json();
     const pre = [].concat(si.setupInstructions || [], [si.swapInstruction], si.cleanupInstruction ? [si.cleanupInstruction] : [], si.otherInstructions || []);
     const p0 = (await (await fetch("https://api-v3.raydium.io/pools/info/ids?ids=" + POOL)).json()).data[0].price;
+    const t1 = Date.now();
     const r = await kzRay.buildOpen({ rpc: RPC, owner: W, pool: POOL, lower: p0 * .95, upper: p0 * 1.05, amountA: (+q.otherAmountThreshold / 1e9) * .99, amountB: 1, decA: 9, decB: 6, slipBps: 100, pre, alts: si.addressLookupTableAddresses || [] });
-    log.push("una firma: bytes " + r.bytes.length + " sim " + await sim(r.bytes));
+    log.push("ms " + (Date.now() - t1) + " out " + q.outAmount + " min " + q.otherAmountThreshold + " ruta " + (q.routePlan || []).map(x => x.swapInfo.label).join(">"));log.push("una firma: bytes " + r.bytes.length + " sim " + await sim(r.bytes));
   } catch (e) { log.push("una firma ERR " + (e.kzBig ? "[GRANDE] " : "") + e.message.slice(0, 200)) }
   /* 2) posiciones de Raydium de una wallet con posiciones */
+  return log;
   const accs = await call("getProgramAccounts", ["CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK", { encoding: "base64", dataSlice: { offset: 9, length: 32 }, filters: [{ dataSize: 281 }, { memcmp: { offset: 41, bytes: POOL } }] }]);
   log.push("posiciones en pool " + (accs.result ? accs.result.length : JSON.stringify(accs.error).slice(0, 120)));
   const A = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
