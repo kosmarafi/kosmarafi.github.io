@@ -29618,7 +29618,9 @@ async function v7(e) {
     new U(T.amountSlippageB.amount.toString()).gt(p) && (m = "MintB", h = p, g = d);
   } else
     m = "MintB", h = p, g = d;
-  const y = g, A = await t.clmm.openPositionFromBase({
+  const y = g;
+  h = h.muln(985).divn(1e3);
+  const A = await t.clmm.openPositionFromBase({
     ...e.pre && e.pre.length ? { nft2022: !0 } : {},
     poolInfo: r,
     tickUpper: u,
@@ -29781,4 +29783,4 @@ async function E7(e) {
   }), a = s.transaction;
   return s.signers && s.signers.length && a.sign(s.signers), { bytes: a.serialize() };
 }
-window.kzRay = { ready: !0, version: "0.2.1", buildOpen: v7, positions: C7, buildManage: E7 };
+window.kzRay = { ready: !0, version: "0.2.2", buildOpen: v7, positions: C7, buildManage: E7 };
