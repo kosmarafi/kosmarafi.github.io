@@ -65,7 +65,9 @@ async function buildOpen(o) {
     otherMax = maxA;
   }
   // Maximo del otro token: lo que hay disponible (el programa solo toma lo necesario para el rango).
+  // La cantidad base se deja un 1,5 % por debajo para que el otro token siempre quepa con el redondeo del programa.
   const withSlip = otherMax;
+  baseAmount = baseAmount.muln(985).divn(1000);
 
   // Con cambio delante (una sola transacción): NFT de Token-2022 con los datos dentro del propio NFT, que ocupa menos.
   const res = await raydium.clmm.openPositionFromBase({
@@ -236,4 +238,4 @@ async function buildManage(o) {
   return { bytes: tx.serialize() };
 }
 
-window.kzRay = { ready: true, version: "0.2.1", buildOpen, positions, buildManage };
+window.kzRay = { ready: true, version: "0.2.2", buildOpen, positions, buildManage };
