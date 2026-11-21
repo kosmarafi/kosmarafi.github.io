@@ -31,9 +31,10 @@ jobs:
             echo "== core quotes"
             grep -rn -A8 -E "(type|interface) (CollectFeesQuote|CollectRewardsQuote|CollectRewardQuote)\b" node_modules/@orca-so/whirlpools-core/dist/ --include=*.d.ts | head -n 60 || true
             echo "== raydium"
-            node --input-type=module -e "import * as R from '@raydium-io/raydium-sdk-v2'; console.log(Object.keys(R).filter(k=>/position|tickarray|getpda|clmm_program|tickutil/i.test(k)).join(' '))" 2>&1 | head -c 2500 || true
-            echo
-            for f in $(grep -rlE "static GetPositionFeesV2|getOwnerPositionInfo\(|static getTickArrayAddressByTick|static getTickOffsetInArray|static getTickArrayStartIndexByTick" node_modules/@raydium-io/raydium-sdk-v2/lib --include=*.d.ts | head -6); do echo "-- $f"; grep -nE "^declare class|static GetPositionFeesV2|getOwnerPositionInfo\(|static getTickArrayAddressByTick|static getTickOffsetInArray|static getTickArrayStartIndexByTick|getRpcClmmPoolInfos\(" $f | cut -c1-300 | head -14; done
+            F=node_modules/@raydium-io/raydium-sdk-v2/lib/raydium-3efe7aee.d.ts; [ -f $F ] || F=$(grep -rlE "getOwnerPositionInfo\(" node_modules/@raydium-io/raydium-sdk-v2/lib --include=*.d.ts | head -1)
+            awk '/declare class Clmm extends/,/^}/' $F | grep -nE "decreaseLiquidity|getOwnerPositionInfo|harvest|collect|closePosition" -A6 | cut -c1-220 | head -60
+            grep -rhE "type DecreaseLiquidity|interface DecreaseLiquidity" -A16 node_modules/@raydium-io/raydium-sdk-v2/lib --include=*.d.ts | head -40 | cut -c1-200
+            grep -rhE "PersonalPositionLayout: |declare const PersonalPositionLayout" -A3 node_modules/@raydium-io/raydium-sdk-v2/lib --include=*.d.ts | head -6 | cut -c1-900
             echo "== orca meta"
             curl -s https://api.orca.so/v2/solana/pools/Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE | head -c 5000
             echo "== whirlpool fields"
