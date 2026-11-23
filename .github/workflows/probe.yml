@@ -5,4 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: npm i @solana/web3.js@1 >/dev/null 2>&1 && node .github/probe.mjs
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: cd kosmara-sdk && npm install >/dev/null 2>&1; cp ../.github/probe.mjs ./probe.mjs && node probe.mjs
