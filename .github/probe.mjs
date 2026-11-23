@@ -9,7 +9,7 @@ const signer=createNoopSigner(address(owner));
 const sim=async(name,ixs)=>{const bh=(await rpc.getLatestBlockhash().send()).value;const m=pipe(createTransactionMessage({version:0}),x=>setTransactionMessageFeePayerSigner(signer,x),x=>setTransactionMessageLifetimeUsingBlockhash(bh,x),x=>appendTransactionMessageInstructions(ixs,x));const t=await partiallySignTransactionMessageWithSigners(m);const b=getBase64EncodedWireTransaction(t);
  const r=(await rpc.simulateTransaction(b,{encoding:"base64",sigVerify:false,replaceRecentBlockhash:true}).send()).value;console.log("SIM",name,"bytes",Buffer.from(b,"base64").length,"err",S(r.err));console.log((r.logs||[]).filter(l=>!/consumed|success|invoke \[/.test(l)).slice(0,25).join("\n"))};
 const off=await A.autoOffIxs(c,signer);await sim("off",off);
-const on=await A.autoOnIxs(Object.assign({},c),signer,{},{});console.log("thr",S({a:on.thrA,b:on.thrB}));
+const on=await A.autoOnIxs(Object.assign({},c),signer,{EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v:1},{});console.log("thr",S({a:on.thrA,b:on.thrB}));
 await sim("off+on",off.concat(on.ixs));
 console.log("STATUS",S(await A.autoStatus(rpc,owner,[{mint,pos:c.pos}])));
 // transacciones RemoveAutomations reales para comparar
