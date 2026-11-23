@@ -10,8 +10,10 @@ else{const d=Buffer.from(ai.data[0],"base64");console.log("AUTO next",new Date(N
  const pi=(await rpc.getAccountInfo(pos,{encoding:"base64"}).send()).value;const pd=Buffer.from(pi.data[0],"base64");
  const mint=(await import("@solana/kit")).getAddressDecoder().decode(pd.subarray(40,72));console.log("pos",pos,"mint",mint);
 
- const h=await harvestPositionInstructions(rpc,mint,createNoopSigner(address(OWNER)));
- console.log("FEES owedA",String(h.feesQuote.feeOwedA),"owedB",String(h.feesQuote.feeOwedB));}
+}
 const sigs=(await rpc.getSignaturesForAddress(address(AUTO),{limit:50}).send());
 for(const s of sigs){const t=await rpc.getTransaction(s.signature,{encoding:"json",maxSupportedTransactionVersion:0}).send();
- console.log("TX",new Date(Number(s.blockTime)*1000).toISOString(),"err",JSON.stringify(s.err),"signer",t.transaction.message.accountKeys[0],(t.meta.logMessages||[]).filter(l=>/Instruction: /.test(l)).map(l=>l.replace("Program log: Instruction: ","")).join(","))}
+ console.log("TX",new Date(Number(s.blockTime)*1000).toISOString(),"err",JSON.stringify(s.err),"signer",t.transaction.message.accountKeys[0],"pre/post",JSON.stringify((t.meta.preTokenBalances||[]).filter(b=>b.owner===OWNER).map(b=>[b.mint.slice(0,4),b.uiTokenAmount.uiAmountString]))+" -> "+JSON.stringify((t.meta.postTokenBalances||[]).filter(b=>b.owner===OWNER).map(b=>[b.mint.slice(0,4),b.uiTokenAmount.uiAmountString])),(t.meta.logMessages||[]).filter(l=>/Instruction: /.test(l)).map(l=>l.replace("Program log: Instruction: ","")).join(","))}
+
+for(const s of sigs){const t=await rpc.getTransaction(s.signature,{encoding:"jsonParsed",maxSupportedTransactionVersion:0}).send();
+ for(const g of (t.meta.innerInstructions||[]))for(const ix of g.instructions){if(ix.parsed&&/transfer/.test(ix.parsed.type))console.log("XFER",s.signature.slice(0,6),ix.parsed.type,JSON.stringify(ix.parsed.info.tokenAmount?ix.parsed.info.tokenAmount.uiAmountString:ix.parsed.info.amount),ix.parsed.info.mint?ix.parsed.info.mint.slice(0,4):"")}}
