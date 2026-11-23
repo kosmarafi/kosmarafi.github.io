@@ -31,10 +31,12 @@ jobs:
             echo "== core quotes"
             grep -rn -A8 -E "(type|interface) (CollectFeesQuote|CollectRewardsQuote|CollectRewardQuote)\b" node_modules/@orca-so/whirlpools-core/dist/ --include=*.d.ts | head -n 60 || true
             echo "== raydium"
-            F=node_modules/@raydium-io/raydium-sdk-v2/lib/raydium-3efe7aee.d.ts; [ -f $F ] || F=$(grep -rlE "getOwnerPositionInfo\(" node_modules/@raydium-io/raydium-sdk-v2/lib --include=*.d.ts | head -1)
-            awk '/declare class Clmm extends/,/^}/' $F | grep -nE "decreaseLiquidity|getOwnerPositionInfo|harvest|collect|closePosition" -A6 | cut -c1-220 | head -60
-            grep -rhE "type DecreaseLiquidity|interface DecreaseLiquidity" -A16 node_modules/@raydium-io/raydium-sdk-v2/lib --include=*.d.ts | head -40 | cut -c1-200
-            grep -rhE "PersonalPositionLayout: |declare const PersonalPositionLayout" -A3 node_modules/@raydium-io/raydium-sdk-v2/lib --include=*.d.ts | head -6 | cut -c1-900
+            F=$(grep -rlE "getOwnerPositionInfo\(" node_modules/@raydium-io/raydium-sdk-v2/lib --include=*.d.ts | head -1)
+            awk '/declare class Clmm extends/,/^}/' $F | grep -nE "increasePosition" -A3 | cut -c1-400 | head -20
+            grep -rhE "interface IncreasePositionFromBase" -A22 node_modules/@raydium-io/raydium-sdk-v2/lib --include=*.d.ts | head -26 | cut -c1-200
+            echo "== orca inc/dec"
+            grep -nE "type (IncreaseLiquidityParam|DecreaseLiquidityQuoteParam|IncreaseLiquidityQuoteParam)\b" -A12 node_modules/@orca-so/whirlpools/dist/index.d.ts | head -40
+            grep -nE "declare function increaseLiquidityInstructions" -A2 node_modules/@orca-so/whirlpools/dist/index.d.ts | cut -c1-400
             echo "== orca meta"
             curl -s https://api.orca.so/v2/solana/pools/Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE | head -c 5000
             echo "== whirlpool fields"
