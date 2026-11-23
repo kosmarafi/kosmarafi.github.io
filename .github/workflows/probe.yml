@@ -5,4 +5,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: npm i @solana/web3.js@1 >/dev/null 2>&1 && node .github/probe.mjs
+      - run: bash .github/probe.sh
