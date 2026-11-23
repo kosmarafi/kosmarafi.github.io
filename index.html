@@ -2087,7 +2087,7 @@ async function posAct(kind,mint){
     '<div id="kzAs" style="margin-top:12px"></div><div class="row" style="margin-top:10px"><span class="dim">Depósito reembolsable</span><b>~0,0103 SOL</b></div><div class="dim" style="margin-top:12px;font-size:13px">Puedes desactivarlo cuando quieras desde este menú y recuperas el depósito; al cerrar la posición se desactiva solo.</div>',"Activar",
     function(m){return{minUsd:+m.querySelector("#kzAm .on").getAttribute("data-o"),interval:+m.querySelector("#kzAh .on").getAttribute("data-o")}},
     function(m){var u=function(){var a=+m.querySelector("#kzAm .on").getAttribute("data-o"),h=+m.querySelector("#kzAh .on").getAttribute("data-o")/3600,def=a===5&&h===12;
-      m.querySelector("#kzAs").innerHTML="Cada <b>"+h+" h</b>, si hay al menos <b>"+a+" $</b> de cada token (≈"+(a*2)+" $ en total)."+(def?' <span class="dim">Igual que en Orca.</span>':"")};
+      m.querySelector("#kzAs").innerHTML="Cada <b>"+h+" h</b>, si hay al menos <b>"+a+" $</b> de cada token (≈"+(a*2)+" $ en total)."};
      m.querySelectorAll("#kzAm .kzpct,#kzAh .kzpct").forEach(function(b){b.onclick=function(){b.parentNode.querySelectorAll(".kzpct").forEach(function(x){x.classList.remove("on");x.setAttribute("aria-pressed","false")});b.classList.add("on");b.setAttribute("aria-pressed","true");u()}});u()});
    if(!form)return}}
  if(kind==="harv"&&!(await kzConfirm("Confirmar cobro","Vas a cobrar <b>"+usd(p.pend)+"</b> de rendimiento de "+esc(p.pair)+" a tu wallet. La liquidez sigue en la posición.","Cobrar")))return;
