@@ -14,8 +14,8 @@ for(const s of sigs){if(n>=2)break;if(s.err)continue;const t=await call("getTran
  const all=[];(t.meta.innerInstructions||[]).forEach(g=>g.instructions.forEach(i=>{if(i.programId===W)all.push(i)}));
  all.forEach(i=>console.log(" whirl inner data",hex(i.data).slice(0,16),"acc",(i.accounts||[]).slice(0,6).join(" ")));
  // fuerza bruta: autoridad de CollectFeesV2 = acc[1]
- const auth=all[0]&&all[0].accounts[1];console.log(" AUTH",auth);
+ const cf=all.find(i=>hex(i.data).startsWith('cf755fbf'));const auth=cf&&cf.accounts[1];console.log(" AUTH",auth);
  const cand=[...new Set(outer.filter(i=>i.programId===P).flatMap(i=>i.accounts))];
- const S=["","delegate","authority","position_authority","automation","automation_authority","signer","pda","auth","vault","delegate_authority","position_delegate"];
- for(const st of S)for(const a of cand)for(const b of [null,...cand])for(const x of [[],[Buffer.from([0])]]){const seeds=[...(st?[Buffer.from(st)]:[]),new PublicKey(a).toBuffer(),...(b&&b!==a?[new PublicKey(b).toBuffer()]:[]),...x];try{const [p]=PublicKey.findProgramAddressSync(seeds,PROG);if(p.toBase58()===auth)console.log(" MATCH auth",st,a,b,x.length)}catch(e){}}
+ const S=["","delegate","authority","position_authority","automation","automation_authority","signer","pda","auth","vault","delegate_authority","position_delegate","position","owner","nft","nft_authority","harvest","compound","auto","automations","token_authority","manager","operator","executor","program_authority","delegated","delegation","position_owner"];
+ for(const st of S)for(const a of cand)for(const b of [null,...cand])for(const x of [[],[Buffer.from([0])],[Buffer.from([1])]]){const seeds=[...(st?[Buffer.from(st)]:[]),new PublicKey(a).toBuffer(),...(b&&b!==a?[new PublicKey(b).toBuffer()]:[]),...x];try{const [p]=PublicKey.findProgramAddressSync(seeds,PROG);if(p.toBase58()===auth)console.log(" MATCH auth",st,a,b,x.length)}catch(e){}}
 }
