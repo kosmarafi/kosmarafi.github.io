@@ -111,47 +111,27 @@ node_modules/@orca-so/whirlpools-core/dist/nodejs/orca_whirlpools_core_js_bindin
 node_modules/@orca-so/whirlpools-core/dist/nodejs/orca_whirlpools_core_js_bindings.d.ts-794-}
 node_modules/@orca-so/whirlpools-core/dist/nodejs/orca_whirlpools_core_js_bindings.d.ts-795-
 == raydium
-12:    createCustomizablePoolV2<T extends TxVersion>(props: Omit<CreateCustomizablePool<T>, "collectFeeOn">): Promise<MakeTxData<T, {
-13-        mockPoolInfo: ApiV3PoolInfoConcentratedItem;
-14-        address: ClmmKeys;
-15-    }>>;
-16-    openPositionFromBase<T extends TxVersion>({ poolInfo, poolKeys: propsPoolKeys, ownerInfo, tickLower, tickUpper, base, baseAmount, otherAmountMax, liquidity, nft2022, associatedOnly, checkCreateATAOwner, withMetada
-17-    openPositionFromLiquidity<T extends TxVersion>({ poolInfo, poolKeys: propPoolKeys, ownerInfo, amountMaxA, amountMaxB, base, tickLower, tickUpper, liquidity, associatedOnly, checkCreateATAOwner, withMetadata, txVer
-18-    increasePositionFromLiquidity<T extends TxVersion>(props: IncreasePositionFromLiquidity<T>): Promise<MakeTxData<T, ManipulateLiquidityExtInfo>>;
---
-20:    decreaseLiquidity<T extends TxVersion>(props: DecreaseLiquidity<T>): Promise<MakeTxData<T, ManipulateLiquidityExtInfo & Partial<ClosePositionExtInfo>>>;
+18:    increasePositionFromLiquidity<T extends TxVersion>(props: IncreasePositionFromLiquidity<T>): Promise<MakeTxData<T, ManipulateLiquidityExtInfo>>;
+19:    increasePositionFromBase<T extends TxVersion>(props: IncreasePositionFromBase<T>): Promise<MakeTxData<T, ManipulateLiquidityExtInfo>>;
+20-    decreaseLiquidity<T extends TxVersion>(props: DecreaseLiquidity<T>): Promise<MakeTxData<T, ManipulateLiquidityExtInfo & Partial<ClosePositionExtInfo>>>;
 21-    lockPosition<T extends TxVersion>(props: LockPosition<T>): Promise<MakeTxData<ClmmLockAddress>>;
-22:    harvestLockPosition<T extends TxVersion>(props: HarvestLockPosition<T>): Promise<MakeTxData<T>>;
-23:    closePosition<T extends TxVersion>({ poolInfo, poolKeys: propPoolKeys, ownerPosition, txVersion, computeBudgetConfig, txTipConfig, feePayer, }: {
-24-        poolInfo: ApiV3PoolInfoConcentratedItem;
-25-        poolKeys?: ClmmKeys;
-26-        ownerPosition: ReturnType<typeof PersonalPositionLayout.decode>;
-27-        computeBudgetConfig?: ComputeBudgetConfig;
-28-        txTipConfig?: TxTipConfig;
-29-        txVersion: T;
---
-42:    collectReward<T extends TxVersion>({ poolInfo, ownerInfo, rewardMint, associatedOnly, checkCreateATAOwner, computeBudgetConfig, txTipConfig, txVersion, feePayer, }: CollectRewardParams<T>): Promise<MakeTxData<{
-43-        address: Record<string, PublicKey>;
-44-    }>>;
-45:    collectRewards({ poolInfo, ownerInfo, rewardMints, associatedOnly, checkCreateATAOwner, computeBudgetConfig, txTipConfig, feePayer, }: CollectRewardsParams): Promise<MakeTransaction>;
-46-    openLimitOrder<T extends TxVersion>({ poolInfo, baseIn, orderTick, amount, noneIndex, tickArrayBitmap, ownerInfo, associatedOnly, feePayer, computeBudgetConfig, txTipConfig, txVersion, }: OpenLimitOrder<T>): Promi
-47-        limitOrder: PublicKey;
-48-    }>>;
-49-    increaseLimitOrder<T extends TxVersion>({ poolInfo, limitOrder, amount, ownerInfo, associatedOnly, feePayer, computeBudgetConfig, txTipConfig, txVersion, }: IncreaseLimitOrder<T>): Promise<MakeTxData<T>>;
-50-    decreaseLimitOrder<T extends TxVersion>({ poolInfo, limitOrder, limitOrderInfo: defaultLimitOrderInfo, amount, slippage, tickArrayBitmap, ownerInfo, associatedOnly, feePayer, computeBudgetConfig, txTipConfig, txVe
-51-    closeLimitOrder<T extends TxVersion>({ programId, limitOrder, autoWithdraw, tickArrayBitmap, slippage, feePayer, computeBudgetConfig, txTipConfig, txVersion, }: CloseLimitOrder<T>): Promise<MakeTxData<T>>;
---
-95:    harvestAllRewards<T extends TxVersion = TxVersion.LEGACY>({ allPoolInfo, allPositions, lockInfo, ownerInfo, associatedOnly, checkCreateATAOwner, programId, txVersion, computeBudgetConfig, insCountLimit, feePayer, 
-96-    getWhiteListMint({ programId }: {
-97-        programId: PublicKey;
-98-    }): Promise<PublicKey[]>;
-99:    getOwnerPositionInfo({ programId, }: {
-100-        programId?: string | PublicKey;
-101-    }): Promise<ReturnType<typeof PersonalPositionLayout.decode>[]>;
-102-    getOwnerLockedPositionInfo({ programId, }: {
-103-        programId?: string | PublicKey;
-104-    }): Promise<{
-105-        position: ReturnType<typeof PersonalPositionLayout.decode>;
+22-    harvestLockPosition<T extends TxVersion>(props: HarvestLockPosition<T>): Promise<MakeTxData<T>>;
+interface IncreasePositionFromBase<T = TxVersion.LEGACY> {
+    poolInfo: ApiV3PoolInfoConcentratedItem;
+    ownerPosition: ClmmPoolPersonalPosition;
+    ownerInfo: {
+        useSOLBalance?: boolean;
+    };
+    base: "MintA" | "MintB";
+    baseAmount: BN__default;
+    otherAmountMax: BN__default;
+    associatedOnly?: boolean;
+    checkCreateATAOwner?: boolean;
+    computeBudgetConfig?: ComputeBudgetConfig;
+    txVersion?: T;
+    txTipConfig?: TxTipConfig;
+    feePayer?: PublicKey;
+}
 interface DecreaseLiquidity<T = TxVersion.LEGACY> {
     poolInfo: ApiV3PoolInfoConcentratedItem;
     poolKeys?: ClmmKeys;
@@ -159,22 +139,41 @@ interface DecreaseLiquidity<T = TxVersion.LEGACY> {
     ownerInfo: {
         useSOLBalance?: boolean;
         closePosition?: boolean;
-    };
-    liquidity: BN__default;
-    amountMinA: BN__default;
-    amountMinB: BN__default;
-    nftAccount?: PublicKey;
-    associatedOnly?: boolean;
-    checkCreateATAOwner?: boolean;
-    computeBudgetConfig?: ComputeBudgetConfig;
-    txVersion?: T;
-    txTipConfig?: TxTipConfig;
-declare const PersonalPositionLayout: Structure<number | _solana_web3_js.PublicKey | Buffer | BN | BN[] | {
-    growthInsideLastX64: BN;
-    rewardAmountOwed: BN;
-}[], "", {
+== orca inc/dec
+45:type DecreaseLiquidityQuoteParam = {
+46-    liquidity: bigint;
+47-} | {
+48-    tokenA: bigint;
+49-} | {
+50-    tokenB: bigint;
+51-};
+52-type DecreaseLiquidityInstructions = {
+53-    quote: DecreaseLiquidityQuote;
+54-    instructions: Instruction[];
+55-};
+56-type DecreaseLiquidityConfig = {
+57-    slippageToleranceBps?: number;
+--
+89:type IncreaseLiquidityParam = {
+90-    tokenMaxA: bigint;
+91-    tokenMaxB: bigint;
+92-};
+93-type IncreaseLiquidityInstructions = {
+94-    instructions: Instruction[];
+95-};
+96-type IncreaseLiquidityConfig = {
+97-    slippageToleranceBps?: number;
+98-    authority?: TransactionSigner<string>;
+99-    whirlpoolDeployment?: WhirlpoolDeployment;
+100-};
+101-declare function increaseLiquidityInstructions(rpc: IncreaseLiquidityRpc, positionMintAddress: Address, param: IncreaseLiquidityParam, config?: IncreaseLiquidityConfig): Promise<IncreaseLiquidityInstructions>;
+--
+173:export { type ClosePositionConfig, type ClosePositionInstructions, type CreatePoolConfig, type CreatePoolInstructions, DEFAULT_ADDRESS, DEFAULT_ENFORCE_TOKEN_BALANCE_CHECK, DEFAULT_FUNDER, DEFAULT_NATIVE_MINT_WRAPPING_STRATEGY, DEFAULT_SLIPPAGE_TOLERANCE_BPS, type DecreaseLiquidityConfig, type DecreaseLiquidityInstructions, type DecreaseLiquidityQuoteParam, ENFORCE_TOKEN_BALANCE_CHECK, type ExactInParams, type ExactOutParams, FUNDER, type HarvestPositionConfig, type HarvestPositionInstructions, type HydratedPosition, type HydratedPositionBundle, type IncreaseLiquidityConfig, type IncreaseLiquidityInstructions, type IncreaseLiquidityParam, type InitializablePool, type InitializedPool, NATIVE_MINT_WRAPPING_STRATEGY, type NativeMintWrappingStrategy, type OpenPositionConfig, type OpenPositionInstructions, type PoolInfo, type PositionData, type PositionOrBundle, SLIPPAGE_TOLERANCE_BPS, SPLASH_POOL_TICK_SPACING, type SwapConfig, type SwapInstructions, type SwapParams, type SwapQuote, closePosition, closePositionInstructions, createConcentratedLiquidityPool, createConcentratedLiquidityPoolInstructions, createSplashPool, createSplashPoolInstructions, decreaseLiquidity, decreaseLiquidityInstructions, fetchConcentratedLiquidityPool, fetchPositionsForOwner, fetchPositionsInWhirlpool, fetchSplashPool, fetchWhirlpoolsByTokenPair, getPayer, harvestAllPositionFees, harvestPosition, harvestPositionInstructions, increaseLiquidityInstructions, increasePosLiquidity, openConcentratedPosition, openConcentratedPositionWithTickBounds, openFullRangePosition, openFullRangePositionInstructions, openPositionInstructions, openPositionInstructionsWithTickBounds, orderMints, resetConfiguration, setDefaultFunder, setDefaultSlippageToleranceBps, setEnforceTokenBalanceCheck, setNativeMintWrappingStrategy, setPayerFromBytes, swap, swapInstructions };
+101:declare function increaseLiquidityInstructions(rpc: IncreaseLiquidityRpc, positionMintAddress: Address, param: IncreaseLiquidityParam, config?: IncreaseLiquidityConfig): Promise<IncreaseLiquidityInstructions>;
+102-type OpenPositionInstructions = IncreaseLiquidityInstructions & {
+103-    initializationCost: Lamports;
 == orca meta
-{"data":{"address":"Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE","whirlpoolsConfig":"2LecshUwdy9xi7meFgHtFJQNSKk4KdTrcpvaB56dP2NQ","whirlpoolBump":[255],"tickSpacing":4,"tickSpacingSeed":[4,0],"feeRate":400,"protocolFeeRate":1300,"liquidity":"72189678337690","sqrtPrice":"4719746918912915293","tickCurrentIndex":-27265,"protocolFeeOwedA":"24091177","protocolFeeOwedB":"743497","tokenMintA":"So11111111111111111111111111111111111111112","tokenVaultA":"EUuUbDcafPrmVTD5M6qoJAoyyNbihBhugADAxRMn5he9","feeGrowthGlobalA":"13703844550575345165","tokenMintB":"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v","tokenVaultB":"2WLWEuKDgkDUccTpbwYp1GToYktiSB1cXvreHUwiSUVP","feeGrowthGlobalB":"1736336974463570504","rewardLastUpdatedTimestamp":"2026-11-21T04:44:14Z","updatedAt":"2026-11-21T04:44:15.151437Z","updatedSlot":472009433,"writeVersion":8439082698,"hasWarning":false,"poolType":"whirlpool","tokenA":{"address":"So11111111111111111111111111111111111111112","programId":"TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA","imageUrl":"https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png","name":"Solana","symbol":"SOL","decimals":9,"tags":[]},"tokenB":{"address":"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v","programId":"TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA","imageUrl":"https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png","name":"USD Coin","symbol":"USDC","decimals":6,"tags":[]},"price":"65.46331266046349998000","tvlUsdc":"15565973.5018077440902513","yieldOverTvl":"0.00276887624872755000","tokenBalanceA":"222496737670265","tokenBalanceB":"1010951857132","stats":{"24h":{"volume":"107750635.79369500","fees":"43098.1852950462149912","rewards":"0","yieldOverTvl":"0.00276236674671745000","volumeDelta":"-0.0492153457356165","feesDelta":"-0.04919718079941359265","rewardsDelta":null,"yieldOverTvlDelta":"0.106426417923016984211040348074440528","tvlDelta":"-0.14263339364962141260","priceDelta":"-0.090619506449111989797501739600286000"},"7d":{"volume":"677322984.67723800","fees":"270918.76677050913731516000","rewards":"0","yieldOverTvl":"0.0173615507207743","volumeDelta":"0.2568281978631800","feesDelta":"0.256941915082837233692200","rewardsDelta":null,"yieldOverTvlDelta":"0.253836531110877733278200","tvlDelta":null,"priceDelta":null},"30d":{"volume":"2692279075.64385000","fees":"1076810.909254232008062867813500","rewards":"0","yieldOverTvl":"0.0690101189295145","volumeDelta":null,"feesDelta":null,"rewardsDelta":null,"yieldOverTvlDelta":null,"tvlDelta":null,"priceDelta":null}},"rewards":[{"mint":"orcaEKTdK7LKz57vaAYr9QeNsVEPfiu6QeMU1kektZE","vault":"21yVeQh9dMDFxcgAxo7pSKBiBUeb2UmHgrf9fobEX4x9","authority":"DXnB9N9JLH5c9AYdKMGHQyspewSsvhFnwLK1tz1iPmZw","emissions_per_second_x64":"0","growth_global_x64":"4903944807059099939","active":false,"emissionsPerSecond":"0"}],"lockedLiquidityPercent":[{"name":"Whirlpool-Locked","locked_percentage":"0.000001089","lockedPercentage":"0.000001089"}],"addressLookupTable":"3TcUvdbG2NckrLorL9NGNSRRYYZUkqr5cD11pXqzPzj7","feeTierIndex":4,"adaptiveFeeEnabled":false,"adaptiveFee":null,"tradeEnableTimestamp":"1970-01-01T00:00:00Z","priceHistory7d":["72.88277533855769693000","70.98754667484859998000","71.27382433689365749000","71.70830480843759188000","71.02827630380752852000","72.91810472408252046000","72.06975875494833006000","74.90443472815889997000","72.31795440569105836000","74.73177025711580393000","73.90146113243577712000","71.98671306973689709000","69.25542519735479897000","65.55138028233607224000"]},"meta":{"cursor":null}}== whirlpool fields
+{"data":{"address":"Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE","whirlpoolsConfig":"2LecshUwdy9xi7meFgHtFJQNSKk4KdTrcpvaB56dP2NQ","whirlpoolBump":[255],"tickSpacing":4,"tickSpacingSeed":[4,0],"feeRate":400,"protocolFeeRate":1300,"liquidity":"390153120417422","sqrtPrice":"4924518574072416966","tickCurrentIndex":-26415,"protocolFeeOwedA":"136273255","protocolFeeOwedB":"7100615","tokenMintA":"So11111111111111111111111111111111111111112","tokenVaultA":"EUuUbDcafPrmVTD5M6qoJAoyyNbihBhugADAxRMn5he9","feeGrowthGlobalA":"13724101045607479023","tokenMintB":"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v","tokenVaultB":"2WLWEuKDgkDUccTpbwYp1GToYktiSB1cXvreHUwiSUVP","feeGrowthGlobalB":"1737808926526970010","rewardLastUpdatedTimestamp":"2026-11-23T05:13:17Z","updatedAt":"2026-11-23T05:13:18.850502Z","updatedSlot":472821195,"writeVersion":9964568781,"hasWarning":false,"poolType":"whirlpool","tokenA":{"address":"So11111111111111111111111111111111111111112","programId":"TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA","imageUrl":"https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png","name":"Solana","symbol":"SOL","decimals":9,"tags":[]},"tokenB":{"address":"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v","programId":"TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA","imageUrl":"https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png","name":"USD Coin","symbol":"USDC","decimals":6,"tags":[]},"price":"71.26694047011464653000","tvlUsdc":"17042066.0745723286451900","yieldOverTvl":"0.00163246161551869000","tokenBalanceA":"191257279111873","tokenBalanceB":"3418222316741","stats":{"24h":{"volume":"69551296.78968140","fees":"27818.03577683056568291240","rewards":"0","yieldOverTvl":"0.00163280180840609000","volumeDelta":"0.0125777028532938","feesDelta":"0.01258752430472724969","rewardsDelta":null,"yieldOverTvlDelta":"-0.015095268764682935306676468471558602","tvlDelta":"0.02841311114441932418","priceDelta":"0.031914894513950776833362211359314000"},"7d":{"volume":"620514193.47454200","fees":"248218.90374923010259678240","rewards":"0","yieldOverTvl":"0.0145691399581477","volumeDelta":"-0.0366362034802563","feesDelta":"-0.03631790081487085650","rewardsDelta":null,"yieldOverTvlDelta":"-0.03604868800357332509","tvlDelta":null,"priceDelta":null},"30d":{"volume":"2644683545.50102000","fees":"1057750.135621873066160264133500","rewards":"0","yieldOverTvl":"0.0620948966592744","volumeDelta":null,"feesDelta":null,"rewardsDelta":null,"yieldOverTvlDelta":null,"tvlDelta":null,"priceDelta":null}},"rewards":[{"mint":"orcaEKTdK7LKz57vaAYr9QeNsVEPfiu6QeMU1kektZE","vault":"21yVeQh9dMDFxcgAxo7pSKBiBUeb2UmHgrf9fobEX4x9","authority":"DXnB9N9JLH5c9AYdKMGHQyspewSsvhFnwLK1tz1iPmZw","emissions_per_second_x64":"0","growth_global_x64":"4903944807059099939","active":false,"emissionsPerSecond":"0"}],"lockedLiquidityPercent":[{"name":"Whirlpool-Locked","locked_percentage":"0.000001038","lockedPercentage":"0.000001038"}],"addressLookupTable":"3TcUvdbG2NckrLorL9NGNSRRYYZUkqr5cD11pXqzPzj7","feeTierIndex":4,"adaptiveFeeEnabled":false,"adaptiveFee":null,"tradeEnableTimestamp":"1970-01-01T00:00:00Z","priceHistory7d":["71.41002578420009511000","72.69515390598165706000","72.55825928203424148000","74.77175921734972558000","73.02876089988186717000","74.54998920263263919000","72.91502494457193846000","71.93966773264057658000","69.19171543235581781000","65.96658713267866332000","70.68656922120187401000","69.06280823059790296000","70.43584726848242191000","71.17124096889073205000"]},"meta":{"cursor":null}}== whirlpool fields
 692:type Whirlpool = {
 693-    discriminator: ReadonlyUint8Array;
 694-    whirlpoolsConfig: Address;
