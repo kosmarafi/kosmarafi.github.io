@@ -1,7 +1,7 @@
 // Kosmara SDK: abre posiciones en Orca Whirlpools y lee las posiciones de una wallet.
 // Se compila con Vite a ../sdk/kz-sdk.js y lo carga la web (index.html) como modulo.
 // La web llama a window.kzSdk.openPosition / positions / closePosition / harvest.
-import { openPositionInstructions, fetchPositionsForOwner, closePositionInstructions, harvestPositionInstructions, setNativeMintWrappingStrategy } from "@orca-so/whirlpools";
+import { openPositionInstructions, fetchPositionsForOwner, closePositionInstructions, harvestPositionInstructions, setNativeMintWrappingStrategy, increaseLiquidityInstructions, decreaseLiquidityInstructions } from "@orca-so/whirlpools";
 import { fetchAllWhirlpool } from "@orca-so/whirlpools-client";
 import {
   findAssociatedTokenPda,
@@ -285,6 +285,36 @@ async function swapAndOpen(o) {
   const pre = (o.pre || []).map((ix) => jupIx(ix, signer));
   const out = await sendIxs(Object.assign({}, o, { signer, cuLimit: o.cuLimit || 1000000 }), wrapPre.concat(pre, res.instructions, wrapPost));
   return Object.assign(out, { positionMint: String(res.positionMint) });
+}
+
+/**
+ * Depositar mas liquidez en una posicion abierta. o = { rpc, owner, mint, amountA, amountB, decA, decB, slipBps, provider }
+ */
+async function increase(o) {
+  if (!o || !o.provider || !o.owner) throw new Error("Conecta tu wallet primero");
+  const rpc = createSolanaRpc(o.rpc);
+  const signer = createNoopSigner(address(o.owner));
+  const res = await increaseLiquidityInstructions(rpc, address(o.mint), { tokenMaxA: toUnits(o.amountA, o.decA), tokenMaxB: toUnits(o.amountB, o.decB) }, {
+    slippageToleranceBps: Math.max(1, Math.round(o.slipBps || 100)),
+    authority: signer,
+  });
+  return sendIxs(Object.assign({}, o, { signer }), res.instructions);
+}
+
+/**
+ * Retirar un porcentaje de la liquidez sin cerrar la posicion. o = { rpc, owner, mint, liquidity (texto), pct (1-100), slipBps, provider }
+ */
+async function decrease(o) {
+  if (!o || !o.provider || !o.owner) throw new Error("Conecta tu wallet primero");
+  const rpc = createSolanaRpc(o.rpc);
+  const signer = createNoopSigner(address(o.owner));
+  const liq = (BigInt(o.liquidity) * BigInt(Math.round(Math.min(100, Math.max(0, o.pct)) * 100))) / 10000n;
+  if (liq <= 0n) throw new Error("Elige cuánto quieres retirar");
+  const res = await decreaseLiquidityInstructions(rpc, address(o.mint), { liquidity: liq }, {
+    slippageToleranceBps: Math.max(1, Math.round(o.slipBps || 100)),
+    authority: signer,
+  });
+  return sendIxs(Object.assign({}, o, { signer }), res.instructions);
 }
 
 /**
@@ -745,10 +775,15 @@ async function positions(o) {
       dur,
       mint: String(d.positionMint),
       pool: String(d.whirlpool),
+      liq: String(d.liquidity),
+      decA: dA,
+      decB: dB,
+      mA,
+      mB,
     };
   });
   return out.filter(Boolean);
 }
 
-window.kzSdk = { ready: true, version: "0.6.2", openPosition, swapAndOpen, positions, closePosition, harvest, livePrices };
+window.kzSdk = { ready: true, version: "0.7.0", openPosition, swapAndOpen, positions, closePosition, harvest, increase, decrease, livePrices };
 window.dispatchEvent(new Event("kzsdk"));

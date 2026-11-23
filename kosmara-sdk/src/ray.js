@@ -209,7 +209,7 @@ async function positions(o) {
       symA: p.mintA.symbol === "WSOL" ? "SOL" : p.mintA.symbol, symB: p.mintB.symbol === "WSOL" ? "SOL" : p.mintB.symbol,
       fee: String(+(p.feeRate * 100).toFixed(4)), price, lo: sa * sa * scale, hi: sb * sb * scale, usd,
       amtA: rA / Math.pow(10, dA), amtB: rB / Math.pow(10, dB), pend, harv: null, pnl: null, pnlPct: null, entry: null, dur: "—", est, est24: est && est["24h"],
-      mint, pool: id,
+      mint, pool: id, liq: big(pos.liquidity).toString(), decA: dA, decB: dB, mA, mB,
     });
   }
   return out;
@@ -220,16 +220,18 @@ async function buildManage(o) {
   const raydium = await load(o.rpc, o.owner);
   const c = POS[o.mint];
   if (!c) throw new Error("No encuentro esta posición de Raydium; recarga el Portafolio");
+  if (o.kind === "inc") return buildIncrease(raydium, c, o);
   const close = o.kind === "close";
+  const part = o.kind === "dec";
   const slip = Math.max(1, Math.round(o.slipBps || 100)) / 10000;
   const minOf = (v) => new BN(Math.floor(Math.max(0, v) * (1 - slip)).toString());
   const res = await raydium.clmm.decreaseLiquidity({
     poolInfo: c.poolInfo,
     ownerPosition: c.pos,
     ownerInfo: { useSOLBalance: true, closePosition: close },
-    liquidity: close ? c.pos.liquidity : new BN(0),
-    amountMinA: close ? minOf((o.amtA || 0) * Math.pow(10, c.poolInfo.mintA.decimals)) : new BN(0),
-    amountMinB: close ? minOf((o.amtB || 0) * Math.pow(10, c.poolInfo.mintB.decimals)) : new BN(0),
+    liquidity: close ? c.pos.liquidity : part ? new BN(big(c.pos.liquidity) * BigInt(Math.round(o.pct * 100)) / 10000n + "") : new BN(0),
+    amountMinA: close || part ? minOf((o.amtA || 0) * (close ? 1 : o.pct / 100) * Math.pow(10, c.poolInfo.mintA.decimals)) : new BN(0),
+    amountMinB: close || part ? minOf((o.amtB || 0) * (close ? 1 : o.pct / 100) * Math.pow(10, c.poolInfo.mintB.decimals)) : new BN(0),
     txVersion: TxVersion.V0,
     computeBudgetConfig: { units: 400000, microLamports: 20000 },
   });
@@ -238,4 +240,21 @@ async function buildManage(o) {
   return { bytes: tx.serialize() };
 }
 
-window.kzRay = { ready: true, version: "0.2.2", buildOpen, positions, buildManage };
+// Depositar mas en una posicion abierta de Raydium: parte del token A (o del B si no hay suficiente del otro).
+async function buildIncrease(raydium, c, o) {
+  const pi = c.poolInfo, dA = pi.mintA.decimals, dB = pi.mintB.decimals;
+  const maxA = units(o.amountA, dA), maxB = units(o.amountB, dB);
+  const epochInfo = await raydium.fetchEpochInfo();
+  let base = "MintA", baseAmount = maxA, otherMax = maxB;
+  if (maxA.gtn(0)) {
+    const r = await PoolUtils.getLiquidityAmountOutFromAmountIn({ poolInfo: pi, slippage: 0, inputA: true, tickUpper: c.pos.tickUpper, tickLower: c.pos.tickLower, amount: maxA, add: true, amountHasFee: true, epochInfo });
+    if (new BN(r.amountSlippageB.amount.toString()).gt(maxB)) { base = "MintB"; baseAmount = maxB; otherMax = maxA; }
+  } else { base = "MintB"; baseAmount = maxB; otherMax = maxA; }
+  baseAmount = baseAmount.muln(985).divn(1000);
+  const res = await raydium.clmm.increasePositionFromBase({ poolInfo: pi, ownerPosition: c.pos, ownerInfo: { useSOLBalance: true }, base, baseAmount, otherAmountMax: otherMax, txVersion: TxVersion.V0, computeBudgetConfig: { units: 500000, microLamports: 20000 } });
+  const tx = res.transaction;
+  if (res.signers && res.signers.length) tx.sign(res.signers);
+  return { bytes: tx.serialize() };
+}
+
+window.kzRay = { ready: true, version: "0.3.0", buildOpen, positions, buildManage };
