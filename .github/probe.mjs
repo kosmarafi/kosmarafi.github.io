@@ -1,5 +1,5 @@
 import { createSolanaRpcFromTransport, createDefaultRpcTransport, address, createNoopSigner } from "@solana/kit";
-import { harvestPositionInstructions, setWhirlpoolsConfig } from "@orca-so/whirlpools";
+import { harvestPositionInstructions } from "@orca-so/whirlpools";
 const URL="https://mainnet.helius-rpc.com/?api-key=d69a3929-b7b3-4523-8dea-9d82a0bcfd36";
 const rpc=createSolanaRpcFromTransport(createDefaultRpcTransport({url:URL,headers:{origin:"https://kosmarafi.github.io"}}));
 const AUTO="5who9tNcJ1LmhK1PuKCRUdbkSp1hDr7qvyuoiG2qH66N",OWNER="8AMfcuNiwoQH8xKiytkujH5JVjiskER8eRTK7XAfhQ21";
@@ -9,7 +9,7 @@ else{const d=Buffer.from(ai.data[0],"base64");console.log("AUTO next",new Date(N
  const pos=(await import("@solana/kit")).getAddressDecoder().decode(d.subarray(464,496));
  const pi=(await rpc.getAccountInfo(pos,{encoding:"base64"}).send()).value;const pd=Buffer.from(pi.data[0],"base64");
  const mint=(await import("@solana/kit")).getAddressDecoder().decode(pd.subarray(40,72));console.log("pos",pos,"mint",mint);
- try{await setWhirlpoolsConfig("solanaMainnet")}catch(e){}
+
  const h=await harvestPositionInstructions(rpc,mint,createNoopSigner(address(OWNER)));
  console.log("FEES owedA",String(h.feesQuote.feeOwedA),"owedB",String(h.feesQuote.feeOwedB));}
 const sigs=(await rpc.getSignaturesForAddress(address(AUTO),{limit:50}).send());
