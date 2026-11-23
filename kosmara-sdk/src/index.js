@@ -11,6 +11,7 @@ import {
   TOKEN_PROGRAM_ADDRESS,
 } from "@solana-program/token";
 import { getTransferSolInstruction } from "@solana-program/system";
+import { autoCtx, autoOnIxs, autoOffIxs, autoStatus } from "./auto.js";
 import {
   createSolanaRpcFromTransport,
   createDefaultRpcTransport,
@@ -331,7 +332,50 @@ async function closePosition(o) {
     slippageToleranceBps: Math.max(1, Math.round(o.slipBps || 100)),
     authority: signer,
   });
+  // Si tiene la auto-composición activa, primero se quita (devuelve el depósito); si no cabe todo junto, van dos firmas.
+  let c = null;
+  try {
+    c = await autoCtx(rpc, o.owner, o.mint);
+  } catch (e) {}
+  if (c && c.active) {
+    const off = await autoOffIxs(c, signer);
+    try {
+      return await sendIxs(Object.assign({}, o, { signer }), off.concat(res.instructions));
+    } catch (e) {
+      if (!e.kzBig) throw e;
+      await sendIxs(Object.assign({}, o, { signer }), off);
+      const again = await closePositionInstructions(rpc, address(o.mint), { slippageToleranceBps: Math.max(1, Math.round(o.slipBps || 100)), authority: signer });
+      return sendIxs(Object.assign({}, o, { signer }), again.instructions);
+    }
+  }
   return sendIxs(Object.assign({}, o, { signer }), res.instructions);
+}
+
+/**
+ * Activa la auto-composición de Orca en una posición: cada 12 h, si hay al menos ~5 $ de cada token
+ * pendiente, el programa de Orca cobra, hace el swap y lo reinvierte. o = { rpc, owner, mint, provider }
+ */
+async function autoOn(o) {
+  if (!o || !o.provider || !o.owner) throw new Error("Conecta tu wallet primero");
+  const rpc = createSolanaRpc(o.rpc);
+  const signer = createNoopSigner(address(o.owner));
+  const c = await autoCtx(rpc, o.owner, o.mint);
+  if (c.active) throw new Error("La auto-composición ya está activa en esta posición");
+  const prices = await usdPrices([String(c.mA), String(c.mB)]);
+  if (STABLES[String(c.mA)] && !prices[String(c.mA)]) prices[String(c.mA)] = 1;
+  if (STABLES[String(c.mB)] && !prices[String(c.mB)]) prices[String(c.mB)] = 1;
+  const on = await autoOnIxs(c, signer, prices, { minUsd: o.minUsd, interval: o.interval });
+  return sendIxs(Object.assign({}, o, { signer }), on.ixs);
+}
+
+/** Quita la auto-composición y devuelve el depósito. o = { rpc, owner, mint, provider } */
+async function autoOff(o) {
+  if (!o || !o.provider || !o.owner) throw new Error("Conecta tu wallet primero");
+  const rpc = createSolanaRpc(o.rpc);
+  const signer = createNoopSigner(address(o.owner));
+  const c = await autoCtx(rpc, o.owner, o.mint);
+  if (!c.active) throw new Error("Esta posición no tiene la auto-composición activa");
+  return sendIxs(Object.assign({}, o, { signer }), await autoOffIxs(c, signer));
 }
 
 /**
@@ -782,8 +826,17 @@ async function positions(o) {
       mB,
     };
   });
-  return out.filter(Boolean);
+  const res = out.filter(Boolean);
+  // Auto-composición de Orca: qué posiciones la tienen activa.
+  try {
+    const st = await autoStatus(rpc, o.owner, list.map((p) => ({ mint: String(p.data.positionMint), pos: String(p.address) })));
+    res.forEach((r) => {
+      r.auto = !!st[r.mint];
+      r.autoNext = st[r.mint] ? st[r.mint].next : null;
+    });
+  } catch (e) {}
+  return res;
 }
 
-window.kzSdk = { ready: true, version: "0.7.0", openPosition, swapAndOpen, positions, closePosition, harvest, increase, decrease, livePrices };
+window.kzSdk = { ready: true, version: "0.8.0", openPosition, swapAndOpen, positions, closePosition, harvest, increase, decrease, livePrices, autoOn, autoOff };
 window.dispatchEvent(new Event("kzsdk"));
