@@ -1,7 +1,7 @@
-import { createSolanaRpc, address, createNoopSigner, pipe, createTransactionMessage, setTransactionMessageFeePayerSigner, setTransactionMessageLifetimeUsingBlockhash, appendTransactionMessageInstructions, partiallySignTransactionMessageWithSigners, getBase64EncodedWireTransaction } from "@solana/kit";
+import { createSolanaRpcFromTransport, createDefaultRpcTransport, address, createNoopSigner, pipe, createTransactionMessage, setTransactionMessageFeePayerSigner, setTransactionMessageLifetimeUsingBlockhash, appendTransactionMessageInstructions, partiallySignTransactionMessageWithSigners, getBase64EncodedWireTransaction } from "@solana/kit";
 import * as A from "./src/auto.js";
 const URL="https://mainnet.helius-rpc.com/?api-key=d69a3929-b7b3-4523-8dea-9d82a0bcfd36";
-const rpc=createSolanaRpc(URL);
+const rpc=createSolanaRpcFromTransport(createDefaultRpcTransport({url:URL,headers:{origin:"https://kosmarafi.github.io"}}));
 const owner="DCpVrKPdytGgDUDBfjzMzYSnTAeMXPanf5BoPbQ7cWKS",mint="DV8msyuktcoyfeapkEYBQ8jSZrvifD2qrftpiszSEhmJ";
 const S=x=>JSON.stringify(x,(k,v)=>typeof v==="bigint"?String(v):v);
 const c=await A.autoCtx(rpc,owner,mint);console.log("CTX",S({ta:c.ta,auto:c.auto,authority:c.authority,active:c.active,delegate:c.delegate,bA:c.bA,bB:c.bB,cfg:await A.globalConfigPda(),pp:c.poolPrice}));
