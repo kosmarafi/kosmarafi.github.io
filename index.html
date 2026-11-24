@@ -1546,8 +1546,10 @@ window.kzP=336;
 window.kzAfter=function(v){S.view=v;if(v==="home"){rHome();if(window.kzDoor)window.kzDoor()}else if(v==="portfolio")rPf();else if(v==="wallet")rWallet();else if(v==="lottery")rLot()};
 
 /* ---------- inicio ---------- */
-function poolRow(p){
- return '<div class="row prow pick" data-pool="'+esc(p.k)+'"><div class="a">'+pnm(p)+'<span class="tag o">'+p.pr+'</span></div><div class="r up"><b>'+(p.apr!=null?f(p.apr,1)+"%":"—")+'</b> <small>'+(p.kind?"APY":"APR")+'</small></div><small>TVL '+cur(p.tvl,0)+'</small><small class="r">'+(p.kind?esc(p.kind):"vol. "+cur(p.vol,0))+"</small></div>";
+/* APR: el de la fuente; si no lo da, estimado con volumen 24 h × comisión / TVL × 365 */
+function aprOf(p){var a=+p.apr;if(a>0)return a;if(p.fee>0&&p.tvl>0&&p.vol>0)return p.vol*p.fee/p.tvl*365;return null}
+function poolRow(p){var ap=aprOf(p);
+ return '<div class="row prow pick" data-pool="'+esc(p.k)+'"><div class="a">'+pnm(p)+'<span class="tag o">'+p.pr+'</span></div><div class="r up"><b>'+(ap!=null?f(ap,1)+"%":"—")+'</b> <small>'+(p.kind?"APY":"APR")+'</small></div><small>TVL '+cur(p.tvl,0)+'</small><small class="r">'+(p.kind?esc(p.kind):"vol. "+cur(p.vol,0))+"</small></div>";
 }
 /* Hoja de ruta. Para marcar algo como hecho, cambia su estado:
    "on" = en marcha (verde) · "test" = en pruebas (amarillo) · "soon" = próximamente · "idea" = en estudio */
@@ -1593,7 +1595,7 @@ var tickSig="";
 function rHome(){
  var A=Object.keys(S.pools).map(function(k){return S.pools[k]}),P=A.filter(function(p){return !p.kind}),used={},L=[];
  /* 1) mayor TVL, 2) mayor volumen 24 h, 3) mayor APR (con al menos 250.000 $ de liquidez para evitar pools vacías) */
- [["Mayor TVL",function(p){return +p.tvl||0},function(){return true}],["Mayor volumen 24 h",function(p){return +p.vol||0},function(){return true}],["Mayor APR",function(p){return +p.apr||0},function(p){return (+p.tvl||0)>=250000&&(+p.vol||0)>0}]].forEach(function(c){
+ [["Mayor TVL",function(p){return +p.tvl||0},function(){return true}],["Mayor volumen 24 h",function(p){return +p.vol||0},function(){return true}],["Mayor APR",function(p){return aprOf(p)||0},function(p){return (+p.tvl||0)>=250000&&(+p.vol||0)>0}]].forEach(function(c){
   var b=P.filter(function(p){return !used[p.k]&&c[2](p)}).sort(function(x,y){return c[1](y)-c[1](x)})[0];if(b&&c[1](b)>0){used[b.k]=1;L.push([c[0],b])}});
  $("hTop").innerHTML='<div class="k">Pools destacados</div>'+(L.length?'<div class="plist">'+L.map(function(x){return '<div class="hbest">'+esc(x[0])+"</div>"+poolRow(x[1])}).join("")+"</div>":'<div class="dim">Cargando pools…</div>');
  if(!A.length)return;
