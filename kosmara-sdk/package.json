@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "build": "vite build && vite build -c vite.ray.config.js"
+    "build": "vite build && vite build -c vite.ray.config.js && vite build -c vite.met.config.js"
   },
   "dependencies": {
     "@orca-so/whirlpools": "^8.0.1",
@@ -14,7 +14,8 @@
     "@solana/web3.js": "^1.98.0",
     "buffer": "^6.0.3",
     "decimal.js": "^10.4.3",
-    "bn.js": "^5.2.1"
+    "bn.js": "^5.2.1",
+    "@meteora-ag/dlmm": "latest"
   },
   "devDependencies": {
     "vite": "^5.4.0",
