@@ -6,12 +6,29 @@
   var CH = {
     ETH: { name: "Ethereum", id: 1, rpc: ["https://ethereum-rpc.publicnode.com", "https://eth.drpc.org"], llama: "ethereum", tx: "https://etherscan.io/tx/", nft: "https://etherscan.io/token/", acct: "https://etherscan.io/address/", native: "ETH", gas: 0.004 },
     BSC: { name: "BNB Chain", id: 56, rpc: ["https://bsc-rpc.publicnode.com", "https://bsc-dataseed.binance.org"], llama: "bsc", tx: "https://bscscan.com/tx/", nft: "https://bscscan.com/token/", acct: "https://bscscan.com/address/", native: "BNB", gas: 0.002 },
+    BASE: { name: "Base", id: 8453, rpc: ["https://base-rpc.publicnode.com", "https://mainnet.base.org"], llama: "base", tx: "https://basescan.org/tx/", nft: "https://basescan.org/token/", acct: "https://basescan.org/address/", native: "ETH", gas: 0.0004 },
+    ARB: { name: "Arbitrum", id: 42161, rpc: ["https://arbitrum-one-rpc.publicnode.com", "https://arb1.arbitrum.io/rpc"], llama: "arbitrum", tx: "https://arbiscan.io/tx/", nft: "https://arbiscan.io/token/", acct: "https://arbiscan.io/address/", native: "ETH", gas: 0.0004 },
+    OP: { name: "Optimism", id: 10, rpc: ["https://optimism-rpc.publicnode.com", "https://mainnet.optimism.io"], llama: "optimism", tx: "https://optimistic.etherscan.io/tx/", nft: "https://optimistic.etherscan.io/token/", acct: "https://optimistic.etherscan.io/address/", native: "ETH", gas: 0.0004 },
   };
+  // Gestores de posiciones verificados en la blockchain (nombre del NFT, fábrica y WETH9). slip: Aerodrome/Velodrome (Slipstream).
   var DEX = [
     { k: "uni", name: "Uniswap v3", chain: "ETH", npm: "0xc36442b4a4522e871399cd717abdd847ab11fe88" },
     { k: "pcs", name: "PancakeSwap v3", chain: "ETH", npm: "0x46a15b0b27311cedf172ab29e4f4766fbe7f4364" },
+    { k: "sushi", name: "Sushi v3", chain: "ETH", npm: "0x2214a42d8e2a1d20635c2cb0664422c528b6a432" },
     { k: "uni", name: "Uniswap v3", chain: "BSC", npm: "0x7b8a01b39d58278b5de7e48c8449c9f4f5170613" },
     { k: "pcs", name: "PancakeSwap v3", chain: "BSC", npm: "0x46a15b0b27311cedf172ab29e4f4766fbe7f4364" },
+    { k: "sushi", name: "Sushi v3", chain: "BSC", npm: "0xf70c086618dcf2b1a461311275e00d6b722ef914" },
+    { k: "uni", name: "Uniswap v3", chain: "BASE", npm: "0x03a520b32c04bf3beef7beb72e919cf822ed34f1" },
+    { k: "pcs", name: "PancakeSwap v3", chain: "BASE", npm: "0x46a15b0b27311cedf172ab29e4f4766fbe7f4364" },
+    { k: "sushi", name: "Sushi v3", chain: "BASE", npm: "0x80c7dd17b01855a6d2347444a0fcc36136a314de" },
+    { k: "aero", name: "Aerodrome", chain: "BASE", npm: "0x827922686190790b37229fd06084350e74485b72", slip: true },
+    { k: "aero2", name: "Aerodrome", chain: "BASE", npm: "0xa990c6a764b73bf43cee5bb40339c3322fb9d55f", slip: true },
+    { k: "uni", name: "Uniswap v3", chain: "ARB", npm: "0xc36442b4a4522e871399cd717abdd847ab11fe88" },
+    { k: "pcs", name: "PancakeSwap v3", chain: "ARB", npm: "0x46a15b0b27311cedf172ab29e4f4766fbe7f4364" },
+    { k: "sushi", name: "Sushi v3", chain: "ARB", npm: "0xf0cbce1942a68beb3d1b73f0dd86c8dcc363ef49" },
+    { k: "uni", name: "Uniswap v3", chain: "OP", npm: "0xc36442b4a4522e871399cd717abdd847ab11fe88" },
+    { k: "sushi", name: "Sushi v3", chain: "OP", npm: "0x1af415a1eba07a4986a52b6f2e7de7003d82231e" },
+    { k: "velo", name: "Velodrome", chain: "OP", npm: "0x416b433906b1b72fa758e166e239c43d68dc6f29", slip: true },
   ];
   var STABLE = /^(USDC|USDT|DAI|BUSD|FDUSD|USD1|USDE|PYUSD|TUSD|USDS|LUSD|FRAX|USDC\.E|BSC-USD)$/i;
   var MAX128 = (1n << 128n) - 1n;
@@ -82,7 +99,8 @@
   var SEL = {
     balanceOf: "0x70a08231", tokenOfOwnerByIndex: "0x2f745c59", positions: "0x99fbab88", factory: "0xc45a0155", getPool: "0x1698ee82",
     slot0: "0x3850c7bd", decimals: "0x313ce567", symbol: "0x95d89b41", collect: "0xfc6f7865", decrease: "0x0c49ccbe", increase: "0x219f5d17",
-    burn: "0x42966c68", unwrap: "0x49404b7c", sweep: "0xdf2ab5bb", weth: "0x4aa4a4fc", refund: "0x12210e8a", allowance: "0xdd62ed3e", approve: "0x095ea7b3",
+    burn: "0x42966c68", getPoolTs: "0x28af8d0b", fee: "0xddca3f43", tickSpacing: "0xd0c93a7c", token0: "0x0dfe1681", token1: "0xd21220a7",
+    mint: "0x88316456", mintSlip: "0xb5007d1f", unwrap: "0x49404b7c", sweep: "0xdf2ab5bb", weth: "0x4aa4a4fc", refund: "0x12210e8a", allowance: "0xdd62ed3e", approve: "0x095ea7b3",
   };
 
   /* ---------- matemáticas de liquidez ---------- */
@@ -152,7 +170,8 @@
       if (p.length < 12) return;
       var liq = U(p[7]), c = words(cr[i]), f0 = c.length >= 2 ? U(c[0]) : U(p[10]), f1 = c.length >= 2 ? U(c[1]) : U(p[11]);
       if (liq === 0n && f0 === 0n && f1 === 0n && !opts.all) return; // cerrada y vacía
-      list.push({ d: x.d, id: x.id, t0: A(p[2]), t1: A(p[3]), fee: Number(U(p[4])), tl: Number(I(p[5], 24)), tu: Number(I(p[6], 24)), liq: liq, f0: f0, f1: f1 });
+      var f4 = Number(I(p[4], 24));
+      list.push({ d: x.d, id: x.id, t0: A(p[2]), t1: A(p[3]), fee: x.d.slip ? null : f4, ts: x.d.slip ? f4 : null, tl: Number(I(p[5], 24)), tu: Number(I(p[6], 24)), liq: liq, f0: f0, f1: f1 });
     });
     if (!list.length) return [];
     // 4) tokens y pools (con caché)
@@ -165,15 +184,16 @@
       need.forEach(function (t, i) { TOK[chain + t] = { dec: Number(U(words(tr[i])[0] || "12")), sym: str(tr[need.length + i]) || t.slice(0, 6) }; });
     }
     var pk = [];
-    list.forEach(function (x) { x.pkey = chain + x.d.npm + x.t0 + x.t1 + x.fee; if (!POOL[x.pkey] && pk.indexOf(x) < 0) pk.push(x); });
+    list.forEach(function (x) { x.pkey = chain + x.d.npm + x.t0 + x.t1 + (x.d.slip ? "s" + x.ts : x.fee); if (!POOL[x.pkey] && pk.indexOf(x) < 0) pk.push(x); });
     if (pk.length) {
-      var gr = await calls(chain, pk.map(function (x) { return [FACT[chain + x.d.npm], SEL.getPool + w(x.t0) + w(x.t1) + w(x.fee)]; }));
+      var gr = await calls(chain, pk.map(function (x) { return [FACT[chain + x.d.npm], (x.d.slip ? SEL.getPoolTs : SEL.getPool) + w(x.t0) + w(x.t1) + w(x.d.slip ? x.ts : x.fee)]; }));
       pk.forEach(function (x, i) { POOL[x.pkey] = A(words(gr[i])[0]); });
     }
     var pools = [];
     list.forEach(function (x) { if (pools.indexOf(POOL[x.pkey]) < 0) pools.push(POOL[x.pkey]); });
-    var sr = await calls(chain, pools.map(function (a) { return [a, SEL.slot0]; })), SP = {};
-    pools.forEach(function (a, i) { var s = words(sr[i]); SP[a] = s.length ? Number(U(s[0])) / Q96 : 0; });
+    var sr = await calls(chain, pools.map(function (a) { return [a, SEL.slot0]; }).concat(pools.map(function (a) { return [a, SEL.fee]; }))), SP = {}, PF = {};
+    pools.forEach(function (a, i) { var s = words(sr[i]); SP[a] = s.length ? Number(U(s[0])) / Q96 : 0; PF[a] = Number(U(words(sr[pools.length + i])[0] || "0")); });
+    list.forEach(function (x) { if (x.fee == null) x.fee = PF[POOL[x.pkey]] || 0; });
     // 5) precios en dólares
     var keys = [];
     list.forEach(function (x) { [x.t0, x.t1].forEach(function (t) { var kk = CH[chain].llama + ":" + t; if (keys.indexOf(kk) < 0) keys.push(kk); }); });
@@ -251,5 +271,76 @@
   }
   function approveData(spender, amt) { return SEL.approve + w(spender) + w(amt); }
 
-  G.kzEvmPos = { ready: true, version: "1.0.0", CH: CH, DEX: DEX, positions: positions, txHarvest: txHarvest, txDecrease: txDecrease, txClose: txClose, txIncrease: txIncrease, allowance: allowance, balances: balances, approveData: approveData, _calls: calls, _multicall: multicall };
+  /* ---------- crear posiciones ---------- */
+  var NETK = { eth: "ETH", bsc: "BSC", base: "BASE", arbitrum: "ARB", optimism: "OP" };
+  /** Datos de una pool concentrada y el gestor de posiciones que le corresponde (por su fábrica). null si no es compatible. */
+  async function poolInfo(chain, pool) {
+    pool = String(pool).toLowerCase();
+    var dexes = DEX.filter(function (d) { return d.chain === chain; });
+    var need = dexes.filter(function (d) { return !FACT[chain + d.npm] || !WN[chain + d.npm]; });
+    if (need.length) {
+      var hr = await calls(chain, need.map(function (d) { return [d.npm, SEL.factory]; }).concat(need.map(function (d) { return [d.npm, SEL.weth]; })));
+      need.forEach(function (d, i) { FACT[chain + d.npm] = A(words(hr[i])[0]); WN[chain + d.npm] = A(words(hr[need.length + i])[0]); });
+    }
+    var r = await calls(chain, [[pool, SEL.factory], [pool, SEL.token0], [pool, SEL.token1], [pool, SEL.fee], [pool, SEL.tickSpacing], [pool, SEL.slot0]]);
+    if (!r[0] || !r[5]) return null;
+    var fac = A(words(r[0])[0]), d = dexes.filter(function (x) { return FACT[chain + x.npm] === fac; })[0];
+    if (!d) return null;
+    var t0 = A(words(r[1])[0]), t1 = A(words(r[2])[0]), s0 = words(r[5]);
+    var need2 = [t0, t1].filter(function (t) { return !TOK[chain + t]; });
+    if (need2.length) {
+      var tr = await calls(chain, need2.map(function (t) { return [t, SEL.decimals]; }).concat(need2.map(function (t) { return [t, SEL.symbol]; })));
+      need2.forEach(function (t, i) { TOK[chain + t] = { dec: Number(U(words(tr[i])[0] || "12")), sym: str(tr[need2.length + i]) || t.slice(0, 6) }; });
+    }
+    var a = TOK[chain + t0], b = TOK[chain + t1], wn = WN[chain + d.npm], sp = Number(U(s0[0])) / Q96, k = Math.pow(10, a.dec - b.dec);
+    var inv = rank(a.sym, t0, wn) > rank(b.sym, t1, wn), p01 = sp * sp * k;
+    var PX = await prices([CH[chain].llama + ":" + t0, CH[chain].llama + ":" + t1]);
+    var px0 = PX[(CH[chain].llama + ":" + t0).toLowerCase()] || 0, px1 = PX[(CH[chain].llama + ":" + t1).toLowerCase()] || 0;
+    if (!px0 && px1) px0 = px1 * p01;
+    if (!px1 && px0 && p01 > 0) px1 = px0 / p01;
+    var nat = function (t, s) { return t === wn ? CH[chain].native : s; };
+    return {
+      chain: chain, pool: pool, dex: d.name, dexKey: d.k, npm: d.npm, slip: !!d.slip, wnative: wn, t0: t0, t1: t1, dec0: a.dec, dec1: b.dec,
+      fee: Number(U(words(r[3])[0])) / 10000, ts: Number(I(words(r[4])[0], 24)), sp: sp, tick: Number(I(s0[1], 24)), inv: inv,
+      mA: inv ? t1 : t0, mB: inv ? t0 : t1, symA: inv ? nat(t1, b.sym) : nat(t0, a.sym), symB: inv ? nat(t0, a.sym) : nat(t1, b.sym),
+      decA: inv ? b.dec : a.dec, decB: inv ? a.dec : b.dec, pxA: inv ? px1 : px0, pxB: inv ? px0 : px1, price: inv ? (p01 > 0 ? 1 / p01 : 0) : p01,
+    };
+  }
+  /** Ticks (redondeados al espaciado de la pool) para un rango de precios en la orientación mostrada A/B. lo<=0 o hi=Infinity: rango completo. */
+  function ticks(info, lo, hi) {
+    var k = Math.pow(10, info.dec0 - info.dec1), ts = info.ts, MIN = Math.ceil(-887272 / ts) * ts, MAX = Math.floor(887272 / ts) * ts;
+    var full = !(lo > 0) || !isFinite(hi);
+    if (full) return { tl: MIN, tu: MAX, full: true };
+    var r0 = info.inv ? 1 / hi : lo, r1 = info.inv ? 1 / lo : hi; // precio de token1 por token0 (humano)
+    var tl = Math.floor(Math.log(r0 / k) / Math.log(1.0001) / ts) * ts, tu = Math.ceil(Math.log(r1 / k) / Math.log(1.0001) / ts) * ts;
+    if (tu <= tl) tu = tl + ts;
+    return { tl: Math.max(MIN, tl), tu: Math.min(MAX, tu), full: false };
+  }
+  /** Proporción del rango: cuánto valen (en %) A y B dentro de la posición al precio actual. */
+  function split(info, tl, tu) {
+    var a = amounts(1e18, info.sp, tl, tu), v0 = a[0] / Math.pow(10, info.dec0) * (info.inv ? info.pxB : info.pxA), v1 = a[1] / Math.pow(10, info.dec1) * (info.inv ? info.pxA : info.pxB);
+    var fA = info.inv ? v1 : v0, fB = info.inv ? v0 : v1, t = fA + fB;
+    return t > 0 ? { a: fA / t, b: fB / t } : { a: 0.5, b: 0.5 };
+  }
+  /** Cantidades usadas de verdad (brutas, token0/token1) por mint con d0/d1 deseados. */
+  function used(info, tl, tu, d0, d1) {
+    var sa = sqrtAt(tl), sb = sqrtAt(tu), sp = info.sp, L;
+    if (sp <= sa) L = Number(d0) * sa * sb / (sb - sa);
+    else if (sp >= sb) L = Number(d1) / (sb - sa);
+    else L = Math.min(Number(d0) * sp * sb / (sb - sp), Number(d1) / (sp - sa));
+    return amounts(L, sp, tl, tu);
+  }
+  /** Transacción para crear la posición. a y b: cantidades en el par mostrado (A/B). */
+  function txMint(info, owner, tl, tu, a, b, slipBps) {
+    var rA = BigInt(Math.floor(a * Math.pow(10, info.decA))), rB = BigInt(Math.floor(b * Math.pow(10, info.decB)));
+    var d0 = info.inv ? rB : rA, d1 = info.inv ? rA : rB, u = used(info, tl, tu, d0, d1), f = 1 - slipBps / 10000;
+    var m0 = BigInt(Math.max(0, Math.floor(u[0] * f))), m1 = BigInt(Math.max(0, Math.floor(u[1] * f)));
+    var data = info.slip
+      ? SEL.mintSlip + w(info.t0) + w(info.t1) + w(info.ts) + w(tl) + w(tu) + w(d0) + w(d1) + w(m0) + w(m1) + w(owner) + w(deadline()) + w(0)
+      : SEL.mint + w(info.t0) + w(info.t1) + w(Math.round(info.fee * 10000)) + w(tl) + w(tu) + w(d0) + w(d1) + w(m0) + w(m1) + w(owner) + w(deadline());
+    var val = info.t0 === info.wnative ? d0 : info.t1 === info.wnative ? d1 : 0n;
+    return { to: info.npm, data: val > 0n ? multicall([data, SEL.refund]) : data, value: "0x" + val.toString(16), need: [{ t: info.t0, amt: d0 }, { t: info.t1, amt: d1 }].filter(function (x) { return x.t !== info.wnative && x.amt > 0n; }) };
+  }
+
+  G.kzEvmPos = { ready: true, version: "2.0.0", CH: CH, DEX: DEX, NETK: NETK, positions: positions, poolInfo: poolInfo, ticks: ticks, split: split, txMint: txMint, txHarvest: txHarvest, txDecrease: txDecrease, txClose: txClose, txIncrease: txIncrease, allowance: allowance, balances: balances, approveData: approveData, _calls: calls, _multicall: multicall };
 })(typeof window !== "undefined" ? window : globalThis);
