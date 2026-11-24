@@ -1081,21 +1081,24 @@ async function loadPools(q){
 window.kzP=115;
 /* Refresco general: pools cada 5 min y "arrastrar hacia abajo" para actualizar todo */
 var RF_ON=false,RF_AT=Date.now();
+var NET_ON=false;
+function kzNets(){if(NET_ON)return;NET_ON=true;(async function(){for(var n of Object.keys(NET)){try{await loadNet(n)}catch(e){}}})().finally(function(){NET_ON=false})}
 async function kzRefreshAll(){if(RF_ON)return;RF_ON=true;RF_AT=Date.now();
+ kzNets(); /* las pools EVM se cargan en segundo plano: van espaciadas por el límite de GeckoTerminal */
  try{await Promise.all([loadPools().catch(function(){}),
-   (async function(){for(var n of Object.keys(NET)){try{await loadNet(n)}catch(e){}}})(),
    (async function(){try{if(typeof loadBal==="function")await loadBal()}catch(e){}try{if(typeof loadHold==="function")await loadHold(true)}catch(e){}})(),
    (async function(){try{if(typeof loadPos==="function")await loadPos()}catch(e){}try{if(typeof loadEvmPos==="function")await loadEvmPos(true)}catch(e){}})()]);
   if(S.view==="home")rHome();else if(S.view==="portfolio")rPf();else if(S.view==="wallet")rWallet();}
  finally{RF_ON=false}}
-setInterval(function(){if(document.hidden)return;loadPools().catch(function(){});(async function(){for(var n of Object.keys(NET)){try{await loadNet(n)}catch(e){}}})()},300000);
+setInterval(function(){if(document.hidden)return;loadPools().catch(function(){});kzNets()},300000);
 (function(){var y0=null,dy=0,el=null,busy=false;
  function ind(){if(!el){el=document.createElement("div");el.id="ptr";el.setAttribute("role","status");el.setAttribute("aria-label","Actualizando");el.innerHTML="<i></i>";document.body.appendChild(el)}return el}
  function blocked(){return document.querySelector(".kzc,.pmenu")||(function(){var ps=$("ps");return ps&&!ps.hidden})()}
  document.addEventListener("touchstart",function(e){if(busy||e.touches.length!==1||window.scrollY>0||blocked()){y0=null;return}y0=e.touches[0].clientY;dy=0},{passive:true});
- document.addEventListener("touchmove",function(e){if(y0==null)return;dy=e.touches[0].clientY-y0;if(dy<=0||window.scrollY>0){dy=0;return}var d=Math.min(110,dy*.5);ind().style.transform="translateY("+(d-10)+"px) rotate("+(d*3)+"deg)"},{passive:true});
- document.addEventListener("touchend",function(){if(y0==null)return;y0=null;var e=ind();if(dy*.5>=70){busy=true;e.classList.add("go");e.style.transform="translateY(60px)";
-   kzRefreshAll().finally(function(){busy=false;e.classList.remove("go");e.style.transform="translateY(-50px)"})}else e.style.transform="translateY(-50px)";dy=0},{passive:true});
+ document.addEventListener("touchmove",function(e){if(y0==null)return;dy=e.touches[0].clientY-y0;if(dy<=0||window.scrollY>0){dy=0;return}var d=Math.min(150,dy*.5);ind().style.transform="translateY("+(d-10)+"px) rotate("+(d*3)+"deg)"},{passive:true});
+ document.addEventListener("touchend",function(){if(y0==null)return;y0=null;var e=ind();if(dy*.5>=70){busy=true;e.classList.add("go");e.style.transform="translateY(120px)";
+   var done=function(){if(!busy)return;busy=false;e.classList.remove("go");e.style.transform="translateY(-50px)"};
+   Promise.race([kzRefreshAll(),new Promise(function(z){setTimeout(z,8000)})]).then(done,done)}else e.style.transform="translateY(-50px)";dy=0},{passive:true});
 })();
 var STB=/usd|dai|eur|frax|gho|usx/i;
 window.kzP=116;
