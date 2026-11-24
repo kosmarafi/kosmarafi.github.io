@@ -5,8 +5,8 @@ await pg.goto("https://kosmarafi.github.io/?t="+Date.now(),{waitUntil:"networkid
 const out=await pg.evaluate(async(owners)=>{
  const L=[];const log=(...a)=>L.push(a.join(" "));
  try{await import("./sdk/kz-met.js?v="+Date.now())}catch(e){log("IMPORTERR",e.message);return L}
- const K=window.kzMet,RPC=rpcUrl();log("met",K&&K.version,"rpc",RPC.slice(0,40));
- const sim=async(b)=>{const r=await rc("simulateTransaction",[u8b(b),{encoding:"base64",sigVerify:false,replaceRecentBlockhash:true}]);const v=r&&(r.value||r);return v&&v.err?"ERR "+JSON.stringify(v.err)+" "+(v.logs||[]).filter(l=>/rror|failed/.test(l)).slice(-2).join(" · ").slice(0,200):"OK"};
+ const K=window.kzMet,RPC="https://mainnet.helius-rpc.com/?api-key=d69a3929-b7b3-4523-8dea-9d82a0bcfd36";log("met",K&&K.version,"rpc",RPC.slice(0,40));
+ const sim=async(b)=>{let bin="";const u=new Uint8Array(b);for(let i=0;i<u.length;i++)bin+=String.fromCharCode(u[i]);const rr=await fetch(RPC,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method:"simulateTransaction",params:[btoa(bin),{encoding:"base64",sigVerify:false,replaceRecentBlockhash:true}]})});const r=(await rr.json()).result;const v=r&&r.value;return v&&v.err?"ERR "+JSON.stringify(v.err)+" "+(v.logs||[]).filter(l=>/rror|failed/.test(l)).slice(-2).join(" · ").slice(0,200):"OK"};
  let done=0;
  for(const o of owners){if(done>=2)break;let P;try{P=await K.positions({rpc:RPC,owner:o})}catch(e){log("POSERR",String(e.message).slice(0,200));continue}
   if(!P.length){log("NOPOS",o);continue}
