@@ -773,7 +773,11 @@ function netHead(via){
 /* ---------- Swap en una red EVM (LI.FI) ---------- */
 var EV={tk:{},ld:{},from:{},to:{},amt:"",q:null};
 var EVP=["USDC","USDT","USDT0","WETH","ETH","WBTC","cbBTC","DAI","USDe","wstETH","WHYPE","HYPE","UBTC","UETH","AVAX","WAVAX","BNB","WBNB","BTCB","ARB","OP","POL","WPOL","S","MON","UNI","LINK","AAVE"];
-async function loadTk(id){if(EV.ld[id])return;EV.ld[id]=1;try{var r=await fetch(LIFI+"/tokens?chains="+id);if(!r.ok)throw new Error("LI.FI HTTP "+r.status);
+async function loadTk(id){if(EV.ld[id])return;EV.ld[id]=1;EV.err="";
+ try{var r=null,le=null;for(var t=0;t<3&&!r;t++){var ac=window.AbortController?new AbortController():null,tm=ac&&setTimeout(function(){ac.abort()},25000);
+   try{var x=await fetch(LIFI+"/tokens?chains="+id,ac?{signal:ac.signal}:undefined);if(x.ok)r=x;else le=new Error("LI.FI respondió "+x.status)}catch(e1){le=e1&&e1.name==="AbortError"?new Error("LI.FI tarda demasiado en responder"):e1}finally{if(tm)clearTimeout(tm)}
+   if(!r&&t<2)await new Promise(function(z){setTimeout(z,1500*(t+1))})}
+  if(!r)throw le||new Error("No se pudo conectar con LI.FI");
   var L=(await r.json()).tokens[id]||[],rk=function(t){var i=EVP.indexOf(t.symbol);return t.address===NAT?-1:i<0?99:i};
   L=L.filter(function(t){return t.address===NAT||t.coinKey||EVP.indexOf(t.symbol)>=0}).sort(function(a,b){return rk(a)-rk(b)||a.symbol.localeCompare(b.symbol)}).slice(0,70);
   (HD.evm||[]).forEach(function(h){if(h.ok&&h.v>=.01&&String(h.c)===String(id)&&!L.some(function(t){return t.address.toLowerCase()===h.m.toLowerCase()}))L.push({address:h.m,symbol:h.s,decimals:h.d,logoURI:h.ic,priceUSD:h.px})});
@@ -782,7 +786,8 @@ async function loadTk(id){if(EV.ld[id])return;EV.ld[id]=1;try{var r=await fetch(
 function evT(id,a){return (EV.tk[id]||[]).filter(function(t){return t.address===a})[0]}
 function evBal(id,a){var h=(HD.evm||[]).filter(function(x){return String(x.c)===String(id)&&x.m.toLowerCase()===String(a).toLowerCase()})[0];return h?h.a:null}
 function rE(){swTint();
- var id=SW.net,el=$("swap");if(EV.ld[id]!==2){el.innerHTML=swTabs()+netHead("LI.FI")+'<div class="stat">'+(EV.ld[id]?"Cargando tokens de "+esc(chN(id))+"…":esc(EV.err||"")+' <button class="btn" data-act="evload">Reintentar</button>')+"</div>";if(!EV.ld[id])loadTk(id);return}
+ var id=SW.net,el=$("swap");if(EV.ld[id]!==2){var fresh=!EV.ld[id]&&!EV.err;if(fresh)loadTk(id);
+  el.innerHTML=swTabs()+netHead("LI.FI")+'<div class="stat">'+(EV.ld[id]===1?"Cargando tokens de "+esc(chN(id))+"…":'<span class="dn">'+esc(EV.err||"No se pudieron cargar los tokens.")+'</span> <button class="btn" data-act="evload">Reintentar</button>')+"</div>";return}
  var L=EV.tk[id],fr=evT(id,EV.from[id])||L[0],to=evT(id,EV.to[id])||L[1],b=evBal(id,fr.address),op=function(sel){return L.map(function(t){return '<option value="'+esc(t.address)+'"'+(t.address===sel?" selected":"")+">"+esc(t.symbol)+"</option>"}).join("")};
  el.innerHTML=swTabs()+netHead(KSC[id]?"LI.FI y KyberSwap":"LI.FI")+
  '<div class="box"><label for="eamt">Das · saldo '+(S.eaddr?(b==null?"0":f(b,6))+" "+esc(fr.symbol):"conecta tu wallet")+'</label><div class="srow"><button class="tkb" data-tkp="from" aria-label="Elegir token que das">'+ico({s:fr.symbol,m:fr.address,i:fr.logoURI})+'<b>'+esc(fr.symbol)+'</b><i aria-hidden="true">▾</i></button><input id="eamt" class="num" type="text" inputmode="decimal" value="'+esc(EV.amt)+'" placeholder="0.0"></div>'+
@@ -837,10 +842,10 @@ async function eSwap(){
  catch(e){eres('<span class="dn">'+esc(fe(e))+"</span>")}}
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-net],[data-epct],[data-er],[data-act='netpick'],[data-act^='e']");if(!b)return;
  if(b.hasAttribute("data-er")){EV.sel=b.getAttribute("data-er");EV.q=(EV.res||[]).filter(function(x){return x.p===EV.sel})[0]||EV.q;var d=$("eq");if(d)d.innerHTML=eqHtml();return}
- if(b.hasAttribute("data-net")){var n=b.getAttribute("data-net");SW.net=n==="sol"?"sol":+n;LS("kz_swnet",String(SW.net));SW.np=false;SW.mode="sol";EV.q=null;EV.res=[];EV.amt="";rSwap();return}
+ if(b.hasAttribute("data-net")){var n=b.getAttribute("data-net");SW.net=n==="sol"?"sol":+n;LS("kz_swnet",String(SW.net));EV.err="";SW.np=false;SW.mode="sol";EV.q=null;EV.res=[];EV.amt="";rSwap();return}
  if(b.hasAttribute("data-epct")){var id=SW.net,t=evT(id,EV.from[id]),bl=evBal(id,EV.from[id])||0;if(t&&t.address===NAT)bl=Math.max(0,bl-(id===1?.003:.0005));EV.amt=String(Math.floor(bl*b.getAttribute("data-epct")/100*1e6)/1e6);EV.q=null;EV.res=[];return rSwap()}
  var a=b.getAttribute("data-act");if(a==="netpick"){SW.np=!SW.np;loadCH();return rSwap()}
- if(a==="equote")eQuote();else if(a==="eswap")eSwap();else if(a==="evload"){EV.ld[SW.net]=0;rSwap()}
+ if(a==="equote")eQuote();else if(a==="eswap")eSwap();else if(a==="evload"){EV.ld[SW.net]=0;EV.err="";rSwap()}
  else if(a==="eflip"){var z=EV.from[SW.net];EV.from[SW.net]=EV.to[SW.net];EV.to[SW.net]=z;EV.q=null;EV.res=[];rSwap()}});
 document.addEventListener("input",function(e){if(e.target.id==="eamt"){EV.amt=e.target.value;EV.q=null;EV.res=[];var d=$("eq");if(d)d.innerHTML="";var o=$("eout");if(o)o.textContent=""}});
 document.addEventListener("change",function(e){var t=e.target;var n=SW.net;if(t.id==="ef"){if(t.value===EV.to[n])EV.to[n]=EV.from[n];EV.from[n]=t.value;EV.q=null;EV.res=[];rSwap()}else if(t.id==="et"){if(t.value===EV.from[n])EV.from[n]=EV.to[n];EV.to[n]=t.value;EV.q=null;EV.res=[];rSwap()}});

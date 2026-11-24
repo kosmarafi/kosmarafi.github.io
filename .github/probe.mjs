@@ -1,9 +1,12 @@
 import { chromium } from "playwright";
-const r0=await fetch("https://li.quest/v1/tokens?chains=8453");console.log("DIRECT",r0.status,(await r0.text()).length);
+await new Promise(z=>setTimeout(z,60000));
 const b=await chromium.launch();const pg=await b.newPage({viewport:{width:390,height:844},locale:"es-ES"});const errs=[];pg.on("pageerror",e=>errs.push(e.message));
-pg.on("response",r=>{if(/li\.quest/.test(r.url()))console.log("NET",r.status(),r.url().slice(0,120))});pg.on("requestfailed",r=>{if(/li\.quest/.test(r.url()))console.log("FAIL",r.failure()&&r.failure().errorText,r.url().slice(0,100))});
+pg.on("response",r=>{if(/li\.quest|kyberswap/.test(r.url())&&!/tokens|chains/.test(r.url()))console.log("NET",r.status(),r.url().slice(0,140))});
 await pg.goto("https://kosmarafi.github.io/?t="+Date.now(),{waitUntil:"networkidle"});
-await pg.evaluate(()=>{location.hash="#swap"});await pg.waitForTimeout(2000);
-await pg.click('[data-act="netpick"]');await pg.waitForTimeout(500);await pg.click('[data-net="8453"]');
-for(const t of [1000,4000,10000]){await pg.waitForTimeout(t);console.log("SWAP@"+t,(await pg.$eval("#swap",e=>e.innerText)).replace(/\n+/g," | ").slice(0,200))}
+await pg.evaluate(()=>{location.hash="#swap"});await pg.waitForTimeout(1500);
+await pg.click('[data-act="netpick"]');await pg.waitForTimeout(400);await pg.click('[data-net="8453"]');await pg.waitForTimeout(300);
+console.log("SWAP@0",(await pg.$eval("#swap",e=>e.innerText)).replace(/\n+/g," | ").slice(0,160));await pg.waitForTimeout(5000);
+await pg.fill("#eamt","0.01");await pg.click('[data-act="equote"]');await pg.waitForTimeout(9000);
+console.log("QUOTE",(await pg.$eval("#eq",e=>e.innerText)).replace(/\n+/g," | ").slice(0,400));
+await pg.reload({waitUntil:"networkidle"});await pg.evaluate(()=>{location.hash="#swap"});await pg.waitForTimeout(4000);console.log("AFTER RELOAD",(await pg.$eval("#swap",e=>e.innerText)).replace(/\n+/g," | ").slice(0,120));
 console.log("ERRS",JSON.stringify(errs).slice(0,500));await b.close();
