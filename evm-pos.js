@@ -212,9 +212,9 @@
   function deadline() { return BigInt(Math.floor(Date.now() / 1000) + 1200); }
   function collectTo(p, owner) { // cobra a la wallet; si un token es el nativo envuelto (WETH/WBNB) se entrega como ETH/BNB
     var hasN = p.t0 === p.wnative || p.t1 === p.wnative;
-    if (!hasN) return [SEL.collect + w(p.tokenId) + w(owner) + w(MAX128) + w(MAX128)];
+    if (!hasN) return [SEL.collect + w(BigInt(p.tokenId)) + w(owner) + w(MAX128) + w(MAX128)];
     var other = p.t0 === p.wnative ? p.t1 : p.t0;
-    return [SEL.collect + w(p.tokenId) + w(0) + w(MAX128) + w(MAX128), SEL.unwrap + w(0) + w(owner), SEL.sweep + w(other) + w(0) + w(owner)];
+    return [SEL.collect + w(BigInt(p.tokenId)) + w(0) + w(MAX128) + w(MAX128), SEL.unwrap + w(0) + w(owner), SEL.sweep + w(other) + w(0) + w(owner)];
   }
   function minOut(rawAmt, frac, slipBps) { var v = rawAmt * frac * (1 - slipBps / 10000); return v > 0 ? BigInt(Math.floor(v)) : 0n; }
   function txHarvest(p, owner) {
@@ -223,21 +223,21 @@
   }
   function txDecrease(p, owner, pct, slipBps) {
     var L = BigInt(p.liq), part = pct >= 100 ? L : (L * BigInt(Math.round(pct * 100))) / 10000n, frac = Number(part) / Number(L || 1n);
-    var dec = SEL.decrease + w(p.tokenId) + w(part) + w(minOut(p.raw0, frac, slipBps)) + w(minOut(p.raw1, frac, slipBps)) + w(deadline());
+    var dec = SEL.decrease + w(BigInt(p.tokenId)) + w(part) + w(minOut(p.raw0, frac, slipBps)) + w(minOut(p.raw1, frac, slipBps)) + w(deadline());
     return { to: p.npm, data: multicall([dec].concat(collectTo(p, owner))), value: "0x0" };
   }
   function txClose(p, owner, slipBps) {
     var steps = [];
-    if (BigInt(p.liq) > 0n) steps.push(SEL.decrease + w(p.tokenId) + w(p.liq) + w(minOut(p.raw0, 1, slipBps)) + w(minOut(p.raw1, 1, slipBps)) + w(deadline()));
+    if (BigInt(p.liq) > 0n) steps.push(SEL.decrease + w(BigInt(p.tokenId)) + w(BigInt(p.liq)) + w(minOut(p.raw0, 1, slipBps)) + w(minOut(p.raw1, 1, slipBps)) + w(deadline()));
     steps = steps.concat(collectTo(p, owner));
-    steps.push(SEL.burn + w(p.tokenId));
+    steps.push(SEL.burn + w(BigInt(p.tokenId)));
     return { to: p.npm, data: multicall(steps), value: "0x0" };
   }
   /** Depositar: a y b en unidades del par mostrado (A/B). El lado nativo (ETH/BNB) se paga con saldo nativo. */
   function txIncrease(p, a, b, slipBps) {
     var rawA = BigInt(Math.floor(a * Math.pow(10, p.decA))), rawB = BigInt(Math.floor(b * Math.pow(10, p.decB)));
     var d0 = p.inv ? rawB : rawA, d1 = p.inv ? rawA : rawB, s = BigInt(10000 - slipBps);
-    var data = SEL.increase + w(p.tokenId) + w(d0) + w(d1) + w((d0 * s) / 10000n) + w((d1 * s) / 10000n) + w(deadline());
+    var data = SEL.increase + w(BigInt(p.tokenId)) + w(d0) + w(d1) + w((d0 * s) / 10000n) + w((d1 * s) / 10000n) + w(deadline());
     var val = p.t0 === p.wnative ? d0 : p.t1 === p.wnative ? d1 : 0n;
     return { to: p.npm, data: val > 0n ? multicall([data, SEL.refund]) : data, value: "0x" + val.toString(16), need: [{ t: p.t0, amt: d0 }, { t: p.t1, amt: d1 }].filter(function (x) { return x.t !== p.wnative && x.amt > 0n; }) };
   }
