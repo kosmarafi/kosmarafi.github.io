@@ -322,6 +322,11 @@
     var fA = info.inv ? v1 : v0, fB = info.inv ? v0 : v1, t = fA + fB;
     return t > 0 ? { a: fA / t, b: fB / t } : { a: 0.5, b: 0.5 };
   }
+  /** Cantidades (en el par mostrado A/B) para una misma liquidez: sirve para enlazar los dos importes. */
+  function ratio(info, tl, tu) {
+    var a = amounts(1e18, info.sp, tl, tu), x0 = a[0] / Math.pow(10, info.dec0), x1 = a[1] / Math.pow(10, info.dec1);
+    return info.inv ? { a: x1, b: x0 } : { a: x0, b: x1 };
+  }
   /** Cantidades usadas de verdad (brutas, token0/token1) por mint con d0/d1 deseados. */
   function used(info, tl, tu, d0, d1) {
     var sa = sqrtAt(tl), sb = sqrtAt(tu), sp = info.sp, L;
@@ -342,5 +347,5 @@
     return { to: info.npm, data: val > 0n ? multicall([data, SEL.refund]) : data, value: "0x" + val.toString(16), need: [{ t: info.t0, amt: d0 }, { t: info.t1, amt: d1 }].filter(function (x) { return x.t !== info.wnative && x.amt > 0n; }) };
   }
 
-  G.kzEvmPos = { ready: true, version: "2.0.0", CH: CH, DEX: DEX, NETK: NETK, positions: positions, poolInfo: poolInfo, ticks: ticks, split: split, txMint: txMint, txHarvest: txHarvest, txDecrease: txDecrease, txClose: txClose, txIncrease: txIncrease, allowance: allowance, balances: balances, approveData: approveData, _calls: calls, _multicall: multicall };
+  G.kzEvmPos = { ready: true, version: "2.0.0", CH: CH, DEX: DEX, NETK: NETK, positions: positions, poolInfo: poolInfo, ticks: ticks, split: split, ratio: ratio, txMint: txMint, txHarvest: txHarvest, txDecrease: txDecrease, txClose: txClose, txIncrease: txIncrease, allowance: allowance, balances: balances, approveData: approveData, _calls: calls, _multicall: multicall };
 })(typeof window !== "undefined" ? window : globalThis);

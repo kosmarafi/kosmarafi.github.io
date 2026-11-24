@@ -560,6 +560,9 @@ Se detecta de dos formas: la marca kzdl=ph del enlace, o que la página ocupe ca
 <section class="b all" id="pools" style="--tc:20,241,149"></section>
 <section class="b all" id="poolsEth" style="--tc:140,158,255"></section>
 <section class="b all" id="poolsBnb" style="--tc:243,186,47"></section>
+<section class="b all" id="poolsBase" style="--tc:0,82,255"></section>
+<section class="b all" id="poolsArb" style="--tc:40,160,240"></section>
+<section class="b all" id="poolsOp" style="--tc:255,4,32"></section>
 
 </div>
 
@@ -1226,7 +1229,8 @@ function sumPs(){
 }
 function rPs(){
  var p=S.pools[S.sel],el=$("ps");if(!p){el.hidden=true;return}
- if(p.kind||p.net){el.style.setProperty("--tc","20,241,149");el.innerHTML='<div class="mb"><button class="x" data-act="closeps" aria-label="Cerrar">×</button><b style="font-size:20px">'+esc(p.A.s)+(p.B.s?"/"+esc(p.B.s):"")+'</b><div class="dim">'+p.pr+" · "+esc(p.kind||NET[p.net].n)+" · TVL "+cur(p.tvl,0)+(p.apr!=null?(p.net&&!p.kind?" · APR est. ":" · APY ")+f(p.apr,1)+"%":"")+'</div><div class="dim" style="margin-top:12px;line-height:1.6">'+(p.pr==="Aave"?"Depositas un solo token en Aave, en la red Ethereum, con tu wallet (MetaMask) y lo retiras cuando quieras. El interés lo pagan quienes piden prestado y cambia cada día. Operar en Ethereum tiene coste de gas.":p.net?"La posición se abre en "+p.pr+" con tu wallet (MetaMask). Crear posiciones de "+NET[p.net].n+" sin salir de Kosmara llegará en la siguiente fase.":p.pr==="Kamino"?"Kamino gestiona el rango y reinvierte las comisiones por ti. Recibes un token del vault, no un NFT.":"Depositas un solo token en Jupiter Lend y recibes un token que acumula el interés. No hay rango ni NFT.")+'</div><a class="btn p" href="'+esc(p.url)+'" target="_blank" rel="noopener">'+(p.net&&!p.kind?"Abrir en ":"Depositar en ")+p.pr+" ↗</a></div>";el.hidden=false;return}
+ if(p.net&&!p.kind&&/^(Uniswap|PancakeSwap|Sushi|Aerodrome|Velodrome)$/.test(p.pr)&&window.kzEvmPos)return ecOpen(p,el);
+ if(p.kind||p.net){el.style.setProperty("--tc","20,241,149");el.innerHTML='<div class="mb"><button class="x" data-act="closeps" aria-label="Cerrar">×</button><b style="font-size:20px">'+esc(p.A.s)+(p.B.s?"/"+esc(p.B.s):"")+'</b><div class="dim">'+p.pr+" · "+esc(p.kind||NET[p.net].n)+" · TVL "+cur(p.tvl,0)+(p.apr!=null?(p.net&&!p.kind?" · APR est. ":" · APY ")+f(p.apr,1)+"%":"")+'</div><div class="dim" style="margin-top:12px;line-height:1.6">'+(p.pr==="Aave"?"Depositas un solo token en Aave, en la red Ethereum, con tu wallet (MetaMask) y lo retiras cuando quieras. El interés lo pagan quienes piden prestado y cambia cada día. Operar en Ethereum tiene coste de gas.":p.net?"La posición se abre en "+p.pr+" con tu wallet (MetaMask).":p.pr==="Kamino"?"Kamino gestiona el rango y reinvierte las comisiones por ti. Recibes un token del vault, no un NFT.":"Depositas un solo token en Jupiter Lend y recibes un token que acumula el interés. No hay rango ni NFT.")+'</div><a class="btn p" href="'+esc(p.url)+'" target="_blank" rel="noopener">'+(p.net&&!p.kind?"Abrir en ":"Depositar en ")+p.pr+" ↗</a></div>";el.hidden=false;return}
  var z=ST,chips=[1,5,10].map(function(x){return '<button class="btn chip'+(z.r===x?" on":"")+'" data-pr="'+x+'">±'+x+"%</button>"}).join("")+'',
  vo=VEN.map(function(v){return "<option"+(v===z.via?" selected":"")+">"+v+"</option>"}).join(""),
  sl=[.5,1,3].map(function(v){return '<option value="'+v+'"'+(v===z.slip?" selected":"")+">"+v+"%</option>"}).join("");
@@ -1923,7 +1927,7 @@ function rPf(){
  var body;
  if(S.pfTab==="tok")body=hList();
  else if(S.pfTab==="vault")body='<div class="dim" style="margin-top:12px">Los vaults de Kosmara llegarán más adelante.</div>';
- else if(n){var G=[["sol","Solana",function(p){return !p.evm}],[1,"Ethereum",function(p){return p.chain==="ETH"}],[56,"BNB Chain",function(p){return p.chain==="BSC"}]].map(function(g){return [g,S.positions.filter(g[2])]}).filter(function(x){return x[1].length});
+ else if(n){var G=[["sol","Solana",function(p){return !p.evm}],[1,"Ethereum",function(p){return p.chain==="ETH"}],[56,"BNB Chain",function(p){return p.chain==="BSC"}],[8453,"Base",function(p){return p.chain==="BASE"}],[42161,"Arbitrum",function(p){return p.chain==="ARB"}],[10,"Optimism",function(p){return p.chain==="OP"}]].map(function(g){return [g,S.positions.filter(g[2])]}).filter(function(x){return x[1].length});
   body=G.map(function(x){return (G.length>1||x[0][0]!=="sol"?'<div class="pfnet">'+chIco(x[0][0],"pfni")+esc(x[0][1])+'<span class="dim">'+x[1].length+"</span></div>":"")+x[1].map(posCard).join("")}).join("")+(EP.err?'<div class="stat dn" style="margin-top:8px">'+esc(EP.err)+"</div>":"")}
  else if(!hSol()&&!hEvm())body='<div class="dim" style="margin-top:12px">'+(S.wch.a?"Esta dirección no tiene posiciones abiertas.":"Conecta tu wallet para ver tus posiciones.")+"</div>"+(S.wch.a?"":'<button class="btn p" data-act="open">Conectar wallet</button>'+wForm());
  else body='<div class="dim" style="margin-top:12px;line-height:1.6">'+(S.posOk?(S.wch.a?"Esta dirección no tiene posiciones abiertas en Orca.":"No tienes posiciones abiertas en Orca."):S.posErr?"<span>No se pudieron leer tus posiciones.</span> <span>"+esc(S.posErr)+"</span>"+rbtn("pos"):"Tu wallet está conectada, pero la lectura de posiciones (NFT) aún no está activa.")+' También puedes verlas en <a class="lk" href="https://www.orca.so/portfolio" target="_blank" rel="noopener">orca.so ↗</a>.</div>';
@@ -1982,9 +1986,9 @@ document.addEventListener("input",function(e){var id=e.target.id;if(id==="lotN"|
 
 
 /* ---------- Ethereum y BNB (GeckoTerminal) ---------- */
-var NET={eth:{n:"Ethereum",el:"poolsEth",dx:["Uniswap","Curve"],x:"ethereum",ds:["uniswap_v3","curve"]},bsc:{n:"BNB Chain",el:"poolsBnb",dx:["PancakeSwap","Uniswap","THENA"],x:"bnb",ds:["pancakeswap-v3-bsc"]}},NS={eth:{q:"",f:"all",lim:3,st:""},bsc:{q:"",f:"all",lim:3,st:""}},GT="https://api.geckoterminal.com/api/v2/",nT=null;
-function dxn(id,net){var d=/pancake/i.test(id)?"PancakeSwap":/uniswap/i.test(id)?"Uniswap":/curve/i.test(id)?"Curve":/thena/i.test(id)?"THENA":"";return NET[net].dx.indexOf(d)<0?"":d}
-function dxu(pr,net,a){return pr==="Uniswap"?"https://app.uniswap.org/explore/pools/"+NET[net].x+"/"+a:pr==="PancakeSwap"?"https://pancakeswap.finance/liquidity/pools":pr==="Curve"?"https://www.curve.finance/dex/ethereum/pools":"https://thena.fi/liquidity"}
+var NET={eth:{n:"Ethereum",el:"poolsEth",dx:["Uniswap","PancakeSwap","Sushi","Curve"],x:"ethereum",ds:["uniswap_v3","curve"]},base:{n:"Base",el:"poolsBase",dx:["Aerodrome","Uniswap","PancakeSwap","Sushi"],x:"base",ds:[]},arbitrum:{n:"Arbitrum",el:"poolsArb",dx:["Uniswap","PancakeSwap","Sushi","Camelot"],x:"arbitrum",ds:[]},optimism:{n:"Optimism",el:"poolsOp",dx:["Velodrome","Uniswap","Sushi"],x:"optimism",ds:[]},bsc:{n:"BNB Chain",el:"poolsBnb",dx:["PancakeSwap","Uniswap","THENA"],x:"bnb",ds:["pancakeswap-v3-bsc"]}},NS={eth:{q:"",f:"all",lim:3,st:""},bsc:{q:"",f:"all",lim:3,st:""},base:{q:"",f:"all",lim:3,st:""},arbitrum:{q:"",f:"all",lim:3,st:""},optimism:{q:"",f:"all",lim:3,st:""}},GT="https://api.geckoterminal.com/api/v2/",nT=null;
+function dxn(id,net){var d=/pancake/i.test(id)?"PancakeSwap":/uniswap/i.test(id)?"Uniswap":/curve/i.test(id)?"Curve":/thena/i.test(id)?"THENA":/aerodrome/i.test(id)?"Aerodrome":/velodrome/i.test(id)?"Velodrome":/sushi/i.test(id)?"Sushi":/camelot/i.test(id)?"Camelot":"";return NET[net].dx.indexOf(d)<0?"":d}
+function dxu(pr,net,a){return pr==="Uniswap"?"https://app.uniswap.org/explore/pools/"+NET[net].x+"/"+a:pr==="PancakeSwap"?"https://pancakeswap.finance/liquidity/pools":pr==="Curve"?"https://www.curve.finance/dex/ethereum/pools":pr==="Aerodrome"?"https://aerodrome.finance/liquidity":pr==="Velodrome"?"https://velodrome.finance/liquidity":pr==="Sushi"?"https://www.sushi.com/pool":pr==="Camelot"?"https://app.camelot.exchange/liquidity":"https://thena.fi/liquidity"}
 async function loadNet(net,q){
  var st=NS[net],b="include=base_token,quote_token,dex",us=q?[GT+"search/pools?query="+encodeURIComponent(q)+"&network="+net+"&"+b]:[1,2].map(function(i){return GT+"networks/"+net+"/pools?"+b+"&sort=h24_volume_usd_desc&page="+i}).concat(NET[net].ds.map(function(d){return GT+"networks/"+net+"/dexes/"+d+"/pools?"+b+"&sort=h24_volume_usd_desc"}));
  try{var c=0;for(var i=0;i<us.length;i++){var r=await fetch(us[i]);if(!r.ok){if(c)break;throw new Error("HTTP "+r.status)}var j=await r.json(),T={};
@@ -2014,6 +2018,71 @@ document.addEventListener("click",function(e){var wv=e.target.closest("[data-wv]
  if(a){var v=a.getAttribute("data-nf").split(":");NS[v[0]].f=v[1];NS[v[0]].foc=false;rNet(v[0])}
  else if(m){var n=m.getAttribute("data-nm");NS[n].lim+=10;NS[n].foc=false;rNet(n)}});
 document.addEventListener("input",function(e){var t=e.target,n=t.getAttribute&&t.getAttribute("data-nq");if(!n)return;var st=NS[n];st.q=t.value;st.lim=3;st.foc=true;rNet(n);clearTimeout(nT);if(t.value.trim().length>=2)nT=setTimeout(function(){loadNet(n,t.value.trim())},700)});
+
+/* ---------- Crear posiciones EVM (Uniswap v3, PancakeSwap v3, Sushi v3, Aerodrome y Velodrome) ---------- */
+var EC={};
+function ecOpen(p,el){
+ EC={p:p,info:null,r:5,lo:"",hi:"",pay:"B",amt:"",auto:true,bal:null,err:""};el.style.setProperty("--tc","20,241,149");
+ el.innerHTML='<div class="mb"><button class="x" data-act="closeps" aria-label="Cerrar">×</button><b style="font-size:20px">Crear posición</b><div class="dim">'+esc(p.A.s)+"/"+esc(p.B.s)+" · "+esc(p.pr)+" · "+esc(NET[p.net].n)+'</div><div id="ecf"><div class="dim" style="margin-top:14px">Comprobando la pool…</div></div></div>';el.hidden=false;
+ kzEvmPos.poolInfo(kzEvmPos.NETK[p.net],p.id).then(function(I){if(EC.p!==p)return;if(!I){EC.err="ext";return rEc()}EC.info=I;EC.pay=/USD/i.test(I.symB)||I.mB===I.wnative?"B":"A";rEc();ecBal()}).catch(function(e){if(EC.p===p){EC.err=fe(e);rEc()}})}
+async function ecBal(){var I=EC.info,ow=S.eaddr&&String(S.eaddr).toLowerCase();if(!I||!ow)return;
+ try{var B=await kzEvmPos.balances(I.chain,ow,[I.mA,I.mB].filter(function(t){return t!==I.wnative})),g=kzEvmPos.CH[I.chain].gas,v=function(t,d){return t===I.wnative?Math.max(0,Number(B.native)/1e18-g):Number(B[t]||0n)/Math.pow(10,d)};
+  EC.bal={A:v(I.mA,I.decA),B:v(I.mB,I.decB)};var e=$("ecbal");if(e)e.innerHTML=ecBalTxt()}catch(e){}}
+function ecBalTxt(){var I=EC.info,b=EC.bal;if(!b)return S.eaddr?"Leyendo saldo…":"Conecta tu wallet de Ethereum para ver tu saldo.";var k=EC.pay;return "Saldo: "+f(b[k],6)+" "+esc(k==="A"?I.symA:I.symB)+' · <a href="#" class="lk" data-act="ecmax">Máx</a>'}
+function ecRange(){var I=EC.info,full=EC.r==="full",lo=full?0:EC.lo!==""?+String(EC.lo).replace(",","."):I.price*(1-EC.r/100),hi=full?Infinity:EC.hi!==""?+String(EC.hi).replace(",","."):I.price*(1+EC.r/100);return{lo:lo,hi:hi,t:kzEvmPos.ticks(I,lo,hi)}}
+function ecPlan(){var I=EC.info,R=ecRange(),amt=+String(EC.amt).replace(",",".")||0,sp=kzEvmPos.split(I,R.t.tl,R.t.tu),q=kzEvmPos.ratio(I,R.t.tl,R.t.tu),pay=EC.pay;
+ if(EC.auto){var fo=pay==="A"?sp.b:sp.a,sw=amt*fo,keep=amt-sw,pxP=pay==="A"?I.pxA:I.pxB,pxO=pay==="A"?I.pxB:I.pxA,out=pxO>0?sw*pxP/pxO:0;
+  return{R:R,auto:true,sw:sw,keep:keep,out:out,a:pay==="A"?keep:out,b:pay==="B"?keep:out,usd:amt*pxP}}
+ var a,b;if(pay==="A"){a=amt;b=q.a>0?amt*q.b/q.a:0}else{b=amt;a=q.b>0?amt*q.a/q.b:0}
+ return{R:R,auto:false,a:a,b:b,usd:a*I.pxA+b*I.pxB}}
+function rEc(){var el=$("ecf");if(!el)return;var p=EC.p;
+ if(EC.err){el.innerHTML=(EC.err==="ext"?'<div class="dim" style="margin-top:12px">Esta pool no es de liquidez concentrada compatible, así que se abre en '+esc(p.pr)+".</div>":'<div class="stat dn">'+esc(EC.err)+"</div>")+'<a class="btn p" href="'+esc(p.url)+'" target="_blank" rel="noopener">Abrir en '+esc(p.pr)+" ↗</a>";return}
+ var I=EC.info,Pl=ecPlan(),R=Pl.R,inR=R.t.full||(I.price>R.lo&&I.price<R.hi);
+ var chips=[1,5,10,20].map(function(x){return '<button class="btn chip'+(EC.r===x&&EC.lo===""?" on":"")+'" data-ecr="'+x+'">±'+x+"%</button>"}).join("")+'<button class="btn chip'+(EC.r==="full"?" on":"")+'" data-ecr="full">Completo</button>';
+ el.innerHTML='<div class="dim" style="margin-top:6px">'+esc(I.dex)+" · comisión "+f(I.fee,4)+"% · precio "+fp(I.price)+" "+esc(I.symB)+" por "+esc(I.symA)+"</div>"+
+  '<div class="chips">'+chips+"</div>"+
+  (EC.r==="full"?'<div class="dim" style="margin-top:6px">Rango completo: la posición siempre está dentro de rango, pero gana menos comisiones por dólar.</div>':
+  '<div class="srow" style="gap:8px;margin-top:8px"><label class="dim" style="flex:1">Mínimo<input id="eclo" class="num" type="text" inputmode="decimal" value="'+esc(EC.lo!==""?EC.lo:+R.lo.toPrecision(6))+'"></label><label class="dim" style="flex:1">Máximo<input id="echi" class="num" type="text" inputmode="decimal" value="'+esc(EC.hi!==""?EC.hi:+R.hi.toPrecision(6))+'"></label></div>')+
+  '<label for="ecamt" style="margin-top:12px;display:block">'+(EC.auto?"Depositas":"Cantidad de")+'</label><div class="box"><div class="srow"><select id="ecpay"><option value="A"'+(EC.pay==="A"?" selected":"")+">"+esc(I.symA)+'</option><option value="B"'+(EC.pay==="B"?" selected":"")+">"+esc(I.symB)+'</option></select><input id="ecamt" class="num" type="text" inputmode="decimal" value="'+esc(EC.amt)+'" placeholder="0.0"></div><div class="dim" id="ecbal" style="margin-top:6px">'+ecBalTxt()+"</div></div>"+
+  '<div class="hrow"><label class="tg"><input type="checkbox" id="ecauto"'+(EC.auto?" checked":"")+'>Autoswap</label></div>'+
+  '<div class="sum" id="ecsum">'+ecSum(Pl,inR)+'</div><button class="btn p" data-act="ecmk">Crear posición</button><div class="stat" id="ecres"></div>'+
+  '<div class="dim" style="margin-top:10px;font-size:13px">Firmas en tu wallet: '+(EC.auto?"el swap (con la comisión de Kosmara del 0,2 %), ":"")+"el permiso de cada token si hace falta y la creación de la posición. El NFT de la posición llega a tu wallet.</div>"}
+function ecSum(Pl,inR){var I=EC.info;if(!(Pl.a>0||Pl.b>0))return '<div class="dim">Introduce una cantidad.</div>';
+ return (Pl.auto&&Pl.sw>0?'<div class="row" style="margin-top:0"><span class="dim">Swap</span><span class="v">'+f(Pl.sw,6)+" "+esc(EC.pay==="A"?I.symA:I.symB)+" → ≈"+f(Pl.out,6)+" "+esc(EC.pay==="A"?I.symB:I.symA)+"</span></div>":"")+
+  '<div class="row"><span class="dim">Posición</span><span class="v">≈'+f(Pl.a,6)+" "+esc(I.symA)+" + "+f(Pl.b,6)+" "+esc(I.symB)+"</span></div>"+'<div class="row"><span class="dim">Valor</span><span class="v">≈'+usd(Pl.usd)+"</span></div>"+(inR?"":'<div class="dim" style="margin-top:6px">El precio actual está fuera de este rango: solo se deposita uno de los dos tokens.</div>')}
+function ecUpd(){var s=$("ecsum");if(!s||!EC.info)return;var Pl=ecPlan(),R=Pl.R;s.innerHTML=ecSum(Pl,R.t.full||(EC.info.price>R.lo&&EC.info.price<R.hi))}
+document.addEventListener("click",function(e){var c=e.target.closest&&e.target.closest("[data-ecr],[data-act='ecmax'],[data-act='ecmk']");if(!c||!EC.info)return;
+ if(c.hasAttribute("data-ecr")){var v=c.getAttribute("data-ecr");EC.r=v==="full"?"full":+v;EC.lo="";EC.hi="";rEc()}
+ else if(c.getAttribute("data-act")==="ecmax"){e.preventDefault();if(EC.bal){EC.amt=String(+EC.bal[EC.pay].toFixed(8));var i=$("ecamt");if(i)i.value=EC.amt;ecUpd()}}
+ else ecMake()});
+document.addEventListener("input",function(e){var t=e.target;if(!EC.info)return;if(t.id==="ecamt"){EC.amt=t.value;ecUpd()}else if(t.id==="eclo"){EC.lo=t.value;ecUpd()}else if(t.id==="echi"){EC.hi=t.value;ecUpd()}});
+document.addEventListener("change",function(e){var t=e.target;if(!EC.info)return;if(t.id==="ecpay"){EC.pay=t.value;rEc()}else if(t.id==="ecauto"){EC.auto=t.checked;rEc()}});
+async function ecMake(){var I=EC.info,res=function(h){var e=$("ecres");if(e)e.innerHTML=h};
+ try{var Pl=ecPlan(),R=Pl.R;if(!(Pl.a>0||Pl.b>0))throw new Error("Introduce una cantidad.");if(!R.t.full&&!(R.lo>0&&R.hi>R.lo))throw new Error("El mínimo tiene que ser menor que el máximo.");
+  if(!(await needEvm()))return;var ow=String(S.eaddr).toLowerCase(),C=kzEvmPos.CH[I.chain],sl=Math.round(ST.slip*100);
+  res("Cambiando tu wallet a "+esc(C.name)+"…");await evSwitch(C.id);
+  var bal=async function(){var B=await kzEvmPos.balances(I.chain,ow,[I.mA,I.mB].filter(function(t){return t!==I.wnative}));return{A:I.mA===I.wnative?B.native:B[I.mA]||0n,B:I.mB===I.wnative?B.native:B[I.mB]||0n}};
+  var B0=await bal(),dec=function(k){return k==="A"?I.decA:I.decB},raw=function(v,k){return BigInt(Math.floor(v*Math.pow(10,dec(k))))},hum=function(v,k){return Number(v)/Math.pow(10,dec(k))};
+  var gasR=BigInt(Math.floor(C.gas*1e18)),avail=function(k){var v=k==="A"?B0.A:B0.B,nat=(k==="A"?I.mA:I.mB)===I.wnative;return nat?(v>gasR?v-gasR:0n):v};
+  var a=Pl.a,b=Pl.b;
+  if(Pl.auto){var pk=EC.pay,ok=pk==="A"?"B":"A",tot=raw(Pl.sw+Pl.keep,pk);if(tot>avail(pk))throw new Error("No tienes saldo suficiente de "+(pk==="A"?I.symA:I.symB)+(((pk==="A"?I.mA:I.mB)===I.wnative)?" (se reserva un poco para el gas)":"")+".");
+   if(Pl.sw>0){var tIn=pk==="A"?I.mA:I.mB,tOut=ok==="A"?I.mA:I.mB,kIn=tIn===I.wnative?KSE:tIn,kOut=tOut===I.wnative?KSE:tOut,amIn=raw(Pl.sw,pk),kc=KSC[C.id];
+    res("Buscando el mejor precio para el swap…");var u=KS+"/"+kc+"/api/v1/routes?tokenIn="+kIn+"&tokenOut="+kOut+"&amountIn="+amIn.toString()+(KS_RCV&&KS_FEE_BPS>0?"&feeAmount="+KS_FEE_BPS+"&isInBps=true&chargeFeeBy=currency_in&feeReceiver="+KS_RCV:"");
+    var rr=await fetch(u,{headers:{"x-client-id":"kosmara"}}),rj=await rr.json();if(!rr.ok||rj.code!==0||!rj.data)throw new Error("Swap: "+(rj&&rj.message?(/route not found/i.test(rj.message)?"no hay ruta para este par":rj.message):"sin ruta"));
+    var router=rj.data.routerAddress;if(kIn!==KSE){var al=await kzEvmPos.allowance(I.chain,tIn,ow,router);if(al<amIn){if(al>0n){res("Reiniciando el permiso del token…");await waitRc(await esend({to:tIn,data:kzEvmPos.approveData(router,0n)}))}res("Aprueba el uso de "+esc(pk==="A"?I.symA:I.symB)+" para el swap…");await waitRc(await esend({to:tIn,data:kzEvmPos.approveData(router,amIn)}))}}
+    var bd=await fetch(KS+"/"+kc+"/api/v1/route/build",{method:"POST",headers:{"Content-Type":"application/json","x-client-id":"kosmara"},body:JSON.stringify({routeSummary:rj.data.routeSummary,sender:S.eaddr,recipient:S.eaddr,slippageTolerance:sl})}),bj=await bd.json();
+    if(!bd.ok||bj.code!==0||!bj.data)throw new Error("Swap: "+(bj.message||"no se pudo preparar"));var stx={to:bj.data.routerAddress,data:bj.data.data,value:"0x"+BigInt(bj.data.transactionValue||"0").toString(16)};if(bj.data.gas)stx.gas="0x"+Math.ceil(+bj.data.gas*1.25).toString(16);
+    res("Firma el swap en tu wallet (paso 1)…");var sh=await esend(stx);res('Swap enviado, esperando confirmación… <a class="lk" href="'+C.tx+esc(sh)+'" target="_blank" rel="noopener">Ver ↗</a>');await waitRc(sh);
+    var B1=await bal(),got=(ok==="A"?B1.A:B1.B)-(ok==="A"?B0.A:B0.B);if(got<=0n)throw new Error("El swap se hizo pero no veo el token recibido. Revisa tu wallet antes de seguir.");
+    var gotH=hum(got,ok)*(tOut===I.wnative?0.999:1);if(pk==="A"){a=Pl.keep;b=gotH}else{b=Pl.keep;a=gotH}}}
+  else{if(raw(a,"A")>avail("A")||raw(b,"B")>avail("B"))throw new Error("No tienes saldo suficiente de los dos tokens. Activa el autoswap para depositar con uno solo.")}
+  var tx=kzEvmPos.txMint(I,ow,R.t.tl,R.t.tu,a,b,sl);
+  for(var i=0;i<tx.need.length;i++){var nd=tx.need[i],sym=nd.t===I.mA?I.symA:I.symB,al2=await kzEvmPos.allowance(I.chain,nd.t,ow,I.npm);
+   if(al2<nd.amt){if(al2>0n){res("Reiniciando el permiso de "+esc(sym)+"…");await waitRc(await esend({to:nd.t,data:kzEvmPos.approveData(I.npm,0n)}))}res("Aprueba el uso de "+esc(sym)+" para la posición…");await waitRc(await esend({to:nd.t,data:kzEvmPos.approveData(I.npm,nd.amt)}))}}
+  res("Firma la creación de la posición en tu wallet…");var h=await esend({to:tx.to,data:tx.data,value:tx.value});
+  res('Enviada, esperando confirmación… <a class="lk" href="'+C.tx+esc(h)+'" target="_blank" rel="noopener">Ver ↗</a>');await waitRc(h);
+  res('Posición creada. <a class="lk" href="'+C.tx+esc(h)+'" target="_blank" rel="noopener">Ver transacción ↗</a> La verás en Portafolio → Posiciones.');kzCelebrate(1);setTimeout(function(){loadEvmPos(true);try{loadHold(true)}catch(z){}},3000)}
+ catch(e){res('<span class="dn">'+esc(fe(e))+"</span>")}}
 
 /* ---------- SDK de Orca (sdk/kz-sdk.js, compilado aparte) ---------- */
 /* Crear posición: si falta uno de los dos tokens y el autoswap está activado, primero hace el cambio
@@ -2148,7 +2217,7 @@ async function posAct(kind,mint){
 }
 async function evmAct(kind,p,form,MSG,r){
  var C=kzEvmPos.CH[p.chain],sl=Math.round(ST.slip*100),ow=p.owner;
- try{r("Cambiando tu wallet a "+esc(C.name)+"…");await evmChain(p.chain);r(MSG[0]);
+ try{r("Cambiando tu wallet a "+esc(C.name)+"…");await evSwitch(C.id);r(MSG[0]);
   var tx=kind==="harv"?kzEvmPos.txHarvest(p,ow):kind==="dec"?kzEvmPos.txDecrease(p,ow,form.pct,sl):kind==="close"?kzEvmPos.txClose(p,ow,sl):kzEvmPos.txIncrease(p,form.a,form.b,sl);
   if(kind==="inc")for(var i=0;i<tx.need.length;i++){var nd=tx.need[i],sym=nd.t===p.mA?p.symA:p.symB,al=await kzEvmPos.allowance(p.chain,nd.t,ow,p.npm);
    if(al<nd.amt){if(al>0n){r("Reiniciando el permiso de "+esc(sym)+"…");await waitRc(await esend({to:nd.t,data:kzEvmPos.approveData(p.npm,0n)}))}
@@ -2170,10 +2239,10 @@ async function loadPos(){var ow=hSol();if(!ow||!(window.kzSdk&&kzSdk.ready))retu
 })();
 window.addEventListener("kzsdk",function(){loadPos();if(S.sel&&!$("ps").hidden)rPs()});
 try{var kzM=document.createElement("script");kzM.type="module";kzM.src="./sdk/kz-sdk.js?v=13";document.head.appendChild(kzM)}catch(e){}
-try{var kzE=document.createElement("script");kzE.src="./evm-pos.js?v=1";kzE.onload=function(){loadEvmPos(true)};document.head.appendChild(kzE)}catch(e){}
+try{var kzE=document.createElement("script");kzE.src="./evm-pos.js?v=2";kzE.onload=function(){loadEvmPos(true)};document.head.appendChild(kzE)}catch(e){}
 
 window.kzP=400;
-rRoad();rHome();rPf();rWallet();rLot();rNet("eth");rNet("bsc");loadNet("eth").then(function(){loadNet("bsc")});loadAave();
+rRoad();rHome();rPf();rWallet();rLot();rNet("eth");rNet("bsc");rNet("base");rNet("arbitrum");rNet("optimism");loadNet("eth").then(function(){return loadNet("bsc")}).then(function(){return loadNet("base")}).then(function(){return loadNet("arbitrum")}).then(function(){return loadNet("optimism")});loadAave();
 window.kzOK=true;
 }catch(e){window.onerror("Principal: "+(e&&e.message)+" (paso "+window.kzP+")","",0,0)}</script>
 <script>
