@@ -4,7 +4,7 @@ const b=await chromium.launch();const pg=await b.newPage({viewport:{width:390,he
 const errs=[];pg.on("pageerror",e=>errs.push(e.message));
 await pg.goto("https://kosmarafi.github.io/?t="+Date.now(),{waitUntil:"networkidle"});
 console.log("evm",await pg.evaluate(()=>window.kzEvmPos&&kzEvmPos.version));
-await pg.evaluate(()=>{location.hash="#pools"});await pg.waitForTimeout(40000);
+await pg.evaluate(()=>{location.hash="#pools"});await pg.waitForTimeout(110000);
 for(const id of ["poolsEth","poolsBnb","poolsBase","poolsArb","poolsOp"])console.log("SEC",id,(await pg.$eval("#"+id,e=>e.querySelector(".k")?.textContent+" | "+e.querySelector(".stat")?.textContent)).slice(0,160));
 const shot=async(tag)=>{const s=(await pg.screenshot({type:"jpeg",quality:55})).toString("base64");for(let i=0;i<s.length;i+=3000)console.log(tag+String(i/3000).padStart(3,"0")+" "+s.slice(i,i+3000))};
 let row=await pg.$("#poolsBase .prow");if(row){await row.click();await pg.waitForTimeout(6000);
