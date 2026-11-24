@@ -1852,11 +1852,11 @@ async function posLive(){
   S.positions.forEach(function(p){var v=P[p.pool];if(v>0){p.price=v;var el=$("pb_"+p.mint);if(el)el.innerHTML=posBar(p)}})}catch(e){}
 }
 document.addEventListener("visibilitychange",function(){if(!document.hidden)posLive()});
-/* Refresco de los datos de las posiciones (tokens, saldo, PNL, rendimiento) cada 20 s mientras se ven, como Orca.
+/* Refresco de los datos de las posiciones (tokens, saldo, PNL, rendimiento) cada 10 s mientras se ven.
    No se refresca con el menú ••• o un aviso abiertos, ni mientras se muestra el resultado de una acción. */
 var PR_T=null,PR_ON=false;
 async function posRefresh(){
- clearTimeout(PR_T);PR_T=setTimeout(posRefresh,20000);
+ clearTimeout(PR_T);PR_T=setTimeout(posRefresh,10000);
  var ow=hSol(),L=$("pfList");
  if(PR_ON||document.hidden||!ow||S.pfTab!=="liq"||!S.positions.length||!L||!L.offsetParent||S.pmenu||document.querySelector(".kzc")||!(window.kzSdk&&kzSdk.ready))return;
  if([].some.call(document.querySelectorAll('[id^="pa_"]'),function(e){return e.textContent.trim()}))return;
@@ -1870,7 +1870,7 @@ async function posRefresh(){
  catch(e){}finally{PR_ON=false}
 }
 document.addEventListener("visibilitychange",function(){if(!document.hidden){clearTimeout(PR_T);PR_T=setTimeout(posRefresh,1500)}});
-PR_T=setTimeout(posRefresh,20000);
+PR_T=setTimeout(posRefresh,10000);
 /* Menú de la posición (•••), como en Orca: las acciones quedan dentro para no cerrar nada sin querer. */
 function pMenu(p){var m=esc(p.mint),it=function(k,ic,tx,cl,dis){return '<button class="pmi'+(cl?" "+cl:"")+'" data-pm="'+k+'" data-mint="'+m+'"'+(dis?" disabled":"")+'><span class="pmic" aria-hidden="true">'+ic+"</span>"+tx+"</button>"};
  return '<div class="pmenu" role="menu">'+it("harv","&#127793;","Cosechar rendimiento","pmg",!(p.pend>0))+it("det","&#9776;","Detalles de la posición")+(p.dex==="Raydium"?it("auto","&#8635;","Auto-composición <small>(solo Orca)</small>","",true):it("auto","&#8635;",'Auto-composición<span class="pmck'+(p.auto?" on":"")+'" role="img" aria-label="'+(p.auto?"Activada":"Desactivada")+'"></span>'))+
