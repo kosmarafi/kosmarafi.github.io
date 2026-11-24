@@ -1054,6 +1054,9 @@ var SRC={
  Raydium:{u:function(q){return q?null:["https://api-v3.raydium.io/pools/info/list?poolType=concentrated&poolSortField=liquidity&sortType=desc&pageSize=100&page=1","https://api-v3.raydium.io/pools/info/list?poolType=all&poolSortField=default&sortType=desc&pageSize=100&page=1"]},
   r:function(j){return (j.data&&j.data.data)||j.data||[]},
   n:function(p){var d=p.day||{},o=mk("Raydium",p.id,tk(p.mintA),tk(p.mintB),p.price,p.tvl,d.volume,d.apr,p.feeRate!=null?p.feeRate*100:null,"https://raydium.io/clmm/create-position/?pool_id="+p.id);if(o)o.clmm=p.type==="Concentrated";return o}},
+ Meteora:{u:function(q){return "https://dlmm-api.meteora.ag/pair/all_with_pagination?page=0&limit=100&sort_key=volume&order_by=desc&hide_low_tvl=20000"+(q?"&search_term="+encodeURIComponent(q):"")},
+  r:function(j){return j.pairs||j.data||[]},
+  n:function(p){var nm=String(p.name||"").split("-"),o=mk("Meteora",p.address,{m:p.mint_x,s:sy(nm[0]||"?"),d:9,i:""},{m:p.mint_y,s:sy(nm[1]||"?"),d:9,i:""},p.current_price,p.liquidity,p.trade_volume_24h,p.apr!=null?+p.apr:null,p.base_fee_percentage!=null?+p.base_fee_percentage:null,"https://www.meteora.ag/dlmm/"+p.address);return o}},
  Jupiter:{h:function(){return S.key?{"x-api-key":S.key}:{}},
   u:function(q){return q?null:"https://api.jup.ag/lend/v1/earn/tokens"},
   r:function(j){return Array.isArray(j)?j:j.data||[]},
@@ -1096,7 +1099,7 @@ function filt(){
 function rPools(){
  var act=true,L=filt();
  var cb=Object.keys(CHIPS).map(function(k){return '<button class="btn chip'+(S.chip===k?" on":"")+'" data-chip="'+k+'">'+CHIPS[k].n+"</button>"}).join("");
- var fl=["all","Orca","Raydium","Jupiter","Kamino"].map(function(x){return '<button class="btn chip'+(S.flt===x?" on":"")+'" data-flt="'+x+'">'+(x==="all"?"Todas":x)+"</button>"}).join("");
+ var fl=["all","Orca","Raydium","Meteora","Jupiter","Kamino"].map(function(x){return '<button class="btn chip'+(S.flt===x?" on":"")+'" data-flt="'+x+'">'+(x==="all"?"Todas":x)+"</button>"}).join("");
  var st=Object.keys(SRC).map(function(n){var s=S.stat[n];return n+": <span>"+(s?esc(s):"cargando…")+"</span>"}).join(" · ")+(Object.keys(SRC).some(function(n){return S.stat[n]==="sin conexión"})?rbtn("pools"):"");
  var rows=L.slice(0,S.lim).map(prow).join("");
  var srt='<select id="psort" style="flex:none;width:auto"><option value="tvl"'+(S.sort==="tvl"?" selected":"")+'>Ordenar: TVL</option><option value="vol"'+(S.sort==="vol"?" selected":"")+'>Ordenar: volumen</option><option value="apr"'+(S.sort==="apr"?" selected":"")+">Ordenar: APR</option></select>";
@@ -1230,6 +1233,7 @@ function sumPs(){
 function rPs(){
  var p=S.pools[S.sel],el=$("ps");if(!p){el.hidden=true;return}
  if(p.net&&!p.kind&&/^(Uniswap|PancakeSwap|Sushi|Aerodrome|Velodrome)$/.test(p.pr)&&window.kzEvmPos)return ecOpen(p,el);
+ if(p.pr==="Meteora"&&!p.dok){metDec(p).then(function(){if(S.sel===p.k)rPs()}).catch(function(){})}
  if(p.kind||p.net){el.style.setProperty("--tc","20,241,149");el.innerHTML='<div class="mb"><button class="x" data-act="closeps" aria-label="Cerrar">×</button><b style="font-size:20px">'+esc(p.A.s)+(p.B.s?"/"+esc(p.B.s):"")+'</b><div class="dim">'+p.pr+" · "+esc(p.kind||NET[p.net].n)+" · TVL "+cur(p.tvl,0)+(p.apr!=null?(p.net&&!p.kind?" · APR est. ":" · APY ")+f(p.apr,1)+"%":"")+'</div><div class="dim" style="margin-top:12px;line-height:1.6">'+(p.pr==="Aave"?"Depositas un solo token en Aave, en la red Ethereum, con tu wallet (MetaMask) y lo retiras cuando quieras. El interés lo pagan quienes piden prestado y cambia cada día. Operar en Ethereum tiene coste de gas.":p.net?"La posición se abre en "+p.pr+" con tu wallet (MetaMask).":p.pr==="Kamino"?"Kamino gestiona el rango y reinvierte las comisiones por ti. Recibes un token del vault, no un NFT.":"Depositas un solo token en Jupiter Lend y recibes un token que acumula el interés. No hay rango ni NFT.")+'</div><a class="btn p" href="'+esc(p.url)+'" target="_blank" rel="noopener">'+(p.net&&!p.kind?"Abrir en ":"Depositar en ")+p.pr+" ↗</a></div>";el.hidden=false;return}
  var z=ST,chips=[1,5,10].map(function(x){return '<button class="btn chip'+(z.r===x?" on":"")+'" data-pr="'+x+'">±'+x+"%</button>"}).join("")+'',
  vo=VEN.map(function(v){return "<option"+(v===z.via?" selected":"")+">"+v+"</option>"}).join(""),
@@ -1240,7 +1244,7 @@ function rPs(){
  '<label for="pa">Cantidad de depósito</label><div class="box"><div class="srow"><select id="ppay"><option value="A"'+(z.pay==="A"?" selected":"")+">"+esc(p.A.s)+'</option><option value="B"'+(z.pay==="B"?" selected":"")+">"+esc(p.B.s)+'</option></select><input id="pa" class="num" type="number" inputmode="decimal" min="0" step="any" value="'+esc(z.amt)+'" placeholder="0.0"></div><div class="dim" id="pbal" style="margin-top:6px"></div></div>'+
  '<div class="hrow"><label class="tg"><input type="checkbox" id="pau"'+(z.auto?" checked":"")+'>Autoswap</label><span class="dim">Operar vía <select id="pvia">'+vo+'</select></span><span class="dim">Desliz. <select id="pslp">'+sl+"</select></span></div>"+
  '<div class="sum" id="psum"></div>'+
- ((p.pr==="Orca"&&window.kzSdk&&kzSdk.ready)||(p.pr==="Raydium"&&p.clmm)?'<button class="btn p" data-act="mkpos">Crear posición</button><div class="stat" id="pres"></div>'+
+ ((p.pr==="Orca"&&window.kzSdk&&kzSdk.ready)||(p.pr==="Raydium"&&p.clmm)||p.pr==="Meteora"?'<button class="btn p" data-act="mkpos">Crear posición</button><div class="stat" id="pres"></div>'+
   '<div class="dim" style="margin-top:10px">Con autoswap activado, al crear la posición Kosmara cambia antes la parte necesaria para dejar tus fondos en la proporción del rango. '+(p.pr==="Raydium"?"Todo se firma una sola vez en tu wallet.":"Todo se firma una sola vez en tu wallet.")+'</div></div>'
  :'<div class="stat" id="pres"></div><a class="btn p" href="'+esc(p.url)+'" target="_blank" rel="noopener">Crear posición en '+p.pr+' ↗</a></div>');
  el.hidden=false;sumPs();if(p.pr==="Orca")loadLiq(p);if(RV.open)loadOh(p);
@@ -1851,8 +1855,8 @@ document.addEventListener("click",function(e){
 var PB_T=null;
 async function posLive(){
  clearTimeout(PB_T);PB_T=setTimeout(posLive,6000);
- if(document.hidden||!S.positions.some(function(p){return !p.evm&&p.dex!=="Raydium"})||!(window.kzSdk&&kzSdk.livePrices)||!$("pfList")||!$("pfList").offsetParent)return;
- try{var P=await kzSdk.livePrices({rpc:rpcUrl(),pools:S.positions.filter(function(p){return !p.evm&&p.dex!=="Raydium"}).map(function(p){return p.pool})});
+ if(document.hidden||!S.positions.some(function(p){return !p.evm&&!p.met&&p.dex!=="Raydium"})||!(window.kzSdk&&kzSdk.livePrices)||!$("pfList")||!$("pfList").offsetParent)return;
+ try{var P=await kzSdk.livePrices({rpc:rpcUrl(),pools:S.positions.filter(function(p){return !p.evm&&!p.met&&p.dex!=="Raydium"}).map(function(p){return p.pool})});
   S.positions.forEach(function(p){var v=P[p.pool];if(v>0){p.price=v;var el=$("pb_"+p.mint);if(el)el.innerHTML=posBar(p)}})}catch(e){}
 }
 document.addEventListener("visibilitychange",function(){if(!document.hidden)posLive()});
@@ -1868,7 +1872,8 @@ async function posRefresh(){
  try{var sol=S.positions.filter(function(x){return !x.evm}),E=evmKeep();
   if(ow&&window.kzSdk&&kzSdk.ready&&sol.length){var P=await kzSdk.positions({rpc:rpcUrl(),owner:ow}),R=null;
    if(sol.some(function(x){return x.dex==="Raydium"})){try{R=await (await rayLoad()).positions({rpc:rpcUrl(),owner:ow})}catch(e){}}
-   P.forEach(function(x){x.dex=x.dex||"Orca"});sol=P.concat(R||sol.filter(function(x){return x.dex==="Raydium"}))}
+   var MP=null;if(sol.some(function(x){return x.met})){try{MP=await (await metLoad()).positions({rpc:rpcUrl(),owner:ow})}catch(e){}}
+   P.forEach(function(x){x.dex=x.dex||"Orca"});sol=P.concat(R||sol.filter(function(x){return x.dex==="Raydium"}),MP||sol.filter(function(x){return x.met}))}
   if(ev&&window.kzEvmPos&&E.length){try{E=await kzEvmPos.positions(ev)}catch(e){}}
   if(ow!==hSol()||ev!==hEvm()||S.pmenu||document.querySelector(".kzc"))return;
   S.positions=sol.concat(E);
@@ -1887,7 +1892,7 @@ document.addEventListener("visibilitychange",function(){if(!document.hidden){cle
 PR_T=setTimeout(posRefresh,10000);
 /* Menú de la posición (•••), como en Orca: las acciones quedan dentro para no cerrar nada sin querer. */
 function pMenu(p){var m=esc(p.mint),it=function(k,ic,tx,cl,dis){return '<button class="pmi'+(cl?" "+cl:"")+'" data-pm="'+k+'" data-mint="'+m+'"'+(dis?" disabled":"")+'><span class="pmic" aria-hidden="true">'+ic+"</span>"+tx+"</button>"};
- return '<div class="pmenu" role="menu">'+it("harv","&#127793;","Cosechar rendimiento","pmg",!(p.pend>0))+it("det","&#9776;","Detalles de la posición")+(p.evm?it("auto","&#8635;","Auto-composición <small>(próximamente)</small>","",true):p.dex==="Raydium"?it("auto","&#8635;","Auto-composición <small>(solo Orca)</small>","",true):it("auto","&#8635;",'Auto-composición<span class="pmck'+(p.auto?" on":"")+'" role="img" aria-label="'+(p.auto?"Activada":"Desactivada")+'"></span>'))+
+ return '<div class="pmenu" role="menu">'+it("harv","&#127793;","Cosechar rendimiento","pmg",!(p.pend>0))+it("det","&#9776;","Detalles de la posición")+(p.evm?it("auto","&#8635;","Auto-composición <small>(próximamente)</small>","",true):p.dex==="Raydium"||p.met?it("auto","&#8635;","Auto-composición <small>(solo Orca)</small>","",true):it("auto","&#8635;",'Auto-composición<span class="pmck'+(p.auto?" on":"")+'" role="img" aria-label="'+(p.auto?"Activada":"Desactivada")+'"></span>'))+
   '<div class="pmsep"></div>'+it("inc","+","Depositar liquidez")+it("dec","&minus;","Retirar liquidez")+it("close","&times;","Cerrar posición","pmr")+"</div>"}
 document.addEventListener("click",function(e){
  var b=e.target.closest&&e.target.closest("[data-pmenu]"),it=e.target.closest&&e.target.closest("[data-pm]");
@@ -1900,15 +1905,15 @@ function posDet(mint){var p=S.positions.filter(function(x){return x.mint===mint}
  kzConfirm("Detalles de la posición",row("Protocolo",esc(p.dex||"Orca"))+row("Par",esc(p.pair)+" · "+esc(p.fee)+"%")+row("Rango",fp(p.lo)+" – "+(p.hi>1e12?"∞":fp(p.hi)))+row("Precio actual",fp(p.price))+
   row("Tokens",f(p.amtA,6)+" "+esc(p.symA)+"<br>"+f(p.amtB,6)+" "+esc(p.symB))+row("Saldo",usd(p.usd))+
   (p.evm?row("Red",esc(p.chainName))+row("NFT",'<a class="lk" href="'+kzEvmPos.CH[p.chain].nft+esc(p.npm)+"?a="+esc(p.tokenId)+'" target="_blank" rel="noopener">#'+esc(p.tokenId)+" ↗</a>")+row("Pool",'<a class="lk" href="'+kzEvmPos.CH[p.chain].acct+esc(p.pool)+'" target="_blank" rel="noopener">'+sh(p.pool)+" ↗</a>"):
-  row("NFT",'<a class="lk" href="https://solscan.io/token/'+esc(p.mint)+'" target="_blank" rel="noopener">'+sh(p.mint)+" ↗</a>")+row("Pool",'<a class="lk" href="https://solscan.io/account/'+esc(p.pool)+'" target="_blank" rel="noopener">'+sh(p.pool)+" ↗</a>")),"Listo").then(function(){})}
+  row(p.met?"Posición":"NFT",'<a class="lk" href="https://solscan.io/'+(p.met?"account/":"token/")+esc(p.mint)+'" target="_blank" rel="noopener">'+sh(p.mint)+" ↗</a>")+row("Pool",'<a class="lk" href="https://solscan.io/account/'+esc(p.pool)+'" target="_blank" rel="noopener">'+sh(p.pool)+" ↗</a>")),"Listo").then(function(){})}
 function posCard(p){
  var own=p.evm?!!(!S.wch.a&&S.eaddr&&p.owner===String(S.eaddr).toLowerCase()):!!(p.mint&&S.pk&&hSol()===S.pk);
  var r=function(a,b){return '<div class="row" style="margin-top:6px"><span class="dim" style="font-size:13px">'+a+'</span><span class="v"><b>'+b+"</b></span></div>"};
  return '<div class="pos"><div class="srow" style="justify-content:space-between"><b style="font-size:17px">'+esc(p.pair)+'</b><span class="srow" style="gap:8px"><span class="tag o">'+(p.dex?esc(p.dex)+" · ":"")+esc(p.fee)+'%</span>'+(p.auto?'<span class="tag" style="background:rgba(34,214,138,.14);color:#3fd69a" title="Auto-composición activada">&#8635; Auto</span>':"")+(own?'<button class="pmb" data-pmenu="'+esc(p.mint)+'" aria-label="Opciones de la posición" aria-expanded="'+(S.pmenu===p.mint)+'">•••</button>':"")+'</span></div>'+(own&&S.pmenu===p.mint?pMenu(p):"")+
   '<div id="pb_'+esc(p.mint||"")+'">'+posBar(p)+"</div>"+
   (p.symA?r("Tokens",f(p.amtA,4)+" "+esc(p.symA)+" + "+f(p.amtB,4)+" "+esc(p.symB)):"")+r("Saldo",usd(p.usd))+
-  (p.evm?"":r("PNL total",p.pnl==null?"—":'<span class="'+(p.pnl>=0?"up":"dn")+'">'+(p.pnl>=0?"+":"−")+usd(Math.abs(p.pnl))+(p.pnlPct!=null?" ("+(p.pnl>=0?"+":"−")+f(Math.abs(p.pnlPct),2)+"%)":"")+"</span>")+
-  r("Rendimiento cosechado",usd(p.harv)))+r("Rendimiento pendiente",usd(p.pend))+(p.evm?"":
+  (p.evm||p.met?"":r("PNL total",p.pnl==null?"—":'<span class="'+(p.pnl>=0?"up":"dn")+'">'+(p.pnl>=0?"+":"−")+usd(Math.abs(p.pnl))+(p.pnlPct!=null?" ("+(p.pnl>=0?"+":"−")+f(Math.abs(p.pnlPct),2)+"%)":"")+"</span>")+
+  r("Rendimiento cosechado",usd(p.harv)))+r("Rendimiento pendiente",usd(p.pend))+(p.evm||p.met?"":
   r('Rendimiento estimado <select class="ypsel" data-yp aria-label="Periodo del rendimiento estimado">'+YP.map(function(k){return '<option value="'+k[0]+'"'+(k[0]===ypCur()?" selected":"")+">"+k[1]+"</option>"}).join("")+"</select>",ypVal(p))+r("Duración",esc(p.dur||"—"))+
   r("Precio entr. prom.",p.entry==null?"—":fp(p.entry)))+
   (own?'<div class="stat" id="pa_'+esc(p.mint)+'"></div>':"")+"</div>";
@@ -2095,6 +2100,15 @@ var RAYP=null;
 function rayLoad(){if(window.kzRay&&kzRay.ready)return Promise.resolve(kzRay);if(RAYP)return RAYP;
  RAYP=new Promise(function(ok,ko){var s=document.createElement("script");s.type="module";s.src="./sdk/kz-ray.js?v=7";s.onerror=function(){RAYP=null;ko(new Error("No se pudo cargar el módulo de Raydium"))};
   document.head.appendChild(s);var n=0,iv=setInterval(function(){if(window.kzRay&&kzRay.ready){clearInterval(iv);ok(kzRay)}else if(++n>150){clearInterval(iv);RAYP=null;ko(new Error("El módulo de Raydium tarda demasiado en cargar"))}},100)});return RAYP}
+var METP=null;
+function metLoad(){if(window.kzMet&&kzMet.ready)return Promise.resolve(kzMet);if(METP)return METP;
+ METP=new Promise(function(ok,ko){var s=document.createElement("script");s.type="module";s.src="./sdk/kz-met.js?v=1";s.onerror=function(){METP=null;ko(new Error("No se pudo cargar el módulo de Meteora"))};
+  document.head.appendChild(s);var n=0,iv=setInterval(function(){if(window.kzMet&&kzMet.ready){clearInterval(iv);ok(kzMet)}else if(++n>200){clearInterval(iv);METP=null;ko(new Error("El módulo de Meteora tarda demasiado en cargar"))}},100)});return METP}
+function metKeep(){return (S.positions||[]).filter(function(x){return x.met})}
+async function metDec(p){if(p.dok)return;var r=await rc("getMultipleAccounts",[[p.A.m,p.B.m],{encoding:"jsonParsed"}]),v=(r&&r.value)||[];
+ if(v[0]&&v[0].data&&v[0].data.parsed)p.A.d=+v[0].data.parsed.info.decimals;if(v[1]&&v[1].data&&v[1].data.parsed)p.B.d=+v[1].data.parsed.info.decimals;p.dok=true}
+async function metOpen(p,c,m){var M=await metLoad(),b=await M.buildOpen({rpc:rpcUrl(),owner:S.pk,pool:p.id,lower:c.pa,upper:c.pb,amountA:m.a,amountB:m.b,slipBps:Math.round(ST.slip*100)}),o;
+ for(var i=0;i<b.txs.length;i++)o=await raySend(b.txs[i]);o.positionMint=b.position;return o}
 async function rayOpen(p,c,m){
  var R=await rayLoad(),b=await R.buildOpen({rpc:rpcUrl(),owner:S.pk,pool:p.id,lower:c.pa,upper:c.pb,amountA:m.a,amountB:m.b,decA:p.A.d,decB:p.B.d,slipBps:Math.round(ST.slip*100)});
  var o=await raySend(b.bytes);o.positionMint=b.nftMint;return o}
@@ -2125,7 +2139,7 @@ async function swapOpenTry(p,c,pay,oth,amt,via){
  var o=await kzSdk.swapAndOpen({rpc:rpcUrl(),pool:p.id,owner:S.pk,amountA:c.payB?aOth:aPay,amountB:c.payB?aPay:aOth,decA:p.A.d,decB:p.B.d,lower:c.pa,upper:c.pb,slipBps:Math.round(ST.slip*100),provider:S.sw,pre:pre,alts:si.addressLookupTableAddresses||[],solIn:pay.m===SOLM?amt:0,solOut:oth.m===SOLM?(+q.otherAmountThreshold||0):0});
  if(fee>0)window.kzLastFee=fee;return o}
 async function mkPos(){
- var p=S.pools[S.sel],c=pcalc(),r=function(h){$("pres").innerHTML=h},bt=document.querySelector('[data-act="mkpos"]');
+ var p=S.pools[S.sel];if(p&&p.pr==="Meteora"&&!p.dok){try{await metDec(p)}catch(e){}}var c=pcalc(),r=function(h){$("pres").innerHTML=h},bt=document.querySelector('[data-act="mkpos"]');
  if(!(await needSol()))return r("Elige una wallet de Solana para continuar.");if(!(c.a>0))return r("Introduce una cantidad.");
  if(bt){if(bt.disabled)return;bt.disabled=true}
  try{
@@ -2148,7 +2162,7 @@ async function mkPos(){
   }
   if(short())throw new Error("Te falta "+(m.a<c.aA*.9?p.A.s:p.B.s)+" en la wallet para este rango."+(ST.auto?"":" Activa el autoswap para que Kosmara lo cambie por ti."));
   r((sg?"Paso 2 de 2: ":"")+"Preparando la posición. Firma en tu wallet…");
-  var o=p.pr==="Raydium"?await rayOpen(p,c,m):await kzSdk.openPosition({rpc:rpcUrl(),pool:p.id,owner:S.pk,amountA:m.a,amountB:m.b,decA:p.A.d,decB:p.B.d,lower:c.pa,upper:c.pb,slipBps:Math.round(ST.slip*100),provider:S.sw});
+  var o=p.pr==="Raydium"?await rayOpen(p,c,m):p.pr==="Meteora"?await metOpen(p,c,m):await kzSdk.openPosition({rpc:rpcUrl(),pool:p.id,owner:S.pk,amountA:m.a,amountB:m.b,decA:p.A.d,decB:p.B.d,lower:c.pa,upper:c.pb,slipBps:Math.round(ST.slip*100),provider:S.sw});
   r((o.confirmed?"Posición creada.":"Transacción enviada; aún sin confirmar.")+' <a class="lk" href="https://solscan.io/tx/'+esc(o.signature)+'" target="_blank" rel="noopener">Ver transacción ↗</a> · <a class="lk" href="https://solscan.io/token/'+esc(o.positionMint)+'" target="_blank" rel="noopener">Ver NFT ↗</a>');kzCelebrate(2);loadBal();loadPos()}
  catch(e){r('<span class="dn">'+esc(fe(e))+"</span>")}
  finally{if(bt)bt.disabled=false}
@@ -2204,6 +2218,10 @@ async function posAct(kind,mint){
  if(kind==="harv"&&!(await kzConfirm("Confirmar cobro","Vas a cobrar <b>"+usd(p.pend)+"</b> de rendimiento de "+esc(p.pair)+" a tu wallet. La liquidez sigue en la posición.","Cobrar")))return;
  var MSG={close:["Preparando el cierre…","Posición cerrada."],harv:["Preparando el cobro…","Rendimiento cobrado."],inc:["Preparando el depósito…","Liquidez depositada."],dec:["Preparando la retirada…","Liquidez retirada."],auto:["Activando la auto-composición…","Auto-composición activada."],autoff:["Desactivando la auto-composición…","Auto-composición desactivada."]}[kind];
  if(p.evm)return evmAct(kind,p,form,MSG,r);
+ if(p.met){try{r(MSG[0]);var MM=await metLoad(),bm=await MM.buildManage({rpc:rpcUrl(),owner:S.pk,pool:p.pool,position:mint,kind:kind,pct:form&&form.pct,amountA:form&&form.a,amountB:form&&form.b,slipBps:Math.round(ST.slip*100)}),om;
+   for(var ti=0;ti<bm.txs.length;ti++){if(bm.txs.length>1)r(MSG[0]+" (firma "+(ti+1)+" de "+bm.txs.length+")");om=await raySend(bm.txs[ti])}
+   r((om.confirmed?MSG[1]:"Transacción enviada; aún sin confirmar.")+' <a class="lk" href="https://solscan.io/tx/'+esc(om.signature)+'" target="_blank" rel="noopener">Ver transacción ↗</a>');kzCelebrate(1);setTimeout(function(){loadBal();loadPos()},1500)}
+  catch(e){r('<span class="dn">'+esc(fe(e))+"</span>")}return}
  try{r(MSG[0]);
   var sl=Math.round(ST.slip*100),o=p.dex==="Raydium"?await raySend((await (await rayLoad()).buildManage({rpc:rpcUrl(),owner:S.pk,mint:mint,kind:kind,amtA:p.amtA,amtB:p.amtB,pct:form&&form.pct,amountA:form&&form.a,amountB:form&&form.b,slipBps:sl})).bytes)
    :kind==="auto"?await kzSdk.autoOn({rpc:rpcUrl(),owner:S.pk,mint:mint,minUsd:form.minUsd,interval:form.interval,provider:S.sw})
@@ -2229,7 +2247,9 @@ async function evmAct(kind,p,form,MSG,r){
 }
 document.addEventListener("click",function(e){var t=e.target.closest&&e.target.closest("[data-pact]");if(t&&!t.disabled)posAct(t.getAttribute("data-pact"),t.getAttribute("data-mint"))});
 async function loadPos(){var ow=hSol();if(!ow||!(window.kzSdk&&kzSdk.ready))return;var ray=(S.positions||[]).filter(function(x){return x.dex==="Raydium"});
- try{var P=await kzSdk.positions({rpc:rpcUrl(),owner:ow});if(ow!==hSol())return;P.forEach(function(x){x.dex=x.dex||"Orca"});S.positions=P.concat(ray,evmKeep());S.posOk=true;S.posErr=""}catch(e){S.posErr=fe(e)}rPf();posLive();
+ try{var P=await kzSdk.positions({rpc:rpcUrl(),owner:ow});if(ow!==hSol())return;P.forEach(function(x){x.dex=x.dex||"Orca"});S.positions=P.concat(ray,metKeep(),evmKeep());S.posOk=true;S.posErr=""}catch(e){S.posErr=fe(e)}rPf();posLive();
+ /* Meteora DLMM: módulo aparte; sus posiciones se añaden cuando llegan */
+ metLoad().then(function(M){return M.positions({rpc:rpcUrl(),owner:ow})}).then(function(MP){if(ow!==hSol())return;S.positions=S.positions.filter(function(x){return !x.met}).concat(MP);if(MP.length)S.posOk=true;rPf()}).catch(function(){});
  /* Raydium: el módulo se carga aparte y sus posiciones se añaden cuando llegan */
  try{var R=await rayLoad(),RP=await R.positions({rpc:rpcUrl(),owner:ow});if(ow!==hSol())return;S.positions=S.positions.filter(function(x){return x.dex!=="Raydium"}).concat(RP);S.posOk=true;rPf()}catch(e){}}
 (function(){var id=LS("kz_w");if(id==="-")return;id=id||"ph";var w=WID(id);if(!w)return;var p=solGet(w);if(!p)return;
