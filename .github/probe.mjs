@@ -12,7 +12,6 @@ for(const s of sigs){if(s.err)continue;const t=await call("getTransaction",[s.si
  // condiciones desde el byte 98: [1 ts i64 opt(1+u32)] [2 thrA] [3 thrB]
  let o=98,thr={};while(o<290&&ad[o]){const k=ad[o];if(k===1){o+=9;o+=ad[o]===1?5:1}else if(k===2||k===3){thr[k]=ad.readBigUInt64LE(o+1);o+=9}else break}
  const mA=ad.subarray(368,400),mB=ad.subarray(400,432);
- const bs=require=null;
  const inner=[];for(const g of t.meta.innerInstructions||[])for(const ix of g.instructions)if(ix.parsed&&ix.parsed.type==="transferChecked")inner.push(ix.parsed.info);
  // las dos primeras transferencias son el cobro de comisiones (A y B)
  const first={};for(const x of inner){if(!(x.mint in first))first[x.mint]=BigInt(x.tokenAmount.amount);if(Object.keys(first).length>=2)break}
