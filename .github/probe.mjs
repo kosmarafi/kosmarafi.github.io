@@ -1,13 +1,11 @@
-import { chromium } from "playwright";
-await new Promise(z=>setTimeout(z,70000));
-const b=await chromium.launch();const pg=await b.newPage({viewport:{width:390,height:844},deviceScaleFactor:2,locale:"es-ES"});const errs=[];pg.on("pageerror",e=>errs.push(e.message));
-await pg.addInitScript(()=>{localStorage.setItem("kz_watch",JSON.stringify({a:"AhXkpxcNzpo5u8dS4ZHibm3tG39AofBELyRr8ossTG6a",t:"sol"}))});
-await pg.goto("https://kosmarafi.github.io/?t="+Date.now(),{waitUntil:"networkidle"});
-await pg.evaluate(()=>{location.hash="#pools"});await pg.waitForTimeout(15000);
-console.log("POOLSTAT",(await pg.$eval("#pools .stat",e=>e.textContent)).slice(0,200));
-const f=await pg.$('[data-flt="Meteora"]');if(f){await f.click();await pg.waitForTimeout(800);console.log("METROWS",await pg.$$eval("#plist .prow",x=>x.length));const r=await pg.$("#plist .prow");if(r){await r.click();await pg.waitForTimeout(4000);console.log("SHEET",(await pg.$eval("#ps",e=>e.innerText)).replace(/\n+/g," | ").slice(0,400))}}
-await pg.click('[data-act="closeps"]').catch(()=>{});
-await pg.evaluate(()=>{location.hash="#portfolio"});await pg.waitForTimeout(2000);const t=await pg.$('[data-pft="liq"]');if(t)await t.click();await pg.waitForTimeout(25000);
-console.log("CARDS",await pg.$$eval(".pos",x=>x.map(e=>e.querySelector("b").textContent+" "+e.querySelector(".tag").textContent)));
-const el=await pg.$(".pos");if(el){await el.scrollIntoViewIfNeeded();const s=(await el.screenshot({type:"jpeg",quality:55})).toString("base64");for(let i=0;i<s.length;i+=3000)console.log("MS"+String(i/3000).padStart(3,"0")+" "+s.slice(i,i+3000))}
-console.log("ERRS",JSON.stringify(errs).slice(0,500));await b.close();
+const O={origin:"https://kosmarafi.github.io"};
+// Balancer: estructura
+for(const q of ['{poolGetPools(first:2,orderBy:totalLiquidity,orderDirection:desc,where:{chainIn:[MAINNET,ARBITRUM,BASE,OPTIMISM]}){id address name chain type poolTokens{symbol address} dynamicData{totalLiquidity} userBalance{totalBalanceUsd walletBalance stakedBalances{balanceUsd}}}}',
+ '{poolGetPools(where:{userAddress:"0x8f38e5a7b4a9b5a5a2d3b3c3f3e9d0e8b8a6f1c2",chainIn:[MAINNET]}){id}}']){
+ const r=await fetch("https://api-v3.balancer.fi/",{method:"POST",headers:Object.assign({"content-type":"application/json"},O),body:JSON.stringify({query:q})});
+ console.log("BAL",r.status,"cors",r.headers.get("access-control-allow-origin"),(await r.text()).slice(0,600))}
+// Curve
+for(const c of ["ethereum","arbitrum","base","optimism","bsc"]){for(const host of ["https://api.curve.finance/v1/getPools/all/","https://api.curve.fi/api/getPools/all/"]){try{const r=await fetch(host+c,{headers:O});const t=await r.text();let j=null;try{j=JSON.parse(t)}catch(e){}
+ const L=j&&j.data&&j.data.poolData||[];const big=L.filter(p=>+p.usdTotal>=500000);console.log("CRV",host.slice(8,26),c,r.status,"cors",r.headers.get("access-control-allow-origin"),"pools",L.length,"big",big.length,big[0]?JSON.stringify({address:big[0].address,name:big[0].name,lp:big[0].lpTokenAddress,gauge:big[0].gaugeAddress,usd:big[0].usdTotal,ts:big[0].totalSupply,coins:(big[0].coins||[]).map(x=>x.symbol)}).slice(0,300):"");break}catch(e){console.log("CRVERR",c,e.message)}}}
+// Uniswap v4: PositionManager enumerable?
+const V4="0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e";const r=await fetch("https://ethereum-rpc.publicnode.com",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method:"eth_call",params:[{to:V4,data:"0x4f6ccce70000000000000000000000000000000000000000000000000000000000000001"},"latest"]})});console.log("V4 tokenByIndex",JSON.stringify(await r.json()).slice(0,200));
