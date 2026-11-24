@@ -781,7 +781,7 @@ async function loadTk(id){if(EV.ld[id])return;EV.ld[id]=1;try{var r=await fetch(
  catch(e){EV.ld[id]=0;EV.err=fe(e)}if(String(SW.net)===String(id)&&S.view==="swap")rSwap()}
 function evT(id,a){return (EV.tk[id]||[]).filter(function(t){return t.address===a})[0]}
 function evBal(id,a){var h=(HD.evm||[]).filter(function(x){return String(x.c)===String(id)&&x.m.toLowerCase()===String(a).toLowerCase()})[0];return h?h.a:null}
-function rE(){
+function rE(){swTint();
  var id=SW.net,el=$("swap");if(EV.ld[id]!==2){el.innerHTML=swTabs()+netHead("LI.FI")+'<div class="stat">'+(EV.ld[id]?"Cargando tokens de "+esc(chN(id))+"…":esc(EV.err||"")+' <button class="btn" data-act="evload">Reintentar</button>')+"</div>";if(!EV.ld[id])loadTk(id);return}
  var L=EV.tk[id],fr=evT(id,EV.from[id])||L[0],to=evT(id,EV.to[id])||L[1],b=evBal(id,fr.address),op=function(sel){return L.map(function(t){return '<option value="'+esc(t.address)+'"'+(t.address===sel?" selected":"")+">"+esc(t.symbol)+"</option>"}).join("")};
  el.innerHTML=swTabs()+netHead(KSC[id]?"LI.FI y KyberSwap":"LI.FI")+
@@ -930,6 +930,7 @@ function tcOpts(sel,src){
 function tcAutoDest(){var c=(XS.AM[XS.to]||{}).c;if(!XS.auto)return;XS.dest=TCE[c]?(S.eaddr||""):c==="SOL"?(S.pk||""):""}
 function toU(v,d){v=String(v||"").trim().replace(",",".");if(!/^\d*\.?\d*$/.test(v)||!v||v===".")return 0n;var p=v.split("."),fr=(p[1]||"").slice(0,d);while(fr.length<d)fr+="0";return BigInt((p[0]||"0")+fr)}
 function rX(){
+ swTint();
  var el=$("swap");if(XS.ld!==2){el.innerHTML=swTabs()+'<div class="k">Swap entre redes <small>vía THORChain</small></div><div class="stat">'+(XS.err?esc(XS.err)+' <button class="btn" data-act="xload">Reintentar</button>':"Cargando redes y activos…")+"</div>";if(!XS.ld)loadTC();return}
  var fr=XS.AM[XS.from],to=XS.AM[XS.to];if(!fr||!to){XS.ld=0;XS.err="No se pudieron cargar los activos de THORChain.";return rX()}tcAutoDest();var hz=XS.halt[fr.c]||XS.halt[to.c];
  el.innerHTML=swTabs()+'<div class="k">Swap entre redes <small>vía THORChain</small></div>'+
@@ -1005,7 +1006,11 @@ document.addEventListener("change",function(e){var t=e.target;if(t.id==="xf"){XS
 
 function sres(h){var e=$("sres");if(e)e.innerHTML=h}
 function sopts(v){return TKS.map(function(t){return "<option"+(t.s===v?" selected":"")+">"+t.s+"</option>"}).join("")}
+/* Color del bloque de Swap según la red (Solana morado, Ethereum azul…); entre redes, el morado de Kosmara */
+var NETC={sol:"124,92,255",1:"98,126,234",56:"243,186,47",8453:"0,82,255",42161:"40,160,240",43114:"232,65,66",999:"80,210,193",4663:"190,240,40",137:"130,71,229",10:"255,4,32",130:"240,13,180",143:"131,110,249",146:"254,138,60",59144:"97,223,255"};
+function swTint(){var el=$("swap");if(el)el.style.setProperty("--tc",SW.mode==="x"?"124,92,255":NETC[SW.net]||"124,92,255")}
 function rSwap(){
+ swTint();
  if(SW.mode==="x")return rX();
  if(SW.net!=="sol")return rE();
  var fr=TM[SW.from],bal=S.bal[fr.m];
@@ -1097,8 +1102,8 @@ setInterval(function(){if(document.hidden)return;loadPools().catch(function(){})
  document.addEventListener("touchstart",function(e){if(busy||e.touches.length!==1||window.scrollY>0||blocked()){y0=null;return}y0=e.touches[0].clientY;dy=0},{passive:true});
  document.addEventListener("touchmove",function(e){if(y0==null)return;dy=e.touches[0].clientY-y0;if(dy<=0||window.scrollY>0){dy=0;return}var d=Math.min(150,dy*.5);ind().style.transform="translateY("+(d-10)+"px) rotate("+(d*3)+"deg)"},{passive:true});
  document.addEventListener("touchend",function(){if(y0==null)return;y0=null;var e=ind();if(dy*.5>=70){busy=true;e.classList.add("go");e.style.transform="translateY(120px)";
-   var done=function(){if(!busy)return;busy=false;e.classList.remove("go");e.style.transform="translateY(-50px)"};
-   Promise.race([kzRefreshAll(),new Promise(function(z){setTimeout(z,8000)})]).then(done,done)}else e.style.transform="translateY(-50px)";dy=0},{passive:true});
+   /* como en un navegador: el indicador se ve un segundo y la página se recarga (la wallet se reconecta sola) */
+   setTimeout(function(){try{location.reload()}catch(z){busy=false;e.classList.remove("go");e.style.transform="translateY(-50px)"}},900)}else e.style.transform="translateY(-50px)";dy=0},{passive:true});
 })();
 var STB=/usd|dai|eur|frax|gho|usx/i;
 window.kzP=116;
