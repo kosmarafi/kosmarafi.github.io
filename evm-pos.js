@@ -148,7 +148,7 @@
       if (usd < 0.01) return;
       out.push({ evm: true, lp: true, chain: chain, chainName: CH[chain].name, dex: "Curve", owner: owner, mint: "lp_crv_" + chain + "_" + String(p.address).toLowerCase(),
         pair: (p.coins || []).map(function (c) { return c.symbol; }).join("/") || p.name, usd: usd, stakedUsd: Number(g) / Number(BigInt(p.totalSupply)) * +p.usdTotal,
-        url: "https://www.curve.finance/dex/" + CRV[chain] + "/pools/" + (p.id || p.address) + "/deposit", pend: 0 });
+        url: "https://www.curve.finance/dex/" + CRV[chain] + "/pools?search=" + p.address, pend: 0 });
     });
     return out;
   }
