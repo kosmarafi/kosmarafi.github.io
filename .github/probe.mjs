@@ -1,11 +1,11 @@
-globalThis.window=globalThis;
+globalThis.window=globalThis;const _f=globalThis.fetch;globalThis.fetch=(u,o={})=>{if(String(u).includes("helius")){o=Object.assign({},o);const h=new Headers(o.headers||{});h.set("origin","https://kosmarafi.github.io");o.headers=h}return _f(u,o)};
 const RPC="https://mainnet.helius-rpc.com/?api-key=d69a3929-b7b3-4523-8dea-9d82a0bcfd36";
 const H={"content-type":"application/json",origin:"https://kosmarafi.github.io"};
 const call=async(m,p)=>{for(let i=0;i<8;i++){const r=await fetch(RPC,{method:"POST",headers:H,body:JSON.stringify({jsonrpc:"2.0",id:1,method:m,params:p})});if(r.status===429){await new Promise(z=>setTimeout(z,1200));continue}return (await r.json()).result}};
 // Connection de web3 con cabecera origin
 await import("./sdk/kz-met.js");const K=globalThis.kzMet;
 // buscar dueños recientes de posiciones (firmantes de AddLiquidity en DLMM)
-const sigs=(await call("getSignaturesForAddress",["LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo",{limit:1000}])).filter(s=>!s.err);const owners=[];
+const sigs=(await call("getSignaturesForAddress",["LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo",{limit:1000}])||[]).filter(s=>!s.err);const owners=[];
 for(let i=0;i<sigs.length&&i<600&&owners.length<4;i+=10){const T=await Promise.all(sigs.slice(i,i+10).map(s=>call("getTransaction",[s.signature,{encoding:"json",maxSupportedTransactionVersion:0}])));
  for(const t of T){if(!t)continue;if((t.meta.logMessages||[]).some(l=>/Instruction: (AddLiquidity|InitializePosition|RemoveLiquidity|ClaimFee)/.test(l))){const o=t.transaction.message.accountKeys[0];if(!owners.includes(o))owners.push(o)}}}
 console.log("owners",owners.join(","));
