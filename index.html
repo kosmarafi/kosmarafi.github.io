@@ -1782,7 +1782,7 @@ if(window.MutationObserver&&document.body&&document.createTreeWalker)new Mutatio
  if("IntersectionObserver" in window){
   var io=new IntersectionObserver(function(E){E.forEach(function(e){var b=e.target;if(e.isIntersecting&&!b._seen){b._seen=1;b.classList.add("kz-fresh");setTimeout(function(){b.classList.remove("kz-fresh")},1500)}})},{threshold:.08,rootMargin:"0px 0px -6% 0px"});
   B.forEach(function(b){io.observe(b)})}
- function mv(e){var b=e.currentTarget,r=b.getBoundingClientRect();b.style.setProperty("--mx",(e.clientX-r.left)+"px");b.style.setProperty("--my",(e.clientY-r.top)+"px");b.classList.add("lit")}
+ function mv(e){if(e.pointerType&&e.pointerType!=="mouse")return;var b=e.currentTarget,r=b.getBoundingClientRect();b.style.setProperty("--mx",(e.clientX-r.left)+"px");b.style.setProperty("--my",(e.clientY-r.top)+"px");b.classList.add("lit")}
  B.filter(function(b){return b.classList.contains("b")}).forEach(function(b){b.addEventListener("pointermove",mv);b.addEventListener("pointerdown",mv);b.addEventListener("pointerleave",function(){b.classList.remove("lit")});b.addEventListener("pointerup",function(e){if(e.pointerType!=="mouse")setTimeout(function(){b.classList.remove("lit")},700)})});
 })();
 
