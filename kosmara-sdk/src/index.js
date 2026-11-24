@@ -493,6 +493,7 @@ async function pool(items, n, fn) {
  * Historial de una posicion a partir de sus transacciones:
  * depositos, retiradas y cobros (en unidades crudas de cada token) y fecha de apertura.
  */
+const TXC = new Map();
 async function history(url, posAddr, vaultA, vaultB, rewardVaults) {
   const disc = await discriminators();
   let sigs = [];
@@ -507,7 +508,13 @@ async function history(url, posAddr, vaultA, vaultB, rewardVaults) {
   let ok = sigs.filter((x) => !x.err);
   // Si hay muchas, nos quedamos con las mas recientes y las mas antiguas (donde estan los depositos iniciales).
   if (ok.length > 100) ok = ok.slice(0, 70).concat(ok.slice(-30));
-  const txs = await pool(ok, 3, (x) => rpcCall(url, "getTransaction", [x.signature, { encoding: "jsonParsed", maxSupportedTransactionVersion: 0, commitment: "confirmed" }]));
+  // Las transacciones ya leídas no cambian: se guardan para que el refresco periódico solo lea las nuevas.
+  const txs = await pool(ok, 3, async (x) => {
+    if (TXC.has(x.signature)) return TXC.get(x.signature);
+    const t = await rpcCall(url, "getTransaction", [x.signature, { encoding: "jsonParsed", maxSupportedTransactionVersion: 0, commitment: "confirmed" }]);
+    if (t) TXC.set(x.signature, t);
+    return t;
+  });
 
   const ev = [];
   const rew = {};
@@ -838,5 +845,5 @@ async function positions(o) {
   return res;
 }
 
-window.kzSdk = { ready: true, version: "0.8.0", openPosition, swapAndOpen, positions, closePosition, harvest, increase, decrease, livePrices, autoOn, autoOff };
+window.kzSdk = { ready: true, version: "0.8.1", openPosition, swapAndOpen, positions, closePosition, harvest, increase, decrease, livePrices, autoOn, autoOff };
 window.dispatchEvent(new Event("kzsdk"));
