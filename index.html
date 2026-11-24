@@ -752,7 +752,7 @@ var TKS=[["SOL",SOLM,9],["USDC","EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",6
 window.kzP=43;
 TKS.forEach(function(t){TM[t.s]=t});
 window.kzP=44;
-var SW={from:"SOL",to:"USDC",amt:"",slip:1,res:[],sel:"",net:"sol",mode:"sol",np:false};
+var SW={from:"SOL",to:"USDC",amt:"",slip:1,res:[],sel:"",net:(function(){try{var v=localStorage.getItem("kz_swnet");return !v||v==="sol"||isNaN(+v)?"sol":+v}catch(e){return "sol"}})(),mode:"sol",np:false};
 /* ---------- Redes (LI.FI): lista de cadenas con logo y datos para la wallet ---------- */
 window.kzP=44;
 var LIFI="https://li.quest/v1",LIFI_INT="kosmara-defi",LIFI_FEE=0.002; /* afiliado LI.FI: nombre de integrador del portal y comisión en fracción (0.003 = 0,3 %). Vacío = sin comisión. */
@@ -837,7 +837,7 @@ async function eSwap(){
  catch(e){eres('<span class="dn">'+esc(fe(e))+"</span>")}}
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-net],[data-epct],[data-er],[data-act='netpick'],[data-act^='e']");if(!b)return;
  if(b.hasAttribute("data-er")){EV.sel=b.getAttribute("data-er");EV.q=(EV.res||[]).filter(function(x){return x.p===EV.sel})[0]||EV.q;var d=$("eq");if(d)d.innerHTML=eqHtml();return}
- if(b.hasAttribute("data-net")){var n=b.getAttribute("data-net");SW.net=n==="sol"?"sol":+n;SW.np=false;SW.mode="sol";EV.q=null;EV.res=[];EV.amt="";rSwap();return}
+ if(b.hasAttribute("data-net")){var n=b.getAttribute("data-net");SW.net=n==="sol"?"sol":+n;LS("kz_swnet",String(SW.net));SW.np=false;SW.mode="sol";EV.q=null;EV.res=[];EV.amt="";rSwap();return}
  if(b.hasAttribute("data-epct")){var id=SW.net,t=evT(id,EV.from[id]),bl=evBal(id,EV.from[id])||0;if(t&&t.address===NAT)bl=Math.max(0,bl-(id===1?.003:.0005));EV.amt=String(Math.floor(bl*b.getAttribute("data-epct")/100*1e6)/1e6);EV.q=null;EV.res=[];return rSwap()}
  var a=b.getAttribute("data-act");if(a==="netpick"){SW.np=!SW.np;loadCH();return rSwap()}
  if(a==="equote")eQuote();else if(a==="eswap")eSwap();else if(a==="evload"){EV.ld[SW.net]=0;rSwap()}
@@ -1103,7 +1103,7 @@ setInterval(function(){if(document.hidden)return;loadPools().catch(function(){})
  document.addEventListener("touchmove",function(e){if(y0==null)return;dy=e.touches[0].clientY-y0;if(dy<=0||window.scrollY>0){dy=0;return}var d=Math.min(150,dy*.5);ind().style.transform="translateY("+(d-10)+"px) rotate("+(d*3)+"deg)"},{passive:true});
  document.addEventListener("touchend",function(){if(y0==null)return;y0=null;var e=ind();if(dy*.5>=70){busy=true;e.classList.add("go");e.style.transform="translateY(120px)";
    /* como en un navegador: el indicador se ve un segundo y la página se recarga (la wallet se reconecta sola) */
-   setTimeout(function(){try{location.reload()}catch(z){busy=false;e.classList.remove("go");e.style.transform="translateY(-50px)"}},900)}else e.style.transform="translateY(-50px)";dy=0},{passive:true});
+   setTimeout(function(){try{location.reload()}catch(z){busy=false;e.classList.remove("go");e.style.transform="translateY(-50px)"}},250)}else e.style.transform="translateY(-50px)";dy=0},{passive:true});
 })();
 var STB=/usd|dai|eur|frax|gho|usx/i;
 window.kzP=116;
@@ -1395,7 +1395,11 @@ function rSheet(){
 function openSheet(){S.sheetOpen=true;S.wv="main";try{window.dispatchEvent(new Event("eip6963:requestProvider"))}catch(e){}rSheet();$("sheet").hidden=false}
 /* Botón de wallet: sin conectar, botón amarillo; conectada, chip como el de Orca con el logo de la wallet,
    un punto verde y la dirección recortada (8AMf...hQ21). */
+var RC_PEND=(function(){try{var id=localStorage.getItem("kz_w");return id!=="-"&&!!localStorage.getItem("kz_pk")}catch(e){return false}})();
+setTimeout(function(){if(RC_PEND){RC_PEND=false;rConn()}},4000);
 function rConn(){if(window.rBurger)rBurger();var b=$("bConn"),a=S.pk||S.eaddr,w=a&&WID(S.pk?S.wid:S.eid);
+ if(!a&&RC_PEND){var sa=LS("kz_pk")||"",sw=WID(LS("kz_w")||"ph");b.className="wchip";b.setAttribute("aria-label","Reconectando tu wallet");
+  b.innerHTML='<span class="wc-i">'+(sw?wIcon(sw):"")+'</span><span class="wc-a" style="opacity:.6">'+esc(sa.slice(0,4)+"..."+sa.slice(-4))+"</span>";return}
  if(!a){b.className="ywallet";b.textContent="Conectar wallet";b.removeAttribute("aria-label");return}
  b.className="wchip";b.setAttribute("aria-label",(w?w.n:(S.pk?S.wname:S.ename))+" conectada: "+a+". Tocar para gestionar");
  b.innerHTML='<span class="wc-i">'+(w?wIcon(w):"")+'<i class="wc-dot"></i></span><span class="wc-a">'+esc(a.slice(0,4)+"..."+a.slice(-4))+"</span>"}
@@ -1406,7 +1410,7 @@ function solWrap(p){return{p:p,
  signAndSendTransaction:async function(t){
   if(p.signAndSendTransaction){var r=await p.signAndSendTransaction(t);return{signature:typeof r==="string"?r:r&&r.signature}}
   var sg=await p.signTransaction(t);return{signature:await rc("sendTransaction",[u8b(sg.serialize()),{encoding:"base64",maxRetries:3}])}}}}
-function solOn(w,pk){S.sw=solWrap(solGet(w));S.pk=pk;S.wid=w.id;S.wname=w.n;LS("kz_w",w.id);$("addr").value=S.pk;rConn();loadBal().then(function(){rSwap();sumPsSafe();rWallet();rPf();loadPos()})}
+function solOn(w,pk){RC_PEND=false;LS("kz_pk",pk);S.sw=solWrap(solGet(w));S.pk=pk;S.wid=w.id;S.wname=w.n;LS("kz_w",w.id);$("addr").value=S.pk;rConn();loadBal().then(function(){rSwap();sumPsSafe();rWallet();rPf();loadPos()})}
 async function wallet(id){
  try{var w=WID(id);if(!w)throw new Error("Wallet no disponible.");var sp=solGet(w),p=sp||evmGet(w);
   if(!p)throw new Error(w.n+" no está en este navegador."+(MOB?" Ábrela desde «Abrir en la app».":""));
@@ -2291,9 +2295,10 @@ async function loadPos(){var ow=hSol();if(!ow||!(window.kzSdk&&kzSdk.ready))retu
  metLoad().then(function(M){return M.positions({rpc:rpcUrl(),owner:ow})}).then(function(MP){if(ow!==hSol())return;S.positions=S.positions.filter(function(x){return !x.met}).concat(MP);if(MP.length)S.posOk=true;rPf()}).catch(function(){});
  /* Raydium: el módulo se carga aparte y sus posiciones se añaden cuando llegan */
  try{var R=await rayLoad(),RP=await R.positions({rpc:rpcUrl(),owner:ow});if(ow!==hSol())return;S.positions=S.positions.filter(function(x){return x.dex!=="Raydium"}).concat(RP);S.posOk=true;rPf()}catch(e){}}
-(function(){var id=LS("kz_w");if(id==="-")return;id=id||"ph";var w=WID(id);if(!w)return;var p=solGet(w);if(!p)return;
+(function(){var id=LS("kz_w");if(id==="-")return;id=id||"ph";var w=WID(id),p=w&&solGet(w);if(!w||!p){if(RC_PEND){RC_PEND=false;rConn()}return}
  var go=function(k){if(k)solOn(w,k.toString())};
- if(id==="ph")solConnect(p,true).then(go).catch(function(){});else if(p.isConnected&&p.publicKey)go(p.publicKey);
+ var no=function(){if(RC_PEND){RC_PEND=false;rConn()}};
+ if(id==="ph")solConnect(p,true).then(go,no);else if(p.isConnected&&p.publicKey)go(p.publicKey);else no();
  try{if(p.on)p.on("accountChanged",function(k){if(k&&S.wid===w.id)go(k)})}catch(e){}
 })();
 window.addEventListener("kzsdk",function(){loadPos();if(S.sel&&!$("ps").hidden)rPs()});
