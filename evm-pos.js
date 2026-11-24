@@ -126,7 +126,45 @@
     return out;
   }
 
-  /** Posiciones abiertas de una dirección EVM en Uniswap v3 y PancakeSwap v3 (Ethereum y BNB Chain). */
+  /* ---------- Curve y Balancer: tokens LP (sin rango ni NFT), solo lectura ---------- */
+  var CRV = { ETH: "ethereum", ARB: "arbitrum", BASE: "base" }, CRVP = {};
+  var BALCH = { MAINNET: "ETH", ARBITRUM: "ARB", BASE: "BASE", OPTIMISM: "OP" };
+  async function curvePools(chain) {
+    if (CRVP[chain] && Date.now() - CRVP[chain].at < 600000) return CRVP[chain].L;
+    var r = await fetch("https://api.curve.finance/v1/getPools/all/" + CRV[chain]), j = await r.json();
+    var L = ((j.data && j.data.poolData) || []).filter(function (p) { return +p.usdTotal >= 500000 && p.lpTokenAddress && +p.totalSupply > 0; });
+    CRVP[chain] = { L: L, at: Date.now() };
+    return L;
+  }
+  async function curvePositions(chain, owner) {
+    var L = await curvePools(chain), q = [];
+    L.forEach(function (p) { q.push([p.lpTokenAddress, SEL.balanceOf + w(owner)]); q.push([p.gaugeAddress || p.lpTokenAddress, SEL.balanceOf + w(owner)]); });
+    if (!q.length) return [];
+    var r = await calls(chain, q), out = [];
+    L.forEach(function (p, i) {
+      var lp = U(words(r[2 * i])[0]), g = p.gaugeAddress ? U(words(r[2 * i + 1])[0]) : 0n;
+      if (lp + g === 0n) return;
+      var share = Number(lp + g) / Number(BigInt(p.totalSupply)), usd = share * +p.usdTotal;
+      if (usd < 0.01) return;
+      out.push({ evm: true, lp: true, chain: chain, chainName: CH[chain].name, dex: "Curve", owner: owner, mint: "lp_crv_" + chain + "_" + String(p.address).toLowerCase(),
+        pair: (p.coins || []).map(function (c) { return c.symbol; }).join("/") || p.name, usd: usd, stakedUsd: Number(g) / Number(BigInt(p.totalSupply)) * +p.usdTotal,
+        url: "https://www.curve.finance/dex/" + CRV[chain] + "/pools/" + (p.id || p.address) + "/deposit", pend: 0 });
+    });
+    return out;
+  }
+  async function balancerPositions(owner) {
+    var q = '{poolGetPools(where:{userAddress:"' + owner + '",chainIn:[MAINNET,ARBITRUM,BASE,OPTIMISM]}){id address name chain protocolVersion poolTokens{symbol} userBalance{totalBalanceUsd stakedBalances{balanceUsd}}}}';
+    var r = await fetch("https://api-v3.balancer.fi/", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ query: q }) }), j = await r.json();
+    return ((j.data && j.data.poolGetPools) || []).filter(function (p) { return BALCH[p.chain] && p.userBalance && +p.userBalance.totalBalanceUsd >= 0.01; }).map(function (p) {
+      var chain = BALCH[p.chain];
+      return { evm: true, lp: true, chain: chain, chainName: CH[chain].name, dex: "Balancer", owner: owner, mint: "lp_bal_" + chain + "_" + String(p.address).toLowerCase(),
+        pair: (p.poolTokens || []).map(function (t) { return t.symbol; }).join("/") || p.name, usd: +p.userBalance.totalBalanceUsd,
+        stakedUsd: (p.userBalance.stakedBalances || []).reduce(function (a, x) { return a + (+x.balanceUsd || 0); }, 0),
+        url: "https://balancer.fi/pools/" + String(p.chain).toLowerCase() + "/v" + (p.protocolVersion || 2) + "/" + p.id, pend: 0 };
+    });
+  }
+
+  /** Posiciones de una dirección EVM: liquidez concentrada (Uniswap v3 y copias) y tokens LP de Curve y Balancer. */
   async function positions(owner, opts) {
     owner = String(owner || "").toLowerCase();
     if (!/^0x[0-9a-f]{40}$/.test(owner)) return [];
@@ -134,7 +172,9 @@
     var out = [], errs = [];
     await Promise.all(Object.keys(CH).map(async function (chain) {
       try { out = out.concat(await chainPositions(chain, owner, opts)); } catch (e) { errs.push(CH[chain].name); }
-    }));
+    }).concat(Object.keys(CRV).map(async function (chain) {
+      try { out = out.concat(await curvePositions(chain, owner)); } catch (e) {}
+    })).concat([(async function () { try { out = out.concat(await balancerPositions(owner)); } catch (e) {} })()]));
     out.sort(function (a, b) { return b.usd - a.usd; });
     if (errs.length) out.errors = errs;
     return out;
@@ -347,5 +387,5 @@
     return { to: info.npm, data: val > 0n ? multicall([data, SEL.refund]) : data, value: "0x" + val.toString(16), need: [{ t: info.t0, amt: d0 }, { t: info.t1, amt: d1 }].filter(function (x) { return x.t !== info.wnative && x.amt > 0n; }) };
   }
 
-  G.kzEvmPos = { ready: true, version: "2.0.0", CH: CH, DEX: DEX, NETK: NETK, positions: positions, poolInfo: poolInfo, ticks: ticks, split: split, ratio: ratio, txMint: txMint, txHarvest: txHarvest, txDecrease: txDecrease, txClose: txClose, txIncrease: txIncrease, allowance: allowance, balances: balances, approveData: approveData, _calls: calls, _multicall: multicall };
+  G.kzEvmPos = { ready: true, version: "2.1.0", CH: CH, DEX: DEX, NETK: NETK, positions: positions, poolInfo: poolInfo, ticks: ticks, split: split, ratio: ratio, txMint: txMint, txHarvest: txHarvest, txDecrease: txDecrease, txClose: txClose, txIncrease: txIncrease, allowance: allowance, balances: balances, approveData: approveData, _calls: calls, _multicall: multicall };
 })(typeof window !== "undefined" ? window : globalThis);

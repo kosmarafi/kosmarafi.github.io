@@ -1907,6 +1907,9 @@ function posDet(mint){var p=S.positions.filter(function(x){return x.mint===mint}
   (p.evm?row("Red",esc(p.chainName))+row("NFT",'<a class="lk" href="'+kzEvmPos.CH[p.chain].nft+esc(p.npm)+"?a="+esc(p.tokenId)+'" target="_blank" rel="noopener">#'+esc(p.tokenId)+" ↗</a>")+row("Pool",'<a class="lk" href="'+kzEvmPos.CH[p.chain].acct+esc(p.pool)+'" target="_blank" rel="noopener">'+sh(p.pool)+" ↗</a>"):
   row(p.met?"Posición":"NFT",'<a class="lk" href="https://solscan.io/'+(p.met?"account/":"token/")+esc(p.mint)+'" target="_blank" rel="noopener">'+sh(p.mint)+" ↗</a>")+row("Pool",'<a class="lk" href="https://solscan.io/account/'+esc(p.pool)+'" target="_blank" rel="noopener">'+sh(p.pool)+" ↗</a>")),"Listo").then(function(){})}
 function posCard(p){
+ if(p.lp)return '<div class="pos"><div class="srow" style="justify-content:space-between"><b style="font-size:17px">'+esc(p.pair)+'</b><span class="tag o">'+esc(p.dex)+' · token LP</span></div>'+
+  '<div class="row" style="margin-top:8px"><span class="dim" style="font-size:13px">Saldo</span><span class="v"><b>'+usd(p.usd)+"</b></span></div>"+(p.stakedUsd>0.01?'<div class="row" style="margin-top:6px"><span class="dim" style="font-size:13px">En staking (gauge)</span><span class="v"><b>'+usd(p.stakedUsd)+"</b></span></div>":"")+
+  '<div class="dim" style="font-size:13px;margin-top:8px">Las pools de '+esc(p.dex)+' no tienen rango: tu parte crece con las comisiones. De momento se gestionan en su web.</div><a class="btn" style="margin-top:8px;display:block;text-align:center" href="'+esc(p.url)+'" target="_blank" rel="noopener">Gestionar en '+esc(p.dex)+" ↗</a></div>";
  var own=p.evm?!!(!S.wch.a&&S.eaddr&&p.owner===String(S.eaddr).toLowerCase()):!!(p.mint&&S.pk&&hSol()===S.pk);
  var r=function(a,b){return '<div class="row" style="margin-top:6px"><span class="dim" style="font-size:13px">'+a+'</span><span class="v"><b>'+b+"</b></span></div>"};
  return '<div class="pos"><div class="srow" style="justify-content:space-between"><b style="font-size:17px">'+esc(p.pair)+'</b><span class="srow" style="gap:8px"><span class="tag o">'+(p.dex?esc(p.dex)+" · ":"")+esc(p.fee)+'%</span>'+(p.auto?'<span class="tag" style="background:rgba(34,214,138,.14);color:#3fd69a" title="Auto-composición activada">&#8635; Auto</span>':"")+(own?'<button class="pmb" data-pmenu="'+esc(p.mint)+'" aria-label="Opciones de la posición" aria-expanded="'+(S.pmenu===p.mint)+'">•••</button>':"")+'</span></div>'+(own&&S.pmenu===p.mint?pMenu(p):"")+
@@ -2259,7 +2262,7 @@ async function loadPos(){var ow=hSol();if(!ow||!(window.kzSdk&&kzSdk.ready))retu
 })();
 window.addEventListener("kzsdk",function(){loadPos();if(S.sel&&!$("ps").hidden)rPs()});
 try{var kzM=document.createElement("script");kzM.type="module";kzM.src="./sdk/kz-sdk.js?v=13";document.head.appendChild(kzM)}catch(e){}
-try{var kzE=document.createElement("script");kzE.src="./evm-pos.js?v=2";kzE.onload=function(){loadEvmPos(true)};document.head.appendChild(kzE)}catch(e){}
+try{var kzE=document.createElement("script");kzE.src="./evm-pos.js?v=3";kzE.onload=function(){loadEvmPos(true)};document.head.appendChild(kzE)}catch(e){}
 
 window.kzP=400;
 rRoad();rHome();rPf();rWallet();rLot();rNet("eth");rNet("bsc");rNet("base");rNet("arbitrum");rNet("optimism");loadNet("eth").then(function(){return loadNet("bsc")}).then(function(){return loadNet("base")}).then(function(){return loadNet("arbitrum")}).then(function(){return loadNet("optimism")});loadAave();
