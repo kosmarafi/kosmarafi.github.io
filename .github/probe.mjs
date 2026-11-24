@@ -5,8 +5,9 @@ const call=async(m,p)=>{for(let i=0;i<8;i++){const r=await fetch(RPC,{method:"PO
 // Connection de web3 con cabecera origin
 await import("./sdk/kz-met.js");const K=globalThis.kzMet;
 // buscar dueños recientes de posiciones (firmantes de AddLiquidity en DLMM)
-const sigs=await call("getSignaturesForAddress",["LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo",{limit:120}]);const owners=[];
-for(const s of sigs){if(s.err||owners.length>=4)continue;const t=await call("getTransaction",[s.signature,{encoding:"json",maxSupportedTransactionVersion:0}]);if(!t)continue;if((t.meta.logMessages||[]).some(l=>/AddLiquidity/.test(l))){const o=t.transaction.message.accountKeys[0];if(!owners.includes(o))owners.push(o)}}
+const sigs=(await call("getSignaturesForAddress",["LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo",{limit:1000}])).filter(s=>!s.err);const owners=[];
+for(let i=0;i<sigs.length&&i<600&&owners.length<4;i+=10){const T=await Promise.all(sigs.slice(i,i+10).map(s=>call("getTransaction",[s.signature,{encoding:"json",maxSupportedTransactionVersion:0}])));
+ for(const t of T){if(!t)continue;if((t.meta.logMessages||[]).some(l=>/Instruction: (AddLiquidity|InitializePosition|RemoveLiquidity|ClaimFee)/.test(l))){const o=t.transaction.message.accountKeys[0];if(!owners.includes(o))owners.push(o)}}}
 console.log("owners",owners.join(","));
 const sim=async(b)=>{const r=await call("simulateTransaction",[Buffer.from(b).toString("base64"),{encoding:"base64",sigVerify:false,replaceRecentBlockhash:true}]);return r&&r.value&&r.value.err?"ERR "+JSON.stringify(r.value.err)+" "+(r.value.logs||[]).filter(l=>/rror|failed/.test(l)).slice(-2).join(" · ").slice(0,200):"OK"};
 let done=0;
