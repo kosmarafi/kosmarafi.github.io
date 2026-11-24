@@ -8,4 +8,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: cd kosmara-sdk && npm install >/dev/null 2>&1; F=$(ls node_modules/@meteora-ag/dlmm/dist/index.d.ts 2>/dev/null || find node_modules/@meteora-ag/dlmm -name "*.d.ts" | head -1); echo "DTS $F"; grep -nE "(getAllLbPairPositionsByUser|claimAllRewardsByPosition|removeLiquidity|addLiquidityByStrategy|initializePositionAndAddLiquidityByStrategy|getPosition)\(" $F | head -20 | cut -c1-400; grep -n "version" node_modules/@meteora-ag/dlmm/package.json | head -2; cp ../.github/probe.mjs ./probe.mjs && node probe.mjs
+      - run: cp .github/probe.mjs ./probe.mjs && node probe.mjs

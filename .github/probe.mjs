@@ -3,8 +3,7 @@ const RPC="https://mainnet.helius-rpc.com/?api-key=d69a3929-b7b3-4523-8dea-9d82a
 const H={"content-type":"application/json",origin:"https://kosmarafi.github.io"};
 const call=async(m,p)=>{for(let i=0;i<8;i++){const r=await fetch(RPC,{method:"POST",headers:H,body:JSON.stringify({jsonrpc:"2.0",id:1,method:m,params:p})});if(r.status===429){await new Promise(z=>setTimeout(z,1200));continue}return (await r.json()).result}};
 // Connection de web3 con cabecera origin
-const W=await import("@solana/web3.js");const Orig=W.Connection;
-await import("./src/met.js");const K=globalThis.kzMet;
+await import("./sdk/kz-met.js");const K=globalThis.kzMet;
 // buscar dueños recientes de posiciones (firmantes de AddLiquidity en DLMM)
 const sigs=await call("getSignaturesForAddress",["LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo",{limit:120}]);const owners=[];
 for(const s of sigs){if(s.err||owners.length>=4)continue;const t=await call("getTransaction",[s.signature,{encoding:"json",maxSupportedTransactionVersion:0}]);if(!t)continue;if((t.meta.logMessages||[]).some(l=>/AddLiquidity/.test(l))){const o=t.transaction.message.accountKeys[0];if(!owners.includes(o))owners.push(o)}}
