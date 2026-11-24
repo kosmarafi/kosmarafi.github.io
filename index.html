@@ -1807,6 +1807,12 @@ if(window.MutationObserver&&document.body&&document.createTreeWalker)new Mutatio
   x.lineCap="round";
   for(var i=0;i<st.length;i++){var s=st[i],py=((s.y*H-y*s.z*.45)%H+H)%H,px=s.x*W,a=Math.min(1,(.55+.6*s.z)*(.78+.22*Math.sin(tt*1.6+s.ph))),col=s.c?s.c.join(","):"255,255,255";
    {var rr=s.r*(.75+s.z*.85);if(s.z>.55){x.fillStyle="rgba("+col+","+(a*.22).toFixed(2)+")";x.beginPath();x.arc(px,py,rr*3.2,0,6.3);x.fill()}x.fillStyle="rgba("+col+","+a.toFixed(2)+")";x.beginPath();x.arc(px,py,rr,0,6.3);x.fill()}}
+  // estrella fugaz de vez en cuando
+  nextShoot-=dt;if(sp>.02){nextShoot=Math.max(nextShoot,2);shoot=null}if(!shoot&&nextShoot<=0){shoot={x:Math.random()*W*.7+W*.2,y:Math.random()*H*.45,t:0,L:120+Math.random()*90};nextShoot=3.5+Math.random()*5}
+  if(shoot){shoot.t+=dt;var q=shoot.t/1.25;if(q>=1)shoot=null;else{var sx=shoot.x-q*W*.42,sy2=shoot.y+q*H*.22,al=Math.sin(q*Math.PI),Ls=shoot.L,ex=sx+Ls,ey=sy2-Ls*.52;
+   var lg=x.createLinearGradient(sx,sy2,ex,ey);lg.addColorStop(0,"rgba(255,255,255,"+al.toFixed(2)+")");lg.addColorStop(.35,"rgba(200,215,255,"+(.55*al).toFixed(2)+")");lg.addColorStop(1,"rgba(180,160,255,0)");
+   x.save();x.strokeStyle=lg;x.lineWidth=2.4;x.beginPath();x.moveTo(sx,sy2);x.lineTo(ex,ey);x.stroke();x.restore();
+   var hg=x.createRadialGradient(sx,sy2,0,sx,sy2,9);hg.addColorStop(0,"rgba(255,255,255,"+al.toFixed(2)+")");hg.addColorStop(1,"rgba(255,255,255,0)");x.fillStyle=hg;x.beginPath();x.arc(sx,sy2,9,0,6.3);x.fill()}}
   requestAnimationFrame(draw);
  }
  size();window.addEventListener("resize",size);
