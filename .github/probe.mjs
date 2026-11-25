@@ -1,0 +1,5 @@
+const post=async(u,q,v)=>{const r=await fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({query:q,variables:v})});return r.json()};
+const intro=async(u,t)=>{const j=await post(u,`{__type(name:"${t}"){fields{name args{name type{name kind ofType{name kind ofType{name}}}} type{name kind ofType{name kind ofType{name}}}}}}`);return (j.data&&j.data.__type&&j.data.__type.fields||[]).map(f=>f.name+(f.args&&f.args.length?"("+f.args.map(a=>a.name+":"+(a.type.name||(a.type.ofType&&(a.type.ofType.name||a.type.ofType.ofType&&a.type.ofType.ofType.name)))).join(",")+")":"")+":"+(f.type.name||(f.type.ofType&&(f.type.ofType.name||(f.type.ofType.ofType&&f.type.ofType.ofType.name))))).join(" | ")};
+const A="https://api.v3.aave.com/graphql",M="https://api.morpho.org/graphql";
+for(const t of ["Query","Market","Reserve","MarketUserReserveSupplyPosition","Erc20Token","MarketUserReserveSupplyPosition","UserSuppliesRequest"])console.log("AAVE",t,"=>",await intro(A,t));
+for(const t of ["Query","Vault","VaultV2","VaultState","Asset","User","VaultPosition","VaultV2Position"])console.log("MORPHO",t,"=>",await intro(M,t));
