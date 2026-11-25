@@ -2194,7 +2194,7 @@ async function jeDeposit(){var p=JE.p,res=function(h){var e=$("jeres");if(e)e.in
   res((o.confirmed?"Depositado en Jupiter Earn.":"Depósito enviado; aún sin confirmar.")+' <a class="lk" href="https://solscan.io/tx/'+esc(o.signature)+'" target="_blank" rel="noopener">Ver transacción ↗</a>');kzCelebrate(1);JE.amt="";
   setTimeout(function(){loadBal();loadVaults(true);jePos().then(function(){rJe()}).catch(function(){})},2000)}
  catch(e){try{console.error("[Kosmara] Earn:",e&&(e.stack||e.message||e))}catch(z){}var m=fe(e);if(/Algo ha fallado/.test(m)&&e&&/simulación/i.test(e.message||""))m="La simulación falló y no se ha enviado nada. "+String(e.message).replace(/^.*?Error Message: /,"").slice(0,140);res('<span class="dn">'+esc(m)+"</span>")}}
-async function jeWithdraw(tok,el){var p={id:tok.address,A:{m:tok.assetAddress||(tok.asset&&tok.asset.address),s:(tok.asset&&tok.asset.symbol)||tok.symbol,d:tok.decimals}},pos=(JE.all||S.vlt||[]).filter(function(y){return y.token&&y.token.address===tok.address})[0];
+async function jeWithdraw(tok,el){var p={id:tok.address,A:{m:tok.assetAddress||(tok.asset&&tok.asset.address),s:String((tok.asset&&tok.asset.symbol)||tok.symbol).replace(/^WSOL$/,"SOL"),d:tok.decimals}},pos=(JE.all||S.vlt||[]).filter(function(y){return y.token&&y.token.address===tok.address})[0];
  if(!pos)return;var have=+pos.underlyingAssets/Math.pow(10,p.A.d),r=function(h){if(el)el.innerHTML=h};
  var form=await kzConfirm("Retirar de Jupiter Earn",'<div>Tienes <b>'+f(have,6)+" "+esc(p.A.s)+'</b> depositados.</div><div class="srow" style="gap:6px;margin-top:10px">'+[25,50,75,100].map(function(v){return '<button class="btn kzpct'+(v===100?" on":"")+'" type="button" data-o="'+v+'">'+v+"%</button>"}).join("")+'</div><div class="dim" style="margin-top:10px;font-size:13px">Retirar no tiene comisión de Kosmara. Solo pagas la comisión de red de Solana.</div>',"Retirar",
   function(m){return{pct:+m.querySelector(".kzpct.on").getAttribute("data-o")}},
@@ -2214,7 +2214,7 @@ async function loadVaults(force){var ow=hSol();if(!ow){S.vlt=[];return}if(VL.bus
 function vaultsHtml(){if(!hSol())return '<div class="dim" style="margin-top:12px">Conecta una wallet de Solana para ver tus depósitos.</div>';
  if(!S.vlt){loadVaults();return '<div class="dim" style="margin-top:12px">Cargando tus depósitos…</div>'}
  if(!S.vlt.length)return '<div class="dim" style="margin-top:12px">'+(VL.err?esc(VL.err):"No tienes depósitos en vaults. Puedes depositar desde la pestaña Vault.")+"</div>";
- return S.vlt.map(function(x){var t=x.token,a=t.asset||{},d=+t.decimals,amt=+x.underlyingAssets/Math.pow(10,d),u=amt*(+a.price||0),ap=+t.totalRate/100;
+ return S.vlt.map(function(x){var t=x.token,a=Object.assign({},t.asset||{}),d=+t.decimals;if(a.symbol==="WSOL")a.symbol="SOL";varamt=+x.underlyingAssets/Math.pow(10,d),u=amt*(+a.price||0),ap=+t.totalRate/100;
   return '<div class="pos"><div class="srow" style="justify-content:space-between"><b style="font-size:17px">'+esc(a.symbol||t.symbol)+'</b><span class="tag o">Jupiter Earn</span></div>'+
    '<div class="row" style="margin-top:8px"><span class="dim" style="font-size:13px">Depositado</span><span class="v"><b>'+f(amt,6)+" "+esc(a.symbol||"")+"</b></span></div>"+
    '<div class="row" style="margin-top:6px"><span class="dim" style="font-size:13px">Valor</span><span class="v"><b>'+usd(u)+"</b></span></div>"+
