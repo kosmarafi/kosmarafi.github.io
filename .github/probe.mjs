@@ -1,7 +1,18 @@
-const K="jup_pub_fc0db5fe4cd24284045be587a267338b6e067d0f97e76712fbf9692bd3830f69",H={"content-type":"application/json","x-api-key":K,origin:"https://kosmarafi.github.io"};
-const w="8AMfcuNiwoQH8xKiytkujH5JVjiskER8eRTK7XAfhQ21";
-const p=await (await fetch("https://api.jup.ag/lend/v1/earn/positions?users="+w,{headers:H})).json();
-p.forEach(x=>{const y=Object.assign({},x);delete y.token;console.log("POSKEYS",x.token.symbol,JSON.stringify(y).slice(0,300))});
-await new Promise(z=>setTimeout(z,1500));
-for(const [ep,b] of [["redeem-instructions",{asset:"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",signer:w,shares:"1000000"}],["deposit-instructions",{asset:"So11111111111111111111111111111111111111112",signer:w,amount:"10000000"}]]){const r=await fetch("https://api.jup.ag/lend/v1/earn/"+ep,{method:"POST",headers:H,body:JSON.stringify(b)});const t=await r.text();let j=null;try{j=JSON.parse(t)}catch(e){}
- console.log("EP",ep,r.status,j&&j.instructions?("n="+j.instructions.length+" progs="+j.instructions.map(i=>i.programId.slice(0,6)).join(",")+" dataLen="+j.instructions.map(i=>(i.data||"").length).join(",")+" keys="+Object.keys(j).join(",")):t.slice(0,300));await new Promise(z=>setTimeout(z,1200))}
+import { chromium } from "playwright";
+await new Promise(z=>setTimeout(z,150000));
+const b=await chromium.launch();const pg=await b.newPage({viewport:{width:390,height:844},locale:"es-ES"});const errs=[];pg.on("pageerror",e=>errs.push(e.message));
+pg.on("console",m=>{const t=m.text();if(/sim|Simul|error/i.test(t))console.log("CONSOLE",t.slice(0,300))});
+await pg.addInitScript(()=>{const A="8AMfcuNiwoQH8xKiytkujH5JVjiskER8eRTK7XAfhQ21",pk={toString:()=>A,toBase58:()=>A};
+ window.__sig=0;const prov={isPhantom:true,isConnected:true,publicKey:pk,connect:async()=>({publicKey:pk}),disconnect:async()=>{},on(){},
+  signTransaction:async(t)=>{window.__sig++;return t},signAllTransactions:async(L)=>L,signAndSendTransaction:async()=>{throw new Error("FIRMA_SIMULADA")}};
+ window.phantom={solana:prov};window.solana=prov;localStorage.setItem("kz_w","ph")});
+await pg.goto("https://kosmarafi.github.io/?t="+Date.now(),{waitUntil:"networkidle"});await pg.waitForTimeout(8000);
+console.log("CONN",(await pg.$eval("#bConn",e=>e.textContent)).trim());
+await pg.evaluate(()=>{location.hash="#pools"});await pg.waitForTimeout(6000);
+const f=await pg.$('[data-flt="Jupiter"]');if(f)await f.click();await pg.waitForTimeout(800);
+const rows=await pg.$$("#plist .prow");let opened=false;for(const r of rows){const t=await r.innerText();if(/USDC/.test(t)&&/Earn/.test(t)){await r.click();opened=true;break}}
+console.log("OPENED",opened);await pg.waitForTimeout(4000);console.log("SHEET",(await pg.$eval("#ps",e=>e.innerText)).replace(/\n+/g," | ").slice(0,500));
+for(const [pay,amt] of [["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v","0.1"],["So11111111111111111111111111111111111111112","0.005"]]){
+ await pg.selectOption("#jepay",pay).catch(()=>{});await pg.waitForTimeout(400);await pg.fill("#jeamt",amt);await pg.click('[data-act="jedep"]');
+ for(let i=0;i<20;i++){await pg.waitForTimeout(1500);const t=await pg.$eval("#jeres",e=>e.innerText).catch(()=>"");if(t&&!/Buscando|Preparando|Firma en/.test(t)){console.log("RES",pay.slice(0,4),"firmas",await pg.evaluate(()=>window.__sig),t.slice(0,400));break}}}
+console.log("ERRS",JSON.stringify(errs).slice(0,500));await b.close();

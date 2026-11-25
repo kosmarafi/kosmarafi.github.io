@@ -289,6 +289,29 @@ async function swapAndOpen(o) {
 }
 
 /**
+ * Envia instrucciones en el formato JSON de las APIs de Jupiter (swap, Earn) con la firma de la wallet.
+ * o = { rpc, owner, provider, ixs: [{programId, accounts, data(base64)}], alts: [direcciones de tablas],
+ *       sol: { ata: crear la cuenta wSOL, wrap: lamports a envolver, close: cerrar wSOL al final } }
+ */
+async function sendJson(o) {
+  if (!o || !o.provider || !o.owner) throw new Error("Conecta tu wallet primero");
+  const signer = createNoopSigner(address(o.owner));
+  const WSOL = "So11111111111111111111111111111111111111112";
+  const pre = [], post = [];
+  if (o.sol) {
+    const [ata] = await findAssociatedTokenPda({ owner: signer.address, tokenProgram: TOKEN_PROGRAM_ADDRESS, mint: address(WSOL) });
+    if (o.sol.ata || o.sol.wrap > 0) pre.push(getCreateAssociatedTokenIdempotentInstruction({ payer: signer, ata, owner: signer.address, mint: address(WSOL) }));
+    if (o.sol.wrap > 0) {
+      pre.push(getTransferSolInstruction({ source: signer, destination: ata, amount: BigInt(Math.floor(o.sol.wrap)) }));
+      pre.push(getSyncNativeInstruction({ account: ata }));
+    }
+    if (o.sol.close) post.push(getCloseAccountInstruction({ account: ata, destination: signer.address, owner: signer }));
+  }
+  const mid = (o.ixs || []).map((ix) => jupIx(ix, signer));
+  return sendIxs(Object.assign({}, o, { signer, cuLimit: o.cuLimit || 800000 }), pre.concat(mid, post));
+}
+
+/**
  * Depositar mas liquidez en una posicion abierta. o = { rpc, owner, mint, amountA, amountB, decA, decB, slipBps, provider }
  */
 async function increase(o) {
@@ -845,5 +868,5 @@ async function positions(o) {
   return res;
 }
 
-window.kzSdk = { ready: true, version: "0.8.1", openPosition, swapAndOpen, positions, closePosition, harvest, increase, decrease, livePrices, autoOn, autoOff };
+window.kzSdk = { ready: true, version: "0.9.0", sendJson, openPosition, swapAndOpen, positions, closePosition, harvest, increase, decrease, livePrices, autoOn, autoOff };
 window.dispatchEvent(new Event("kzsdk"));
