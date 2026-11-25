@@ -1,8 +1,8 @@
 import { chromium } from "playwright";
 import fs from "fs";
-const SOLA="8AMfcuNiwoQH8xKiytkujH5JVjiskER8eRTK7XAfhQ21",RP="https://base-rpc.publicnode.com";
+const SOLA="5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9",RP="https://base-rpc.publicnode.com";
 const R=async(m,p)=>(await (await fetch(RP,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method:m,params:p})})).json()).result;
-let ME="";{const blk=await R("eth_getBlockByNumber",["latest",true]);for(const t of blk.transactions){if((await R("eth_getCode",[t.from,"latest"]))!=="0x")continue;const b=BigInt(await R("eth_getBalance",[t.from,"latest"]));if(b>5000000000000000n){ME=t.from;break}}}
+let ME="";{const blk=await R("eth_getBlockByNumber",["latest",true]);for(const t of blk.transactions){if(/^0xdead/i.test(t.from)||(await R("eth_getCode",[t.from,"latest"]))!=="0x")continue;const b=BigInt(await R("eth_getBalance",[t.from,"latest"]));if(b>5000000000000000n){ME=t.from;break}}}
 console.log("ME",ME);
 const b=await chromium.launch();const pg=await b.newPage({viewport:{width:390,height:844},locale:"es-ES"});const errs=[];pg.on("pageerror",e=>errs.push(e.message));
 pg.on("console",m=>{const t=m.text();if(/TXCAP|error/i.test(t))console.log("CONSOLE",t.slice(0,700))});
@@ -21,14 +21,14 @@ console.log("CONN",(await pg.$eval("#bConn",e=>e.textContent).catch(()=>"?")).tr
 await click("data-v","swap");await pg.waitForTimeout(1000);await click("data-sm","x");
 for(let i=0;i<20;i++){await pg.waitForTimeout(1500);if(await pg.$("#xf"))break}
 const opts=await pg.$$eval("#xf option",L=>L.map(o=>o.value));console.log("FROM OPTS",opts.length,opts.filter(v=>/^SOL|^X\|SOL/.test(v)).join(" , ").slice(0,600));
-const to=(await pg.$$eval("#xt option",L=>L.map(o=>o.value))).find(v=>/^ETH\.USDC/.test(v));console.log("TO",to);
+const TOL=await pg.$$eval("#xt option",L=>L.map(o=>o.value));const to=TOL.find(v=>/^ETH\.USDC/.test(v));console.log("TO",to,"| BASE/BSC:",TOL.filter(v=>/^(BASE|BSC|ETH)\./.test(v)).join(" , "));
 async function run(tag,from,amt){await pg.selectOption("#xf",from);await pg.waitForTimeout(700);await pg.selectOption("#xt",to);await pg.waitForTimeout(700);await pg.fill("#xamt",amt);await pg.waitForTimeout(300);
  await pg.click('[data-act="xquote"]');for(let i=0;i<15;i++){await pg.waitForTimeout(1000);const t=await pg.$eval("#xq",e=>e.innerText);if(t)break}
  console.log(tag,"QUOTE",(await pg.$eval("#xq",e=>e.innerText)).replace(/\n+/g," | "),"||",(await pg.$eval("#xres",e=>e.innerText)));
  await pg.click('[data-act="xswap"]');for(let i=0;i<25;i++){await pg.waitForTimeout(1200);const t=await pg.$eval("#xres",e=>e.innerText);if(!/Calculando|Consultando|firma|Preparando/i.test(t))break}
  console.log(tag,"RES",(await pg.$eval("#xres",e=>e.innerText)).slice(0,300))}
 await run("S1 SOL→USDC(ETH)","SOL.SOL","0.05");
-const xt=opts.find(v=>/^X\|SOL\|/.test(v));if(xt)await run("S2 "+xt.split("|")[3]+"→USDC(ETH)",xt,String(Math.max(1,0)));
+const xt=opts.find(v=>/^X\|SOL\|/.test(v));if(xt)await run("S2 "+xt.split("|")[3]+"→USDC(ETH)",xt,"5");
 const xe=opts.find(v=>/^X\|(ETH|BASE|BSC)\|/.test(v));console.log("EVM X",xe);
 await pg.screenshot({path:"shots/x1.png"});
 // Vault desde Solana
