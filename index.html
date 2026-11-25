@@ -1271,6 +1271,7 @@ function sumPs(){
 function rPs(){
  var p=S.pools[S.sel],el=$("ps");if(!p){el.hidden=true;return}
  if(p.net&&!p.kind&&/^(Uniswap|PancakeSwap|Sushi|Aerodrome|Velodrome)$/.test(p.pr)&&window.kzEvmPos)return ecOpen(p,el);
+ if(p.vt&&window.kzVault)return vOpen(p,el);
  if(p.kind&&p.pr==="Jupiter"&&!p.net)return jeOpen(p,el);
  if(p.pr==="Meteora"&&!p.dok){metDec(p).then(function(){if(S.sel===p.k)rPs()}).catch(function(){})}
  if(p.kind||p.net){el.style.setProperty("--tc","20,241,149");el.innerHTML='<div class="mb"><button class="x" data-act="closeps" aria-label="Cerrar">×</button><b style="font-size:20px">'+esc(p.A.s)+(p.B.s?"/"+esc(p.B.s):"")+'</b><div class="dim">'+p.pr+" · "+esc(p.kind||NET[p.net].n)+" · TVL "+cur(p.tvl,0)+(p.apr!=null?(p.net&&!p.kind?" · APR est. ":" · APY ")+f(p.apr,1)+"%":"")+'</div><div class="dim" style="margin-top:12px;line-height:1.6">'+(p.pr==="Aave"?"Depositas un solo token en Aave, en la red Ethereum, con tu wallet (MetaMask) y lo retiras cuando quieras. El interés lo pagan quienes piden prestado y cambia cada día. Operar en Ethereum tiene coste de gas.":p.net?"La posición se abre en "+p.pr+" con tu wallet (MetaMask).":p.pr==="Kamino"?"Kamino gestiona el rango y reinvierte las comisiones por ti. Recibes un token del vault, no un NFT.":"Depositas un solo token en Jupiter Lend y recibes un token que acumula el interés. No hay rango ni NFT.")+'</div><a class="btn p" href="'+esc(p.url)+'" target="_blank" rel="noopener">'+(p.net&&!p.kind?"Abrir en ":"Depositar en ")+p.pr+" ↗</a></div>";el.hidden=false;return}
@@ -1575,7 +1576,7 @@ function poolRow(p){var ap=aprOf(p);
    "on" = en marcha (verde) · "test" = en pruebas (amarillo) · "soon" = próximamente · "idea" = en estudio */
 var ROAD=[
  ["on","Pools de Solana en una lista","Orca y Raydium con búsqueda, categorías y filtros."],
- ["on","Rendimientos de Aave, Jupiter Earn y Kamino","Dólares, ETH, BTC y SOL: dónde rinde más cada token, con enlace para depositar."],
+ ["on","Vaults de Aave, Morpho, Jupiter Earn y Kamino","Depositar y retirar gratis desde Kosmara, con autoswap desde cualquier token o red."],
  ["on","Pools de Ethereum y BNB Chain","Uniswap, Curve y PancakeSwap con datos reales."],
  ["on","Movimientos exportables","Historial de cualquier dirección en CSV y PDF."],
  ["on","Swap en Solana con Jupiter","Sin claves ni registro: compara rutas y firmas en tu wallet."],
@@ -2008,22 +2009,21 @@ var VF=[["usd","Dólares",/USD|DAI|GHO/i],["eth","ETH",/ETH/i],["btc","BTC",/BTC
 function lotCalc(){
  var d=Math.max(0,+S.lotN||0),a=Math.max(0,+S.lotP||0),y=d*a/100,e=$("lotRes");if(!e)return;
  var r=function(k,v){return '<div class="row"><span class="dim" style="font-size:13px">'+k+'</span><span class="v"><b>'+v+"</b></span></div>"};
- e.innerHTML=r("Interés estimado al año",cur(y,2))+r("Para ti (80 %)",cur(y*.8,2))+r("Recompra y quema del token (20 %)",cur(y*.2,2))+r("Puntos Kosmara al día",f(Math.floor(d/10),0));
+ e.innerHTML=r("Interés estimado al año",cur(y,2))+r("Para ti (90 %)",cur(y*.9,2))+r("Comisión de Kosmara (10 %)",cur(y*.1,2));
 }
 function rLot(){
- var E=Object.keys(S.pools).map(function(k){return S.pools[k]}).filter(function(p){return p.kind&&p.apr>0}).sort(function(a,b){return b.tvl-a.tvl}),u=E.filter(function(p){return p.pr==="Jupiter"&&p.A.s==="USDC"})[0];
+ var E=Object.keys(S.pools).map(function(k){return S.pools[k]}).filter(function(p){return p.kind&&p.apr>0}).sort(function(a,b){return b.tvl-a.tvl}),u=E.filter(function(p){return p.pr==="Morpho"&&p.A.s==="USDC"&&p.vt&&p.vt.chain===8453&&!p.vt.cfee})[0]||E.filter(function(p){return p.pr==="Jupiter"&&p.A.s==="USDC"})[0];
  if(u&&!S.lotT){S.lotP=String(Math.round(u.apr*10)/10)}
- var cat=VF.filter(function(c){return c[0]===S.vf})[0],L=E.filter(function(p){return !cat[2]||cat[2].test(p.A.s+" "+p.B.s)}).sort(function(a,b){return b.apr-a.apr});
- $("lotMain").innerHTML='<div class="k">Vault Kosmara <small>en estudio</small></div>'+
-  '<div class="dim" style="font-size:14px;line-height:1.6;color:#c9cadb;margin-bottom:10px">Depositas, tu dinero trabaja en protocolos de rendimiento y lo retiras cuando quieras. La mayor parte del interés es para ti; el resto recompra y quema el token de Kosmara.</div>'+
+ var cat=VF.filter(function(c){return c[0]===S.vf})[0],L=E.filter(function(p){return !cat[2]||(cat[2].test(p.A.s)&&(!p.B.s||cat[2].test(p.B.s)))}).sort(function(a,b){return b.apr-a.apr});
+ $("lotMain").innerHTML='<div class="k">Vault Kosmara <small>próximamente</small></div>'+
+  '<div class="dim" style="font-size:14px;line-height:1.6;color:#c9cadb;margin-bottom:10px">Depositas en una vault de Morpho elegida por Kosmara y gestionada por un curador profesional. Depositar y retirar es gratis: Kosmara solo se queda el 10 % del rendimiento.</div>'+
   '<div class="two" style="margin-top:0"><div><label for="lotN" style="margin-top:0">Depósito (USDC)</label><input id="lotN" type="number" inputmode="decimal" min="0" step="any" value="'+esc(S.lotN)+'"></div><div><label for="lotP" style="margin-top:0">Rendimiento anual (%)</label><input id="lotP" type="number" inputmode="decimal" min="0" step="any" value="'+esc(S.lotP)+'"></div></div>'+
-  '<div id="lotRes"></div><div class="dim" style="margin-top:10px">Simulación. '+(u?"El rendimiento de partida es el de USDC en Jupiter Earn ahora mismo; ":"")+'el rendimiento real varía cada día y no está garantizado. El vault todavía no existe y no acepta depósitos.</div>';
+  '<div id="lotRes"></div><div class="dim" style="margin-top:10px">Simulación. '+(u?"El rendimiento de partida es el de USDC en "+esc(u.pr==="Morpho"?u.vt.name+" (Base)":"Jupiter Earn")+" ahora mismo; ":"")+'el rendimiento real varía cada día y no está garantizado. La vault Kosmara aún no está abierta; mientras, puedes depositar gratis en las vaults de abajo.</div>';
  $("lotInfo").innerHTML='<div class="k">Cómo funcionará</div>'+
   '<div class="row" style="margin-top:0"><div><b style="font-size:14px">Tus fondos, siempre retirables</b><small>Cada depósito va entero al protocolo de destino y se retira de ahí. No pasa por la tesorería de Kosmara.</small></div></div>'+
-  '<div class="row"><div><b style="font-size:14px">80 % del interés para ti</b><small>El 20 % restante compra el token en el mercado y lo quema.</small></div></div>'+
-  '<div class="row"><div><b style="font-size:14px">Puntos por depositar</b><small>1 punto por cada 10 $ y día, que contarán para el reparto del token.</small></div></div>'+
-  '<div class="row"><div><b style="font-size:14px">Con contrato auditado</b><small>El vault guarda fondos en un contrato, así que no se abrirá sin auditoría previa.</small></div></div>'+
-  '<div class="k" style="margin-top:16px">Dónde depositar hoy <small>Aave, Jupiter y Kamino</small></div><div class="chips" style="margin-top:0">'+VF.map(function(c){return '<button class="btn chip'+(S.vf===c[0]?" on":"")+'" data-vf="'+c[0]+'">'+c[1]+"</button>"}).join("")+"</div>"+
+  '<div class="row"><div><b style="font-size:14px">90 % del interés para ti</b><small>Kosmara cobra el 10 % del rendimiento, nunca de tu capital. Si no ganas, no pagas. Depositar y retirar es gratis.</small></div></div>'+
+  '<div class="row"><div><b style="font-size:14px">Código de Morpho, auditado</b><small>Usa el envoltorio oficial de Morpho (Fee Wrapper) sobre una vault sin comisión propia. Kosmara no escribe el contrato ni guarda tus fondos.</small></div></div>'+
+  '<div class="k" style="margin-top:16px">Dónde depositar hoy <small>Aave, Morpho, Jupiter y Kamino</small></div><div class="chips" style="margin-top:0">'+VF.map(function(c){return '<button class="btn chip'+(S.vf===c[0]?" on":"")+'" data-vf="'+c[0]+'">'+c[1]+"</button>"}).join("")+"</div>"+
   (L.length?'<div class="plist">'+L.slice(0,S.vlim).map(prow).join("")+"</div>":'<div class="dim" style="margin-top:10px">'+(E.length?"Nada en esta categoría ahora mismo.":"Cargando rendimientos…")+"</div>")+
   (S.aaveSt?'<div class="stat">'+esc(S.aaveSt)+(S.aaveErr?rbtn("aave"):"")+"</div>":"")+
   (L.length>S.vlim?'<button class="btn p" style="background:rgba(255,255,255,.1);color:#fff" data-act="vmore">Ver más</button>':"");
@@ -2053,16 +2053,6 @@ async function loadNet(net,q){
     var fee=(/([\d.]+)%/.exec(a.name||"")||[])[1]||(/_v2$/.test(id("dex"))?(pr==="Uniswap"?.3:.25):0),tvl=+a.reserve_in_usd||0;if(tvl<50000)return;var vol=+(a.volume_usd&&a.volume_usd.h24)||0,o=mk(pr,a.address,tk(A),tk(B),a.base_token_price_quote_token,tvl,vol,fee&&tvl?vol*fee*365/tvl:null,fee?+fee:null,dxu(pr,net,a.address));o.k=net+":"+a.address;o.net=net;S.pools[o.k]=o;c++})}
   st.err=0;st.st=q?c+" resultados para “"+q+"”":"Top por volumen 24 h · datos de GeckoTerminal"}catch(e){st.st=fe(e);st.err=1}
  rNet(net);if(S.view==="home")rHome();
-}
-/* Aave v3 en Ethereum: rendimiento de depositar cada token con más de 5 M$ (API oficial de Aave). */
-async function loadAave(){
- try{var r=await fetch("https://api.v3.aave.com/graphql",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({query:"query{markets(request:{chainIds:[1]}){name reserves{underlyingToken{symbol address decimals imageUrl}supplyInfo{apy{value}}size{usd}isFrozen isPaused}}}"})});
-  if(!r.ok)throw new Error("HTTP "+r.status);var j=await r.json(),n=0;
-  ((j.data&&j.data.markets)||[]).forEach(function(m){if(m.name!=="AaveV3Ethereum")return;(m.reserves||[]).forEach(function(v){var t=v.underlyingToken||{};if(v.isFrozen||v.isPaused||!(+v.size.usd>=5e6)||!(+v.supplyInfo.apy.value>0))return;
-   var o=mk("Aave",t.address,{m:t.address,s:t.symbol,d:t.decimals,i:t.imageUrl||""},{m:"-",s:"",d:0,i:""},0,+v.size.usd,0,+v.supplyInfo.apy.value*100,null,"https://app.aave.com/reserve-overview/?underlyingAsset="+String(t.address).toLowerCase()+"&marketName=proto_mainnet_v3");
-   o.k="aave:"+t.address;o.net="eth";o.kind="Depósito · Ethereum";S.pools[o.k]=o;n++})});
-  S.aaveErr=0;S.aaveSt=n?"":"Aave: sin datos"}catch(e){S.aaveSt="Aave: "+fe(e);S.aaveErr=1}
- if(S.view==="lottery")rLot();if(S.view==="home")rHome();
 }
 function rNet(net){
  var N=NET[net],st=NS[net],q=st.q.toLowerCase().trim(),L=Object.keys(S.pools).map(function(k){return S.pools[k]}).filter(function(p){return p.net===net&&!p.kind&&(st.f==="all"||p.pr===st.f)&&(p.A.s+"/"+p.B.s+" "+p.id).toLowerCase().indexOf(q)>=0}).sort(function(a,b){return b.tvl-a.tvl});
@@ -2141,9 +2131,8 @@ async function ecMake(){var I=EC.info,res=function(h){var e=$("ecres");if(e)e.in
  catch(e){res('<span class="dn">'+esc(fe(e))+"</span>")}}
 
 /* ---------- Jupiter Earn: depositar (con autoswap) y retirar desde Kosmara ----------
-   Comisiones de Kosmara, cobradas en SOL en la misma firma: 0,1 % del depósito y, si hay autoswap, el 0,2 % del cambio.
-   Retirar es gratis. Los fondos van directos de la wallet al protocolo: Kosmara no los toca. */
-var JE_BPS=10,JL_API="https://api.jup.ag/lend/v1/earn/",JE={p:null,pay:"",amt:"",pos:null};
+   Depositar y retirar es gratis. Kosmara solo cobra el 0,2 % del autoswap (en SOL, en la misma firma). Los fondos van directos de la wallet al protocolo: Kosmara no los toca. */
+var JE_BPS=0,JL_API="https://api.jup.ag/lend/v1/earn/",JE={p:null,pay:"",amt:"",pos:null};
 async function jl(path,body){var o={headers:{"x-api-key":S.key}};if(body){o.method="POST";o.headers["Content-Type"]="application/json";o.body=JSON.stringify(body)}
  var r=await fetch(JL_API+path,o),t=await r.text(),j=null;try{j=JSON.parse(t)}catch(e){}if(!r.ok||(j&&j.error))throw new Error((j&&(j.error||j.message))||"Jupiter Earn HTTP "+r.status);return j}
 function jeTok(m){var t=TKS.filter(function(x){return x.m===m})[0];return t||null}
@@ -2156,12 +2145,12 @@ function rJe(el){el=el||$("ps");var p=JE.p;if(!el||!p)return;var pays=jePays(p),
   '<label for="jeamt" style="margin-top:12px;display:block">Pagas con</label><div class="box"><div class="srow"><select id="jepay">'+pays.map(function(x){return '<option value="'+esc(x.m)+'"'+(x.m===pay.m?" selected":"")+">"+esc(x.s)+"</option>"}).join("")+'</select><input id="jeamt" class="num" type="text" inputmode="decimal" value="'+esc(JE.amt)+'" placeholder="0.0"></div>'+
   '<div class="dim" style="margin-top:6px">'+(bal==null?"Conecta tu wallet para ver tu saldo.":"Saldo: "+f(bal,6)+" "+esc(pay.s)+' · <a href="#" class="lk" data-act="jemax">Máx</a>')+"</div></div>"+
   '<div class="sum" id="jesum">'+jeSum()+'</div><button class="btn p" data-act="jedep">Depositar</button><div class="stat" id="jeres"></div>'+
-  '<div class="dim" style="margin-top:10px;font-size:13px">El depósito va directo de tu wallet a Jupiter Lend y lo retiras cuando quieras. Comisión de Kosmara: 0,1 % del depósito'+(pay.m!==p.A.m?" y 0,2 % del cambio a "+esc(p.A.s):"")+", cobrada en SOL en la misma firma. Retirar no tiene comisión de Kosmara.</div></div>"}
+  '<div class="dim" style="margin-top:10px;font-size:13px">El depósito va directo de tu wallet a Jupiter Lend y lo retiras cuando quieras. Depositar y retirar es gratis'+(pay.m!==p.A.m?"; el autoswap a "+esc(p.A.s)+" tiene una comisión de Kosmara del 0,2 %, cobrada en SOL en la misma firma":"")+". Solo pagas la comisión de red.</div></div>"}
 function jeSum(){var p=JE.p,a=+String(JE.amt).replace(",",".")||0;if(!(a>0))return '<div class="dim">Introduce una cantidad.</div>';
  if(JE.pay===p.A.m)return '<div class="row" style="margin-top:0"><span class="dim">Depositas</span><span class="v">'+f(a,6)+" "+esc(p.A.s)+"</span></div>";
  var t=jeTok(JE.pay);return '<div class="row" style="margin-top:0"><span class="dim">Autoswap</span><span class="v">'+f(a,6)+" "+esc(t?t.s:"")+" → "+esc(p.A.s)+'</span></div><div class="dim" style="margin-top:4px">La cantidad exacta que se deposita es la que dé el cambio (con tu deslizamiento máximo).</div>'}
-async function jeFeeL(mint,raw,dec){/* 0,1 % del depósito en lamports */
- if(!(await jfeeReady()))return 0;var L=0;if(mint===SOLM)L=raw*JE_BPS/1e4;else{var P=await solPx([SOLM,mint]),ps=P[SOLM]&&+P[SOLM].usdPrice,pm=P[mint]&&+P[mint].usdPrice;if(ps&&pm)L=raw/Math.pow(10,dec)*pm*JE_BPS/1e4/ps*1e9}
+async function jeFeeL(mint,raw,dec){/* comisión de depósito (JE_BPS, hoy 0) en lamports */
+ if(!JE_BPS||!(await jfeeReady()))return 0;var L=0;if(mint===SOLM)L=raw*JE_BPS/1e4;else{var P=await solPx([SOLM,mint]),ps=P[SOLM]&&+P[SOLM].usdPrice,pm=P[mint]&&+P[mint].usdPrice;if(ps&&pm)L=raw/Math.pow(10,dec)*pm*JE_BPS/1e4/ps*1e9}
  L=Math.floor(L);return L<5000?0:L}
 /* Cuenta del recibo del depósito (jlUSDC, jlSOL…): se crea si no existe, en la misma firma */
 async function jeAta(mint){var W=solanaWeb3,ai=await rc("getAccountInfo",[mint,{encoding:"base64"}]),tp=(ai&&ai.value&&ai.value.owner)||"TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",AT="ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
@@ -2211,9 +2200,11 @@ async function jeWithdraw(tok,el){var p={id:tok.address,A:{m:tok.assetAddress||(
 var VL={at:0,busy:false,err:""};
 async function loadVaults(force){var ow=hSol();if(!ow){S.vlt=[];return}if(VL.busy||(!force&&Date.now()-VL.at<60000))return;VL.busy=true;
  try{var L=await jl("positions?users="+ow);S.vlt=(L||[]).filter(function(x){return +x.shares>0});VL.at=Date.now();VL.err=""}catch(e){VL.err=fe(e)}finally{VL.busy=false}if(S.view==="portfolio")rPf()}
-function vaultsHtml(){if(!hSol())return '<div class="dim" style="margin-top:12px">Conecta una wallet de Solana para ver tus depósitos.</div>';
- if(!S.vlt){loadVaults();return '<div class="dim" style="margin-top:12px">Cargando tus depósitos…</div>'}
- if(!S.vlt.length)return '<div class="dim" style="margin-top:12px">'+(VL.err?esc(VL.err):"No tienes depósitos en vaults. Puedes depositar desde la pestaña Vault.")+"</div>";
+function vaultsHtml(){var e=vtHtml(),s=solVaultsHtml();if(!hSol()&&!hEvm())return '<div class="dim" style="margin-top:12px">Conecta una wallet para ver tus depósitos.</div>';
+ if(!s&&!e)return '<div class="dim" style="margin-top:12px">'+(VL.err?esc(VL.err):"No tienes depósitos en vaults. Puedes depositar desde la pestaña Vault.")+"</div>";return s+e}
+function solVaultsHtml(){if(!hSol())return "";
+ if(!S.vlt){loadVaults();return '<div class="dim" style="margin-top:12px">Cargando tus depósitos de Solana…</div>'}
+ if(!S.vlt.length)return "";
  return S.vlt.map(function(x){var t=x.token,a=Object.assign({},t.asset||{}),d=+t.decimals;if(a.symbol==="WSOL")a.symbol="SOL";var amt=+x.underlyingAssets/Math.pow(10,d),u=amt*(+a.price||0),ap=+t.totalRate/100;
   return '<div class="pos"><div class="srow" style="justify-content:space-between"><b style="font-size:17px">'+esc(a.symbol||t.symbol)+'</b><span class="tag o">Jupiter Earn</span></div>'+
    '<div class="row" style="margin-top:8px"><span class="dim" style="font-size:13px">Depositado</span><span class="v"><b>'+f(amt,6)+" "+esc(a.symbol||"")+"</b></span></div>"+
@@ -2226,6 +2217,136 @@ document.addEventListener("click",function(e){var t=e.target.closest&&e.target.c
  var a=t.getAttribute("data-act");if(a==="jedep")jeDeposit();else if(a==="jewd"){if(JE.pos)jeWithdraw(JE.pos.token,$("jeres"))}else{e.preventDefault();var b=S.bal[JE.pay]||0;JE.amt=String(Math.max(0,JE.pay===SOLM?b-.01:b).toFixed(6)*1);var i=$("jeamt");if(i)i.value=JE.amt;var su=$("jesum");if(su)su.innerHTML=jeSum()}});
 document.addEventListener("input",function(e){if(e.target.id==="jeamt"){JE.amt=e.target.value;var su=$("jesum");if(su)su.innerHTML=jeSum()}});
 document.addEventListener("change",function(e){if(e.target.id==="jepay"){JE.pay=e.target.value;JE.amt="";rJe()}});
+
+/* ---------- Vaults EVM: Aave v3 y Morpho (evm-vault.js) ----------
+   Depositar y retirar es gratis. El autoswap cobra el 0,2 % de Kosmara: KyberSwap dentro de la misma red y LI.FI entre redes.
+   Kosmara elige el camino con menos firmas: si la wallet admite agrupar operaciones (EIP-5792), todo va en una sola confirmación. */
+var VC={1:"Ethereum",56:"BNB Chain",8453:"Base",42161:"Arbitrum",10:"Optimism"},VX=null,VT={},NAT0="0x0000000000000000000000000000000000000000",UMAX=(1n<<256n)-1n,ATOM={};
+function vtLoad(){if(window.kzVault)return Promise.resolve(kzVault);if(!VX)VX=new Promise(function(ok,ko){var s=document.createElement("script");s.src="./evm-vault.js?v=1";s.onload=function(){ok(window.kzVault)};s.onerror=function(){VX=null;ko(new Error("No se pudo cargar el módulo de vaults."))};document.head.appendChild(s)});return VX}
+function vRaw(v,d){v=String(v).replace(",",".").trim();if(!/^\d*\.?\d*$/.test(v)||v===""||v===".")return 0n;var p=v.split("."),fr=(p[1]||"").slice(0,d).padEnd(d,"0");return BigInt(p[0]||"0")*(10n**BigInt(d))+BigInt(fr||"0")}
+function vNat(c){return c===56?"BNB":"ETH"}
+/* ¿La wallet puede agrupar varias operaciones en una sola confirmación en esta red? */
+async function evAtomic(c){if(ATOM[c]!=null)return ATOM[c];var h="0x"+Number(c).toString(16),ok=false;
+ try{var r=await S.ev.request({method:"wallet_getCapabilities",params:[S.eaddr,[h]]}),x=r&&(r[h]||r[String(c)]||r["0x"+Number(c).toString(16).toUpperCase()]);if(x){var a=x.atomic&&x.atomic.status;ok=a==="supported"||a==="ready"||!!(x.atomicBatch&&x.atomicBatch.supported)}}catch(e){}
+ ATOM[c]=ok;return ok}
+/* Envía una lista de operaciones: en una sola confirmación si la wallet lo admite; si no, una tras otra. Devuelve el hash de la última. */
+async function evRun(c,txs,r){if(!txs.length)return null;var C=kzEvmPos.CH[kzVault.KEY[c]];
+ if(txs.length>1&&await evAtomic(c)){var id=null;r("Confirma en tu wallet: "+txs.length+" operaciones en una sola firma…");
+  try{id=await S.ev.request({method:"wallet_sendCalls",params:[{version:"2.0.0",chainId:"0x"+Number(c).toString(16),from:S.eaddr,atomicRequired:true,calls:txs.map(function(t){return{to:t.to,data:t.data,value:t.value||"0x0"}})}]});id=id&&id.id||id}
+  catch(e){if(e.code===4001||/rechazado/.test(fe(e)))throw e;ATOM[c]=false;id=null}
+  if(id){r("Enviado, esperando confirmación…");for(var i=0;i<200;i++){await new Promise(function(z){setTimeout(z,3000)});var s=null;try{s=await S.ev.request({method:"wallet_getCallsStatus",params:[id]})}catch(z){}var st=s&&s.status;
+    if(st===200||st==="CONFIRMED"){var RC=s.receipts||[],rc=RC.slice(-1)[0];if(RC.some(function(x){return x&&(x.status==="0x0"||x.status===0)}))throw new Error("La transacción falló en la red.");return rc&&rc.transactionHash}
+    if((typeof st==="number"&&st>=400)||st==="FAILED")throw new Error("La transacción falló en la red.")}throw new Error("La confirmación tarda demasiado; revisa tu wallet antes de repetir.")}}
+ var h=null;for(var j=0;j<txs.length;j++){var t=txs[j];r(t.lbl+(txs.length>1?" ("+(j+1)+" de "+txs.length+")":"")+": firma en tu wallet…");var tx={to:t.to,data:t.data,value:t.value||"0x0"};if(t.gas)tx.gas=t.gas;else{try{var eg=await S.ev.request({method:"eth_estimateGas",params:[{from:S.eaddr,to:tx.to,data:tx.data,value:tx.value}]});tx.gas="0x"+(BigInt(eg)*13n/10n+20000n).toString(16)}catch(z){}}h=await esend(tx);
+  r(t.lbl+': esperando confirmación… <a class="lk" href="'+C.tx+esc(h)+'" target="_blank" rel="noopener">Ver ↗</a>');await waitRc(h)}return h}
+/* Rendimientos: Aave v3 (5 redes) y vaults de Morpho, en la pestaña Vault y en Pools */
+async function loadAave(){
+ try{var V=await vtLoad(),aE="",R=await Promise.all([V.aaveMarkets().catch(function(e){aE=fe(e);return[]}),V.morphoVaults().catch(function(){return[]})]),n=0;
+  Object.keys(S.pools).forEach(function(k){if(k.indexOf("vt:")===0||k.indexOf("aave:")===0)delete S.pools[k]});
+  R[0].concat(R[1]).forEach(function(it){var id=it.pr==="Aave"?it.asset:it.vault,o=mk(it.pr,id,{m:it.asset,s:sy(it.sym),d:it.dec,i:it.img||""},{m:"-",s:"",d:0,i:""},0,it.tvl,0,it.apy,null,"");
+   o.k="vt:"+it.chain+":"+String(id).toLowerCase();o.net=V.NET[it.chain];o.kind=(it.pr==="Aave"?"Depósito":it.name)+" · "+VC[it.chain];o.vt=it;S.pools[o.k]=o;n++});
+  S.aaveErr=aE&&!n?1:0;S.aaveSt=aE&&!n?"Aave y Morpho: "+aE:""}catch(e){S.aaveSt="Vaults: "+fe(e);S.aaveErr=1}
+ if(S.view==="lottery")rLot();if(S.view==="home")rHome();if(S.view==="portfolio"&&S.pfTab==="vault")rPf()}
+/* Con qué puede pagar: el token del vault, el nativo de la red y lo que tengas en esta u otras redes */
+function vtPays(it){var c=it.chain,H=HD.evm||[],L=[],seen={},add=function(x){var k=x.c+":"+String(x.m).toLowerCase();if(seen[k])return;seen[k]=1;L.push(x)};
+ var h=function(m){return H.filter(function(x){return x.c===c&&String(x.m).toLowerCase()===String(m).toLowerCase()})[0]};
+ var A=h(it.asset);add({c:c,m:it.asset,s:sy(it.sym),d:it.dec,a:A?A.a:0,px:A?A.px:it.px||0});
+ var N=h(NAT0);add({c:c,m:NAT0,s:vNat(c),d:18,a:N?N.a:0,px:N?N.px:0});
+ var okS=/^(ETH|BNB|WETH|WBNB|USDC|USDC\.e|USDbC|USDT|USD₮0|DAI|USDS|USDe|FDUSD|EURC|WBTC|cbBTC|BTCB|tBTC|wstETH|weETH|cbETH|rETH|ARB|OP|AERO|LINK|UNI|AAVE|CAKE)$/i;
+ H.filter(function(x){return x.c===c&&x.v>=.5&&okS.test(x.s)}).sort(function(a,b){return b.v-a.v}).forEach(function(x){add({c:c,m:x.m,s:x.s,d:x.d,a:x.a,px:x.px})});
+ H.filter(function(x){return x.c!==c&&VC[x.c]&&x.v>=1&&okS.test(x.s)}).sort(function(a,b){return b.v-a.v}).forEach(function(x){add({c:x.c,m:x.m,s:x.s,d:x.d,a:x.a,px:x.px,far:1})});
+ return L}
+function vtPay(){var L=vtPays(VT.p.vt);return L.filter(function(x){return x.c+":"+x.m===VT.pay})[0]||L[0]}
+function vtMode(it,pay){return pay.c!==it.chain?"bridge":String(pay.m).toLowerCase()===String(it.asset).toLowerCase()?"direct":pay.m===NAT0&&String(it.asset).toLowerCase()===String(kzVault.WETH[it.chain]).toLowerCase()?"wrap":"swap"}
+function vOpen(p,el){VT={p:p,pay:"",amt:"",perm:LS("kz_vperm")==="1",sig:""};el.style.setProperty("--tc","20,241,149");
+ var it=p.vt,L=vtPays(it),pick=L.filter(function(x){return !x.far&&x.a>0&&String(x.m).toLowerCase()===String(it.asset).toLowerCase()})[0]||L.filter(function(x){return !x.far&&x.a>0&&vtMode(it,x)==="wrap"})[0]||L.filter(function(x){return x.a>0})[0]||L[0];VT.pay=pick.c+":"+pick.m;
+ rVt(el);el.hidden=false;if(hEvm()&&!HD.evm)loadHold(true).then(function(){if(VT.p===p){var L2=vtPays(it),q=L2.filter(function(x){return String(x.m).toLowerCase()===String(it.asset).toLowerCase()&&x.a>0})[0]||L2.filter(function(x){return x.a>0})[0];if(q)VT.pay=q.c+":"+q.m;rVt()}}).catch(function(){})}
+function rVt(el){el=el||$("ps");var p=VT.p;if(!el||!p)return;var it=p.vt,L=vtPays(it),pay=vtPay(),md=vtMode(it,pay),who=it.pr==="Aave"?"Aave v3":it.pr==="Kosmara"?"Vault Kosmara":"Morpho · "+it.name;
+ el.innerHTML='<div class="mb"><button class="x" data-act="closeps" aria-label="Cerrar">×</button><b style="font-size:20px">Depositar '+esc(sy(it.sym))+'</b><div class="dim">'+esc(who)+" · "+esc(VC[it.chain])+" · rendimiento anual "+(it.apy!=null?f(it.apy,2)+"%":"—")+" · variable</div>"+
+  '<label for="vtamt" style="margin-top:12px;display:block">Pagas con</label><div class="box"><div class="srow"><select id="vtpay">'+L.map(function(x){var k=x.c+":"+x.m;return '<option value="'+esc(k)+'"'+(k===VT.pay?" selected":"")+">"+esc(x.s)+(x.far?" · "+esc(VC[x.c]):"")+"</option>"}).join("")+'</select><input id="vtamt" class="num" type="text" inputmode="decimal" value="'+esc(VT.amt)+'" placeholder="0.0"></div>'+
+  '<div class="dim" style="margin-top:6px">'+(!hEvm()?"Conecta tu wallet de Ethereum para ver tu saldo.":!HD.evm?"Leyendo saldo…":"Saldo: "+f(pay.a,6)+" "+esc(pay.s)+(pay.far?" en "+esc(VC[pay.c]):"")+' · <a href="#" class="lk" data-act="vtmax">Máx</a>')+"</div></div>"+
+  '<div class="sum" id="vtsum">'+vtSum()+"</div>"+
+  '<div class="hrow"><label class="tg"><input type="checkbox" id="vtperm"'+(VT.perm?" checked":"")+'>Permiso permanente para este token</label></div><div class="dim" style="font-size:12px;margin-top:-4px">Así tus próximos depósitos de '+esc(sy(it.sym))+" en este vault necesitan una firma menos. Lo puedes quitar cuando quieras desde tu wallet.</div>"+
+  '<button class="btn p" data-act="vtdep">Depositar</button><div class="stat" id="vtres"></div>'+
+  '<div class="dim" style="margin-top:10px;font-size:13px">El depósito va directo de tu wallet a '+(it.pr==="Aave"?"Aave":"la vault de Morpho")+" y lo retiras cuando quieras. Depositar y retirar es gratis"+(md==="swap"||md==="bridge"?"; el autoswap tiene una comisión de Kosmara del 0,2 %, incluida en el cambio":"")+". Solo pagas la comisión de red."+(it.pr==="Kosmara"?" En las vaults Kosmara, Kosmara se queda el "+f(it.kfee,0)+" % del rendimiento; el rendimiento mostrado ya lo descuenta.":it.pr==="Morpho"?" El curador ("+esc(it.name.split(" ")[0])+") gestiona dónde se presta el dinero.":"")+"</div></div>";
+ vtSig()}
+function vtSum(){var it=VT.p.vt,pay=vtPay(),a=+String(VT.amt).replace(",",".")||0,md=vtMode(it,pay);if(!(a>0))return '<div class="dim">Introduce una cantidad.</div>';
+ var R=function(k,v){return '<div class="row" style="margin-top:4px"><span class="dim">'+k+'</span><span class="v">'+v+"</span></div>"},t=md==="direct"||md==="wrap"?R("Depositas",f(a,6)+" "+esc(pay.s))+(md==="wrap"&&it.pr!=="Aave"?R("Se convierte a",esc(sy(it.sym))):""):R("Autoswap",f(a,6)+" "+esc(pay.s)+(md==="bridge"?" ("+esc(VC[pay.c])+")":"")+" → "+esc(sy(it.sym))+(md==="bridge"?" ("+esc(VC[it.chain])+")":""))+R("Comisión de Kosmara","0,2 % del cambio");
+ return t+(pay.px?R("Valor","≈"+usd(a*pay.px)):"")+'<div class="dim" style="margin-top:8px" id="vtsig">'+esc(VT.sig||"")+"</div>"}
+/* Cuántas firmas hacen falta (se avisa antes de empezar) */
+var VTS=0;
+async function vtSig(){var n=++VTS,e=function(){var x=$("vtsig");if(x&&n===VTS)x.textContent=VT.sig};var it=VT.p.vt,pay=vtPay(),md=vtMode(it,pay),a=+String(VT.amt).replace(",",".")||0;if(!(a>0)){VT.sig="";return e()}
+ var ow=S.eaddr,raw=vRaw(VT.amt,pay.d),needA=true,needP=pay.m!==NAT0;
+ try{if(ow&&window.kzVault){var sp=it.pr==="Aave"?it.market:it.vault;needA=(await kzVault.allowance(it.chain,it.asset,ow,sp))<(md==="direct"?raw:1n)}}catch(z){}
+ var A=md==="direct"?(needA?1:0)+1:md==="wrap"?(it.pr==="Aave"?1:1+(needA?1:0)+1):md==="swap"?(needP?1:0)+1+(needA?1:0)+1:0;
+ if(md==="bridge"){VT.sig="Firmas: "+(needP?"permiso y ":"")+"envío entre redes en "+VC[pay.c]+"; cuando llegue, "+(needA?"permiso y ":"")+"depósito en "+VC[it.chain]+".";return e()}
+ var at=ow&&S.ev?await evAtomic(it.chain):false;VT.sig=A<=1?"Necesitarás 1 firma en tu wallet.":at?"Necesitarás 1 confirmación en tu wallet (agrupa "+A+" operaciones).":"Necesitarás "+A+" firmas en tu wallet"+(ow?"":" como máximo")+".";e()}
+async function kyRoute(c,tIn,tOut,amIn,sl){var kc=KSC[c],u=KS+"/"+kc+"/api/v1/routes?tokenIn="+tIn+"&tokenOut="+tOut+"&amountIn="+amIn.toString()+(KS_RCV&&KS_FEE_BPS>0?"&feeAmount="+KS_FEE_BPS+"&isInBps=true&chargeFeeBy=currency_in&feeReceiver="+KS_RCV:"");
+ var rr=await fetch(u,{headers:{"x-client-id":"kosmara"}}),rj=await rr.json();if(!rr.ok||rj.code!==0||!rj.data)throw new Error("Autoswap: "+(rj&&rj.message?(/route not found/i.test(rj.message)?"no hay ruta para este par":rj.message):"sin ruta"));
+ var bd=await fetch(KS+"/"+kc+"/api/v1/route/build",{method:"POST",headers:{"Content-Type":"application/json","x-client-id":"kosmara"},body:JSON.stringify({routeSummary:rj.data.routeSummary,sender:S.eaddr,recipient:S.eaddr,slippageTolerance:sl})}),bj=await bd.json();
+ if(!bd.ok||bj.code!==0||!bj.data)throw new Error("Autoswap: "+(bj.message||"no se pudo preparar"));var tx={to:bj.data.routerAddress,data:bj.data.data,value:"0x"+BigInt(bj.data.transactionValue||"0").toString(16),lbl:"Autoswap"};if(bj.data.gas)tx.gas="0x"+Math.ceil(+bj.data.gas*1.25).toString(16);
+ return{tx:tx,router:bj.data.routerAddress,min:BigInt(bj.data.amountOut)*BigInt(10000-sl)/10000n}}
+/* Permiso (con reinicio a 0 si ya había uno menor, como exige USDT) */
+async function vtAppr(c,tok,sp,need,perm,sym){var ow=S.eaddr,al=await kzVault.allowance(c,tok,ow,sp),L=[];if(al>=need)return L;
+ if(al>0n)L.push({to:tok,data:kzVault.approveData(sp,0n),lbl:"Reiniciar el permiso de "+sym});L.push({to:tok,data:kzVault.approveData(sp,perm?UMAX:need),lbl:"Permiso de "+sym});return L}
+async function vtDepB(it,dep){var ow=S.eaddr,tx=await kzVault.depositTx(it,ow,dep,false);return (await vtAppr(it.chain,it.asset,tx.spender,dep,VT.perm,sy(it.sym))).concat([{to:tx.to,data:tx.data,value:tx.value,lbl:"Depósito"}])}
+async function vtDeposit(){var p=VT.p,it=p.vt,c=it.chain,C0=kzEvmPos.CH[kzVault.KEY[c]],res=function(h){var e=$("vtres");if(e)e.innerHTML=h};
+ try{var pay=vtPay(),md=vtMode(it,pay),raw=vRaw(VT.amt,pay.d);if(!(raw>0n))throw new Error("Introduce una cantidad.");if(!(await needEvm()))return;var ow=S.eaddr,sl=Math.round(ST.slip*100),h=null;
+  var gas=pay.m===NAT0?BigInt(Math.floor(kzEvmPos.CH[kzVault.KEY[pay.c]].gas*1e18)):0n,have=vRaw(String(pay.a.toFixed?pay.a.toFixed(Math.min(pay.d,12)):pay.a),pay.d);
+  if(raw+gas>have)throw new Error("No tienes saldo suficiente de "+pay.s+(gas?" (se reserva un poco para el gas)":"")+".");
+  if(md==="bridge"){var Cf=kzEvmPos.CH[kzVault.KEY[pay.c]];res("Buscando la mejor ruta entre redes…");
+   var u=LIFI+"/quote?fromChain="+pay.c+"&toChain="+c+"&fromToken="+pay.m+"&toToken="+it.asset+"&fromAmount="+raw.toString()+"&fromAddress="+ow+"&toAddress="+ow+"&slippage="+ST.slip/100+(LIFI_INT?"&integrator="+encodeURIComponent(LIFI_INT)+(LIFI_FEE>0?"&fee="+LIFI_FEE:""):"");
+   var qr=await fetch(u),q=await qr.json();if(!qr.ok||!q.transactionRequest)throw new Error((q&&q.message)||"No hay ruta entre redes para este importe.");
+   res("Cambiando tu wallet a "+esc(Cf.name)+"…");await evSwitch(pay.c);var T=q.transactionRequest,A=[];
+   if(pay.m!==NAT0)A=await vtAppr(pay.c,pay.m,q.estimate.approvalAddress,raw,false,pay.s);
+   A.push({to:T.to,data:T.data,value:"0x"+BigInt(T.value||"0").toString(16),gas:T.gasLimit?"0x"+BigInt(T.gasLimit).toString(16):undefined,lbl:"Envío entre redes"});
+   var bh=await evRun(pay.c,A,res);
+   var st=null;for(var i=0;i<300;i++){res('Enviado. Esperando a que llegue a '+esc(VC[c])+'… (suele tardar de 1 a 5 minutos) <a class="lk" href="'+Cf.tx+esc(bh)+'" target="_blank" rel="noopener">Ver ↗</a>');await new Promise(function(z){setTimeout(z,6000)});
+    try{var sr=await fetch(LIFI+"/status?txHash="+bh+"&fromChain="+pay.c+"&toChain="+c);st=await sr.json()}catch(z){st=null}if(st&&(st.status==="DONE"||st.status==="FAILED"))break}
+   if(!st||st.status!=="DONE")throw new Error(st&&st.status==="FAILED"?"El envío entre redes falló. Revisa tu wallet: si se devolvió, tendrás el token de origen.":"El envío tarda más de lo normal. Cuando llegue, deposita desde aquí con "+sy(it.sym)+" de "+VC[c]+".");
+   var rv=st.receiving||{};if(String((rv.token||{}).address).toLowerCase()!==String(it.asset).toLowerCase())throw new Error("Ha llegado otro token a tu wallet en "+VC[c]+" ("+((rv.token||{}).symbol||"")+"). Deposítalo desde aquí cuando quieras.");
+   var dep=BigInt(rv.amount||"0");res("Cambiando tu wallet a "+esc(C0.name)+" para depositar…");await evSwitch(c);h=await evRun(c,await vtDepB(it,dep),res)}
+  else{res("Cambiando tu wallet a "+esc(C0.name)+"…");await evSwitch(c);
+   if(md==="direct")h=await evRun(c,await vtDepB(it,raw),res);
+   else if(md==="wrap"&&it.pr==="Aave"){var t=await kzVault.depositTx(it,ow,raw,true);h=await evRun(c,[{to:t.to,data:t.data,value:t.value,lbl:"Depósito"}],res)}
+   else{var A2,min,b0=await kzVault.balance(c,it.asset,ow);
+    if(md==="wrap"){A2=[Object.assign(kzVault.wrapTx(c,raw),{lbl:"Convertir "+vNat(c)+" a "+sy(it.sym)})];min=raw}
+    else{res("Buscando el mejor precio para el autoswap…");var K=await kyRoute(c,pay.m===NAT0?KSE:pay.m,it.asset,raw,sl);A2=(pay.m===NAT0?[]:await vtAppr(c,pay.m,K.router,raw,false,pay.s)).concat([K.tx]);min=K.min}
+    if(await evAtomic(c))h=await evRun(c,A2.concat(await vtDepB(it,min)),res);
+    else{await evRun(c,A2,res);var got=(await kzVault.balance(c,it.asset,ow))-b0;if(got<=0n)throw new Error("El cambio se hizo pero no veo "+sy(it.sym)+" en tu wallet. Revisa tu wallet antes de seguir.");h=await evRun(c,await vtDepB(it,got),res)}}}
+  res("Depositado. "+(h?'<a class="lk" href="'+C0.tx+esc(h)+'" target="_blank" rel="noopener">Ver transacción ↗</a> ':"")+"Lo verás en Portafolio → Vaults.");kzCelebrate(1);VT.amt="";
+  setTimeout(function(){loadVtPos(true);try{loadHold(true)}catch(z){}},3000)}
+ catch(e){try{console.error("[Kosmara] Vault EVM:",e)}catch(z){}res('<span class="dn">'+esc(fe(e))+"</span>")}}
+document.addEventListener("click",function(e){var t=e.target.closest&&e.target.closest("[data-act='vtdep'],[data-act='vtmax'],[data-vtdep],[data-vtwd]");if(!t)return;
+ if(t.hasAttribute("data-vtdep")){var k=t.getAttribute("data-vtdep");if(S.pools[k]){S.sel=k;rPs()}else toast("Cargando los vaults; prueba en unos segundos.");return}
+ if(t.hasAttribute("data-vtwd")){var x=(S.vte||[])[+t.getAttribute("data-vtwd")];if(x)vtWithdraw(x,$("vtr_"+t.getAttribute("data-vtwd")));return}
+ if(!VT.p)return;var a=t.getAttribute("data-act");if(a==="vtdep")vtDeposit();else{e.preventDefault();var pay=vtPay(),g=pay.m===NAT0?kzEvmPos.CH[kzVault.KEY[pay.c]].gas:0;var dd=Math.pow(10,Math.min(8,pay.d));VT.amt=String(Math.floor(Math.max(0,pay.a-g)*dd)/dd);var i=$("vtamt");if(i)i.value=VT.amt;var s=$("vtsum");if(s)s.innerHTML=vtSum();vtSig()}});
+var VTI=null;document.addEventListener("input",function(e){if(e.target.id==="vtamt"&&VT.p){VT.amt=e.target.value;var s=$("vtsum");if(s)s.innerHTML=vtSum();clearTimeout(VTI);VTI=setTimeout(vtSig,500)}});
+document.addEventListener("change",function(e){if(!VT.p)return;if(e.target.id==="vtpay"){VT.pay=e.target.value;VT.amt="";rVt()}else if(e.target.id==="vtperm"){VT.perm=e.target.checked;LS("kz_vperm",VT.perm?"1":"");vtSig()}});
+/* Retirar (gratis) */
+async function vtWithdraw(x,el){var r=function(h){if(el)el.innerHTML=h},nat=x.pr==="Aave"&&x.native;
+ var form=await kzConfirm("Retirar de "+(x.pr==="Aave"?"Aave":x.name),'<div>Tienes <b>'+f(x.amt,6)+" "+esc(sy(x.sym))+"</b> en "+esc(VC[x.chain])+'.</div><div class="srow" style="gap:6px;margin-top:10px">'+[25,50,75,100].map(function(v){return '<button class="btn kzpct'+(v===100?" on":"")+'" type="button" data-o="'+v+'">'+v+"%</button>"}).join("")+"</div>"+
+  (nat?'<label class="tg" style="margin-top:10px"><input type="checkbox" id="kzvnat" checked>Recibir '+esc(x.native)+" en vez de "+esc(sy(x.sym))+"</label>":"")+'<div class="dim" style="margin-top:10px;font-size:13px">Retirar no tiene comisión de Kosmara. Solo pagas la comisión de red.</div>',"Retirar",
+  function(m){var n=m.querySelector("#kzvnat");return{pct:+m.querySelector(".kzpct.on").getAttribute("data-o"),nat:!!(n&&n.checked)}},
+  function(m){m.querySelectorAll(".kzpct").forEach(function(b){b.onclick=function(){m.querySelectorAll(".kzpct").forEach(function(y){y.classList.remove("on")});b.classList.add("on")}})});
+ if(!form)return;var C=kzEvmPos.CH[kzVault.KEY[x.chain]];
+ try{if(!(await needEvm()))return;r("Cambiando tu wallet a "+esc(C.name)+"…");await evSwitch(x.chain);r("Preparando la retirada…");
+  var L=(await kzVault.withdrawTxs(x,S.eaddr,form.pct,form.nat)).map(function(t){return Object.assign(t,{lbl:t.why==="permiso"?"Permiso para recibir "+x.native:"Retirada"})});
+  var h=await evRun(x.chain,L,r);r('Retirado. <a class="lk" href="'+C.tx+esc(h)+'" target="_blank" rel="noopener">Ver transacción ↗</a>');kzCelebrate(1);setTimeout(function(){loadVtPos(true);try{loadHold(true)}catch(z){}},3000)}
+ catch(e){r('<span class="dn">'+esc(fe(e))+"</span>")}}
+/* Portafolio → Vaults: depósitos en Aave y Morpho */
+var VTP={at:0,busy:false,err:"",key:""};
+async function loadVtPos(force){var ow=hEvm();if(!ow){S.vte=[];return}if(VTP.busy||(!force&&VTP.key===ow&&Date.now()-VTP.at<60000))return;VTP.busy=true;
+ try{var V=await vtLoad(),L=await V.positions(ow);if(ow!==hEvm())return;S.vte=L.sort(function(a,b){return (b.usd||0)-(a.usd||0)});VTP.err=L.err&&!L.length?"No se pudieron leer tus depósitos de "+L.err.join(" y ")+".":"";VTP.at=Date.now();VTP.key=ow}
+ catch(e){VTP.err=fe(e)}finally{VTP.busy=false}if(S.view==="portfolio"&&S.pfTab==="vault")rPf()}
+function vtHtml(){if(!hEvm())return "";if(!S.vte||VTP.key!==hEvm()){loadVtPos();return '<div class="dim" style="margin-top:12px">Cargando tus depósitos en Ethereum y otras redes…</div>'}
+ if(!S.vte.length)return VTP.err?'<div class="dim" style="margin-top:12px">'+esc(VTP.err)+"</div>":"";
+ return S.vte.map(function(x,i){var k="vt:"+x.chain+":"+String(x.pr==="Aave"?x.asset:x.vault).toLowerCase(),pl=S.pools[k],ap=x.apy!=null?x.apy:pl&&pl.apr;
+  return '<div class="pos"><div class="srow" style="justify-content:space-between"><b style="font-size:17px">'+esc(sy(x.sym))+'</b><span class="tag o">'+esc(x.pr==="Aave"?"Aave":x.pr==="Kosmara"?"Vault Kosmara":"Morpho")+'</span></div><div class="dim" style="font-size:13px;margin-top:2px">'+esc(x.pr==="Aave"?"Aave v3":x.name)+" · "+esc(VC[x.chain]||"")+"</div>"+
+   '<div class="row" style="margin-top:8px"><span class="dim" style="font-size:13px">Depositado</span><span class="v"><b>'+f(x.amt,6)+" "+esc(sy(x.sym))+"</b></span></div>"+
+   '<div class="row" style="margin-top:6px"><span class="dim" style="font-size:13px">Valor</span><span class="v"><b>'+usd(x.usd)+"</b></span></div>"+
+   (ap!=null?'<div class="row" style="margin-top:6px"><span class="dim" style="font-size:13px">Rendimiento anual</span><span class="v"><b>'+f(ap,2)+"%</b></span></div>":"")+
+   (S.wch.a?"":'<div class="srow" style="gap:8px;margin-top:10px">'+(pl?'<button class="btn" data-vtdep="'+esc(k)+'">Depositar más</button>':"")+'<button class="btn" data-vtwd="'+i+'">Retirar</button></div><div class="stat" id="vtr_'+i+'"></div>')+"</div>"}).join("")}
 
 /* ---------- SDK de Orca (sdk/kz-sdk.js, compilado aparte) ---------- */
 /* Crear posición: si falta uno de los dos tokens y el autoswap está activado, primero hace el cambio
@@ -2398,10 +2519,10 @@ async function loadPos(){var ow=hSol();if(!ow||!(window.kzSdk&&kzSdk.ready))retu
 })();
 window.addEventListener("kzsdk",function(){loadPos();if(S.sel&&!$("ps").hidden)rPs()});
 try{var kzM=document.createElement("script");kzM.type="module";kzM.src="./sdk/kz-sdk.js?v=14";document.head.appendChild(kzM)}catch(e){}
-try{var kzE=document.createElement("script");kzE.src="./evm-pos.js?v=3";kzE.onload=function(){loadEvmPos(true)};document.head.appendChild(kzE)}catch(e){}
+try{var kzE=document.createElement("script");kzE.src="./evm-pos.js?v=3";kzE.onload=function(){loadEvmPos(true);loadAave()};document.head.appendChild(kzE)}catch(e){}
 
 window.kzP=400;
-rRoad();rHome();rPf();rWallet();rLot();rNet("eth");rNet("bsc");rNet("base");rNet("arbitrum");rNet("optimism");loadNet("eth").then(function(){return loadNet("bsc")}).then(function(){return loadNet("base")}).then(function(){return loadNet("arbitrum")}).then(function(){return loadNet("optimism")});loadAave();
+rRoad();rHome();rPf();rWallet();rLot();rNet("eth");rNet("bsc");rNet("base");rNet("arbitrum");rNet("optimism");loadNet("eth").then(function(){return loadNet("bsc")}).then(function(){return loadNet("base")}).then(function(){return loadNet("arbitrum")}).then(function(){return loadNet("optimism")});
 window.kzOK=true;
 }catch(e){window.onerror("Principal: "+(e&&e.message)+" (paso "+window.kzP+")","",0,0)}</script>
 <script>
