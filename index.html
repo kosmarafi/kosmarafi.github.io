@@ -873,7 +873,7 @@ async function loadHold(force){
    var r=await fetch(JL+"/ultra/v1/balances/"+hs);if(!r.ok)throw new Error("HTTP "+r.status);var b=await r.json(),L=[],meta={};
    Object.keys(b).forEach(function(m){var v=b[m];if(v&&v.uiAmount>0)L.push({c:"sol",m:m==="SOL"?SOLM:m,a:v.uiAmount})});
    for(var i=0;i<L.length;i+=80){try{var q=await fetch(JL+"/tokens/v2/search?query="+L.slice(i,i+80).map(function(x){return x.m}).join(","));if(q.ok)(await q.json()).forEach(function(t){meta[t.id]=t})}catch(z){}}
-   L.forEach(function(x){var t=meta[x.m]||{};x.s=t.symbol||short(x.m);x.n=t.name||"";x.ic=t.icon||"";x.px=+t.usdPrice||0;x.v=x.a*x.px;x.ok=!!t.isVerified||(x.px>0&&(+t.liquidity||0)>5e4)});
+   L.forEach(function(x){var t=meta[x.m]||{};x.d=t.decimals!=null?+t.decimals:x.m===SOLM?9:null;x.s=t.symbol||short(x.m);x.n=t.name||"";x.ic=t.icon||"";x.px=+t.usdPrice||0;x.v=x.a*x.px;x.ok=!!t.isVerified||(x.px>0&&(+t.liquidity||0)>5e4)});
    if(!S.wch.a){var o={};L.forEach(function(x){o[x.m]=x.a});S.bal=Object.assign({},S.bal,o)}HD.sol=L}catch(e){er.push("Solana")}})(),
   (async function(){if(!he){HD.evm=null;return}try{
    var r=await fetch(LIFI+"/wallets/"+he+"/balances?extended=true");if(!r.ok)throw new Error("HTTP "+r.status);var b=(await r.json()).balances||{},L=[];
@@ -909,7 +909,7 @@ var TCS={AVAX:"Avalanche",GAIA:"Cosmos",XRP:"XRP"};
 var TCID={ETH:1,BSC:56,AVAX:43114,BASE:8453},TCNAT={SOL:"SOL.SOL",ETH:"ETH.ETH",BSC:"BSC.BNB",AVAX:"AVAX.AVAX",BASE:"BASE.ETH"},MEMO_P="MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr";
 function xsTok(k){if(XS.AM[k])return XS.AM[k];if(String(k).indexOf("X|")!==0)return null;var p=k.split("|");return{a:k,c:p[1],m:p[2],s:p[3],d:+p[4],usd:+p[5]||0,x:true,tok:""}}
 function xsMine(c){var pool=function(m){m=String(m).toLowerCase();return XS.A.some(function(p){return p.c===c&&p.tok===m})},L;
- if(c==="SOL")L=(HD.sol||[]).filter(function(x){return x.m!==SOLM&&x.v>=.5&&x.ok});
+ if(c==="SOL")L=(HD.sol||[]).filter(function(x){return x.m!==SOLM&&x.v>=.5&&x.ok&&x.d!=null});
  else L=(HD.evm||[]).filter(function(x){return x.c===TCID[c]&&x.m!=="0x0000000000000000000000000000000000000000"&&x.v>=.5&&x.ok!==false&&!pool(x.m)});
  return L.sort(function(a,b){return b.v-a.v}).map(function(x){return{k:["X",c,x.m,String(x.s).replace(/\|/g,""),x.d,x.px||0].join("|"),s:x.s}})}
 function solTxTo(to,L){var d=new Uint8Array(12),dv=new DataView(d.buffer);dv.setUint32(0,2,true);dv.setBigUint64(4,BigInt(L),true);return{programId:"11111111111111111111111111111111",accounts:[{pubkey:S.pk,isSigner:true,isWritable:true},{pubkey:to,isSigner:false,isWritable:true}],data:u8b(d)}}
@@ -2288,7 +2288,7 @@ function vtPays(it){var c=it.chain,H=HD.evm||[],L=[],seen={},add=function(x){var
  H.filter(function(x){return x.c===c&&x.v>=.5&&okS.test(x.s)}).sort(function(a,b){return b.v-a.v}).forEach(function(x){add({c:c,m:x.m,s:x.s,d:x.d,a:x.a,px:x.px})});
  H.filter(function(x){return x.c!==c&&VC[x.c]&&x.v>=1&&okS.test(x.s)}).sort(function(a,b){return b.v-a.v}).forEach(function(x){add({c:x.c,m:x.m,s:x.s,d:x.d,a:x.a,px:x.px,far:1})});
  /* Desde Solana, vía THORChain: solo a las redes y tokens que THORChain entrega (USDC, USDT, ETH… en Ethereum, Base y BNB Chain) */
- if(hSol()&&vtTc(it)){var sb=(HD.sol||[]).filter(function(x){return x.m===SOLM||(x.v>=1&&x.ok&&okS.test(x.s))});if(!sb.some(function(x){return x.m===SOLM}))sb.unshift({m:SOLM,s:"SOL",d:9,a:S.bal[SOLM]||0,px:0});
+ if(hSol()&&vtTc(it)){var sb=(HD.sol||[]).filter(function(x){return x.m===SOLM||(x.v>=1&&x.ok&&x.d!=null&&okS.test(x.s))});if(!sb.some(function(x){return x.m===SOLM}))sb.unshift({m:SOLM,s:"SOL",d:9,a:S.bal[SOLM]||0,px:0});
   sb.sort(function(a,b){return (b.m===SOLM)-(a.m===SOLM)||b.v-a.v}).forEach(function(x){add({c:"sol",m:x.m,s:sy(x.s),d:x.d,a:x.a,px:x.px,far:1})})}
  return L}
 /* Activo de THORChain que llega a la vault: el mismo token, o el nativo si la vault es de WETH/WBNB */

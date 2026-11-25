@@ -21,19 +21,19 @@ console.log("CONN",(await pg.$eval("#bConn",e=>e.textContent).catch(()=>"?")).tr
 await click("data-v","swap");await pg.waitForTimeout(1000);await click("data-sm","x");
 for(let i=0;i<20;i++){await pg.waitForTimeout(1500);if(await pg.$("#xf"))break}
 const opts=await pg.$$eval("#xf option",L=>L.map(o=>o.value));console.log("FROM OPTS",opts.length,opts.filter(v=>/^SOL|^X\|SOL/.test(v)).join(" , ").slice(0,600));
-const TOL=await pg.$$eval("#xt option",L=>L.map(o=>o.value));const to=TOL.find(v=>/^ETH\.USDC/.test(v));console.log("TO",to,"| BASE/BSC:",TOL.filter(v=>/^(BASE|BSC|ETH)\./.test(v)).join(" , "));
+const TOL=await pg.$$eval("#xt option",L=>L.map(o=>o.value));const to=TOL.find(v=>/^ETH\.USDC/.test(v));console.log("TO",to,"| BASE/BSC:",TOL.filter(v=>/^(BASE)\./.test(v)).join(" , "));
 async function run(tag,from,amt){await pg.selectOption("#xf",from);await pg.waitForTimeout(700);await pg.selectOption("#xt",to);await pg.waitForTimeout(700);await pg.fill("#xamt",amt);await pg.waitForTimeout(300);
  await pg.click('[data-act="xquote"]');for(let i=0;i<15;i++){await pg.waitForTimeout(1000);const t=await pg.$eval("#xq",e=>e.innerText);if(t)break}
  console.log(tag,"QUOTE",(await pg.$eval("#xq",e=>e.innerText)).replace(/\n+/g," | "),"||",(await pg.$eval("#xres",e=>e.innerText)));
  await pg.click('[data-act="xswap"]');for(let i=0;i<25;i++){await pg.waitForTimeout(1200);const t=await pg.$eval("#xres",e=>e.innerText);if(!/Calculando|Consultando|firma|Preparando/i.test(t))break}
  console.log(tag,"RES",(await pg.$eval("#xres",e=>e.innerText)).slice(0,300))}
 await run("S1 SOL→USDC(ETH)","SOL.SOL","0.05");
-const xt=opts.find(v=>/^X\|SOL\|/.test(v));if(xt)await run("S2 "+xt.split("|")[3]+"→USDC(ETH)",xt,"5");
+const xt=opts.find(v=>/^X\|SOL\|.*\|USDT\|/.test(v))||opts.find(v=>/^X\|SOL\|/.test(v));if(xt)await run("S2 "+xt.split("|")[3]+"→USDC(ETH)",xt,"5");
 const xe=opts.find(v=>/^X\|(ETH|BASE|BSC)\|/.test(v));console.log("EVM X",xe);
 await pg.screenshot({path:"shots/x1.png"});
 // Vault desde Solana
 await click("data-v","lottery");for(let i=0;i<30;i++){await pg.waitForTimeout(2000);if(await pg.evaluate(()=>document.querySelectorAll('#lotInfo [data-pool^="vt:"]').length))break}
-await click("data-pool","vt:8453:0xbeef0e0834849acc03f0089f01f4f1eeb06873c9");await pg.waitForTimeout(5000);
+await click("data-pool","vt:1:0xbeef088055857739c12cd3765f20b7679def0f51");await pg.waitForTimeout(5000);
 const vo=await pg.$$eval("#vtpay option",L=>L.map(o=>o.value+"="+o.textContent));console.log("VT PAY",vo.join(" , ").slice(0,700));
 const sv=vo.map(x=>x.split("=")[0]).find(v=>v==="sol:So11111111111111111111111111111111111111112");
 if(sv){await pg.selectOption("#vtpay",sv);await pg.waitForTimeout(800);await pg.fill("#vtamt","0.05");await pg.waitForTimeout(3000);
