@@ -1,7 +1,7 @@
 import { chromium } from "playwright";
-await new Promise(z=>setTimeout(z,150000));
+await new Promise(z=>setTimeout(z,70000));
 const b=await chromium.launch();const pg=await b.newPage({viewport:{width:390,height:844},locale:"es-ES"});const errs=[];pg.on("pageerror",e=>errs.push(e.message));
-pg.on("console",m=>{const t=m.text();if(/sim|Simul|error/i.test(t))console.log("CONSOLE",t.slice(0,300))});
+pg.on("console",m=>{const t=m.text();if(/sim|Simul|error|Kosmara/i.test(t))console.log("CONSOLE",t.slice(0,300))});
 await pg.addInitScript(()=>{const A="8AMfcuNiwoQH8xKiytkujH5JVjiskER8eRTK7XAfhQ21",pk={toString:()=>A,toBase58:()=>A};
  window.__sig=0;const prov={isPhantom:true,isConnected:true,publicKey:pk,connect:async()=>({publicKey:pk}),disconnect:async()=>{},on(){},
   signTransaction:async(t)=>{window.__sig++;return t},signAllTransactions:async(L)=>L,signAndSendTransaction:async()=>{throw new Error("FIRMA_SIMULADA")}};
