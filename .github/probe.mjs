@@ -14,3 +14,4 @@ for(const f of fs.readdirSync("shots")){const p2=await b.newPage();await p2.goto
 await b.close();
 // r
 // r
+// r
