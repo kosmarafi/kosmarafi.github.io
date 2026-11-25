@@ -1160,7 +1160,7 @@ window.kzP=126;
 var LSTR=/^(msol|jitosol|bsol|jupsol|hsol|vsol|dsol|stsol|bbsol|picosol|lsol|bnsol|hubsol|inf)$/i,MEMER=/^(bonk|wif|trump|popcat|fartcoin|pengu|mew|bome|goat|pnut|moodeng|useless|wen|myro|giga|ponke|michi|buttcoin|pump)$/i,RWAR=/^[A-Z]{2,8}x$|^(buidl|ousg|usdy|bcspx)$/i,GOVR=/^(jup|orca|ray|jto|pyth|drift|mnde|kmno|tnsr|met)$/i;
 function ico(t){var u=t.i||(typeof lgOf==="function"?lgOf(t):"");return '<span class="ico" data-m="'+esc(t.m||"")+'" data-s="'+esc(t.s||"")+'">'+esc((t.s||"?").slice(0,1))+(u?'<img src="'+esc(u)+'" alt="" loading="lazy" onerror="this.remove()">':"")+"</span>"}
 function pnm(p){return '<span class="icos">'+ico(p.A)+(p.B.s?ico(p.B):"")+'</span><b>'+esc(p.A.s)+(p.B.s?"/"+esc(p.B.s):"")+"</b>"}
-function prow(p){return '<div class="row pick prow" data-pool="'+esc(p.k)+'"><div class="a">'+pnm(p)+'<span class="tag o">'+p.pr+'</span></div><div class="r up"><b>'+(p.apr!=null?f(p.apr,1)+"%":"—")+'</b> <small>'+(p.kind?"APY":"APR")+'</small></div><small>TVL '+cur(p.tvl,0)+(p.fee!=null&&!p.kind?" · comisión "+f(p.fee,2)+"%":"")+'</small><small class="r">'+(p.kind?esc(p.kind):"vol. "+cur(p.vol,0))+"</small></div>"}
+function prow(p){return '<div class="row pick prow" data-pool="'+esc(p.k)+'"><div class="a">'+pnm(p)+'<span class="tag o">'+p.pr+'</span></div><div class="r up"><b>'+(p.apr!=null?f(p.apr,1)+"%":"—")+'</b> <small>'+(p.kind?"APY":"APR")+'</small></div><small>TVL '+(p.kind&&p.tvl>=1e6?cur(p.tvl/1e6,1)+" M":cur(p.tvl,0))+(p.fee!=null&&!p.kind?" · comisión "+f(p.fee,2)+"%":"")+'</small><small class="r">'+(p.kind?esc(p.kind):"vol. "+cur(p.vol,0))+"</small></div>"}
 function filt(){
  var q=S.q.toLowerCase().trim(),ch=S.chip?CHIPS[S.chip]:null,L=Object.keys(S.pools).map(function(k){return S.pools[k]});
  L=L.filter(function(p){return !p.net&&(S.flt==="all"||p.pr===S.flt)&&(ch?ch.t(p):(p.A.s+"/"+p.B.s+" "+p.A.m+" "+p.B.m+" "+p.id).toLowerCase().indexOf(q)>=0)});
@@ -1594,7 +1594,7 @@ document.addEventListener("click",function(e){
 window.kzP=334;
 var VIEWS=["home","pools","portfolio","swap","lottery","wallet"];
 window.kzP=335;
-S.positions=[];S.pfTab="tok";S.lotN="1000";S.lotP="6";S.vf="usd";S.vlim=6;S.view="home";
+S.positions=[];S.pfTab="tok";S.lotN="1000";S.lotP="6";S.vf="all";S.vs="tvl";S.vlim=6;S.view="home";
 window.kzP=336;
 window.kzAfter=function(v){S.view=v;if(v==="home"){rHome();if(window.kzDoor)window.kzDoor()}else if(v==="portfolio")rPf();else if(v==="wallet")rWallet();else if(v==="lottery")rLot()};
 
@@ -2037,7 +2037,7 @@ function rWallet(){
  }
  $("wlMain").innerHTML=h;
 }
-var VF=[["usd","Dólares",/USD|DAI|GHO/i],["eth","ETH",/ETH/i],["btc","BTC",/BTC/i],["sol","SOL",/SOL/i],["all","Todos",null]];
+var VF=[["all","Todos"],["Aave","Aave"],["Morpho","Morpho"],["Jupiter","Jupiter"],["Kamino","Kamino"]],VS=[["tvl","Más usados"],["apy","Mayor rendimiento"]];
 function lotCalc(){
  var d=Math.max(0,+S.lotN||0),a=Math.max(0,+S.lotP||0),y=d*a/100,e=$("lotRes");if(!e)return;
  var r=function(k,v){return '<div class="row"><span class="dim" style="font-size:13px">'+k+'</span><span class="v"><b>'+v+"</b></span></div>"};
@@ -2046,7 +2046,7 @@ function lotCalc(){
 function rLot(){
  var E=Object.keys(S.pools).map(function(k){return S.pools[k]}).filter(function(p){return p.kind&&p.apr>0}).sort(function(a,b){return b.tvl-a.tvl}),u=E.filter(function(p){return p.pr==="Morpho"&&p.A.s==="USDC"&&p.vt&&p.vt.chain===8453&&!p.vt.cfee})[0]||E.filter(function(p){return p.pr==="Jupiter"&&p.A.s==="USDC"})[0];
  if(u&&!S.lotT){S.lotP=String(Math.round(u.apr*10)/10)}
- var cat=VF.filter(function(c){return c[0]===S.vf})[0],L=E.filter(function(p){return !cat[2]||(cat[2].test(p.A.s)&&(!p.B.s||cat[2].test(p.B.s)))}).sort(function(a,b){return b.apr-a.apr});
+ var L=E.filter(function(p){return S.vf==="all"||p.pr===S.vf||(S.vf==="Morpho"&&p.pr==="Kosmara")}).sort(function(a,b){return S.vs==="apy"?b.apr-a.apr:b.tvl-a.tvl});
  $("lotMain").innerHTML='<div class="k">Vault Kosmara <small>próximamente</small></div>'+
   '<div class="dim" style="font-size:14px;line-height:1.6;color:#c9cadb;margin-bottom:10px">Depositas en una vault de Morpho elegida por Kosmara y gestionada por un curador profesional. Depositar y retirar es gratis: Kosmara solo se queda el 10 % del rendimiento.</div>'+
   '<div class="two" style="margin-top:0"><div><label for="lotN" style="margin-top:0">Depósito (USDC)</label><input id="lotN" type="number" inputmode="decimal" min="0" step="any" value="'+esc(S.lotN)+'"></div><div><label for="lotP" style="margin-top:0">Rendimiento anual (%)</label><input id="lotP" type="number" inputmode="decimal" min="0" step="any" value="'+esc(S.lotP)+'"></div></div>'+
@@ -2055,8 +2055,9 @@ function rLot(){
   '<div class="row" style="margin-top:0"><div><b style="font-size:14px">Tus fondos, siempre retirables</b><small>Cada depósito va entero al protocolo de destino y se retira de ahí. No pasa por la tesorería de Kosmara.</small></div></div>'+
   '<div class="row"><div><b style="font-size:14px">90 % del interés para ti</b><small>Kosmara cobra el 10 % del rendimiento, nunca de tu capital. Si no ganas, no pagas. Depositar y retirar es gratis.</small></div></div>'+
   '<div class="row"><div><b style="font-size:14px">Código de Morpho, auditado</b><small>Usa el envoltorio oficial de Morpho (Fee Wrapper) sobre una vault sin comisión propia. Kosmara no escribe el contrato ni guarda tus fondos.</small></div></div>'+
-  '<div class="k" style="margin-top:16px">Dónde depositar hoy <small>Aave, Morpho, Jupiter y Kamino</small></div><div class="chips" style="margin-top:0">'+VF.map(function(c){return '<button class="btn chip'+(S.vf===c[0]?" on":"")+'" data-vf="'+c[0]+'">'+c[1]+"</button>"}).join("")+"</div>"+
-  (L.length?'<div class="plist">'+L.slice(0,S.vlim).map(prow).join("")+"</div>":'<div class="dim" style="margin-top:10px">'+(E.length?"Nada en esta categoría ahora mismo.":"Cargando rendimientos…")+"</div>")+
+  '<div class="k" style="margin-top:16px">Dónde depositar hoy</div><div class="chips" style="margin-top:0;display:grid;grid-template-columns:repeat(5,1fr);gap:5px">'+VF.map(function(c){return '<button class="btn chip'+(S.vf===c[0]?" on":"")+'" style="padding-left:2px;padding-right:2px;font-size:12px;min-width:0" data-vf="'+c[0]+'">'+c[1]+"</button>"}).join("")+"</div>"+
+  '<div class="chips" style="margin-top:6px">'+VS.map(function(c){return '<button class="btn chip'+(S.vs===c[0]?" on":"")+'" data-vs="'+c[0]+'">'+c[1]+"</button>"}).join("")+"</div>"+
+  (L.length?'<div class="plist">'+L.slice(0,S.vlim).map(prow).join("")+"</div>":'<div class="dim" style="margin-top:10px">'+(E.length?"Este protocolo aún está cargando o no tiene vaults ahora mismo.":"Cargando rendimientos…")+"</div>")+
   (S.aaveSt?'<div class="stat">'+esc(S.aaveSt)+(S.aaveErr?rbtn("aave"):"")+"</div>":"")+
   (L.length>S.vlim?'<button class="btn p" style="background:rgba(255,255,255,.1);color:#fff" data-act="vmore">Ver más</button>':"");
  lotCalc();
@@ -2092,7 +2093,7 @@ function rNet(net){
  $(N.el).innerHTML='<div class="k">'+N.n+' · pools de liquidez <small>'+L.length+' pools</small></div><input data-nq="'+net+'" placeholder="Buscar tokens" value="'+esc(st.q)+'" autocomplete="off"><div class="chips">'+fl+'</div><div class="stat">'+esc(st.st||"cargando…")+(st.err?rbtn("net:"+net):"")+'</div><div class="plist">'+(L.slice(0,st.lim).map(prow).join("")||(st.err?"":'<div class="dim" style="margin-top:10px">Sin pools todavía.</div>'))+"</div>"+(L.length>st.lim?'<button class="btn p" style="background:rgba(255,255,255,.1);color:#fff" data-nm="'+net+'">Ver más</button>':"");
  if(st.foc){var i=$(N.el).querySelector("input");i.focus();i.setSelectionRange(i.value.length,i.value.length)}
 }
-document.addEventListener("click",function(e){var wv=e.target.closest("[data-wv]");if(wv){S.wv=wv.getAttribute("data-wv");rSheet();var mb=$("wsheet");if(mb)mb.scrollTop=0;return}var vf=e.target.closest("[data-vf]");if(vf){S.vf=vf.getAttribute("data-vf");S.vlim=6;rLot();return}var a=e.target.closest("[data-nf]"),m=e.target.closest("[data-nm]");
+document.addEventListener("click",function(e){var wv=e.target.closest("[data-wv]");if(wv){S.wv=wv.getAttribute("data-wv");rSheet();var mb=$("wsheet");if(mb)mb.scrollTop=0;return}var vf=e.target.closest("[data-vf]");if(vf){S.vf=vf.getAttribute("data-vf");S.vlim=6;rLot();return}var vs=e.target.closest("[data-vs]");if(vs){S.vs=vs.getAttribute("data-vs");S.vlim=6;rLot();return}var a=e.target.closest("[data-nf]"),m=e.target.closest("[data-nm]");
  if(a){var v=a.getAttribute("data-nf").split(":");NS[v[0]].f=v[1];NS[v[0]].foc=false;rNet(v[0])}
  else if(m){var n=m.getAttribute("data-nm");NS[n].lim+=10;NS[n].foc=false;rNet(n)}});
 document.addEventListener("input",function(e){var t=e.target,n=t.getAttribute&&t.getAttribute("data-nq");if(!n)return;var st=NS[n];st.q=t.value;st.lim=3;st.foc=true;rNet(n);clearTimeout(nT);if(t.value.trim().length>=2)nT=setTimeout(function(){loadNet(n,t.value.trim())},700)});
@@ -2276,7 +2277,7 @@ async function loadAave(){
  try{var V=await vtLoad(),aE="",R=await Promise.all([V.aaveMarkets().catch(function(e){aE=fe(e);return[]}),V.morphoVaults().catch(function(){return[]})]),n=0;
   Object.keys(S.pools).forEach(function(k){if(k.indexOf("vt:")===0||k.indexOf("aave:")===0)delete S.pools[k]});
   R[0].concat(R[1]).forEach(function(it){var id=it.pr==="Aave"?it.asset:it.vault,o=mk(it.pr,id,{m:it.asset,s:sy(it.sym),d:it.dec,i:it.img||""},{m:"-",s:"",d:0,i:""},0,it.tvl,0,it.apy,null,"");
-   o.k="vt:"+it.chain+":"+String(id).toLowerCase();o.net=V.NET[it.chain];o.kind=(it.pr==="Aave"?"Depósito":it.name)+" · "+VC[it.chain];o.vt=it;S.pools[o.k]=o;n++});
+   o.k="vt:"+it.chain+":"+String(id).toLowerCase();o.net=V.NET[it.chain];o.kind=(it.pr==="Aave"?"Depósito":it.name.replace(it.sym,"").replace(/\s+/g," ").trim())+" · "+VC[it.chain];o.vt=it;S.pools[o.k]=o;n++});
   S.aaveErr=aE&&!n?1:0;S.aaveSt=aE&&!n?"Aave y Morpho: "+aE:""}catch(e){S.aaveSt="Vaults: "+fe(e);S.aaveErr=1}
  if(S.view==="lottery")rLot();if(S.view==="home")rHome();if(S.view==="portfolio"&&S.pfTab==="vault")rPf()}
 /* Con qué puede pagar: el token del vault, el nativo de la red y lo que tengas en esta u otras redes */
