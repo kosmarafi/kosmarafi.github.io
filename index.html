@@ -2163,6 +2163,10 @@ function jeSum(){var p=JE.p,a=+String(JE.amt).replace(",",".")||0;if(!(a>0))retu
 async function jeFeeL(mint,raw,dec){/* 0,1 % del depósito en lamports */
  if(!(await jfeeReady()))return 0;var L=0;if(mint===SOLM)L=raw*JE_BPS/1e4;else{var P=await solPx([SOLM,mint]),ps=P[SOLM]&&+P[SOLM].usdPrice,pm=P[mint]&&+P[mint].usdPrice;if(ps&&pm)L=raw/Math.pow(10,dec)*pm*JE_BPS/1e4/ps*1e9}
  L=Math.floor(L);return L<5000?0:L}
+/* Cuenta del recibo del depósito (jlUSDC, jlSOL…): se crea si no existe, en la misma firma */
+async function jeAta(mint){var W=solanaWeb3,ai=await rc("getAccountInfo",[mint,{encoding:"base64"}]),tp=(ai&&ai.value&&ai.value.owner)||"TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",AT="ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
+ var ata=W.PublicKey.findProgramAddressSync([new W.PublicKey(S.pk).toBytes(),new W.PublicKey(tp).toBytes(),new W.PublicKey(mint).toBytes()],new W.PublicKey(AT))[0].toBase58();
+ return{programId:AT,accounts:[{pubkey:S.pk,isSigner:true,isWritable:true},{pubkey:ata,isSigner:false,isWritable:true},{pubkey:S.pk,isSigner:false,isWritable:false},{pubkey:mint,isSigner:false,isWritable:false},{pubkey:"11111111111111111111111111111111",isSigner:false,isWritable:false},{pubkey:tp,isSigner:false,isWritable:false}],data:u8b(new Uint8Array([1]))}}
 function solTx(L){var d=new Uint8Array(12),dv=new DataView(d.buffer);dv.setUint32(0,2,true);dv.setBigUint64(4,BigInt(Math.floor(L)),true);return{programId:"11111111111111111111111111111111",accounts:[{pubkey:S.pk,isSigner:true,isWritable:true},{pubkey:JFEE_TO,isSigner:false,isWritable:true}],data:u8b(d)}}
 async function jeDeposit(){var p=JE.p,res=function(h){var e=$("jeres");if(e)e.innerHTML=h};
  try{var a=+String(JE.amt).replace(",",".")||0;if(!(a>0))throw new Error("Introduce una cantidad.");if(!(await needSol()))return;if(!(window.kzSdk&&kzSdk.sendJson))throw new Error("El módulo de Solana aún está cargando. Prueba en unos segundos.");
@@ -2177,7 +2181,8 @@ async function jeDeposit(){var p=JE.p,res=function(h){var e=$("jeres");if(e)e.in
    depRaw=+q.otherAmountThreshold||0;if(depSol)sol={ata:true,close:true}}
   else if(depSol)sol={wrap:raw,close:true};
   if(!(depRaw>0))throw new Error("La cantidad es demasiado pequeña.");
-  res("Preparando el depósito…");var dx=await jl("deposit-instructions",{asset:p.A.m,signer:S.pk,amount:String(Math.floor(depRaw))});ixs=ixs.concat(dx.instructions||[]);
+  res("Preparando el depósito…");var dx=await jl("deposit-instructions",{asset:p.A.m,signer:S.pk,amount:String(Math.floor(depRaw))});
+  var ata=await jeAta(p.id);ixs=ixs.concat([ata],dx.instructions||[]);dx.instructions=[ata].concat(dx.instructions||[]);
   try{fee+=await jeFeeL(p.A.m,depRaw,p.A.d)}catch(e){}
   if(fee>0){var ub=(S.bal[SOLM]||0)*1e9-(isSol?raw:0);if(ub>fee+3e6)ixs.push(solTx(fee));else fee=0}
   res("Firma en tu wallet…");var o;
@@ -2188,7 +2193,7 @@ async function jeDeposit(){var p=JE.p,res=function(h){var e=$("jeres");if(e)e.in
   if(fee>0)window.kzLastFee=fee;
   res((o.confirmed?"Depositado en Jupiter Earn.":"Depósito enviado; aún sin confirmar.")+' <a class="lk" href="https://solscan.io/tx/'+esc(o.signature)+'" target="_blank" rel="noopener">Ver transacción ↗</a>');kzCelebrate(1);JE.amt="";
   setTimeout(function(){loadBal();loadVaults(true);jePos().then(function(){rJe()}).catch(function(){})},2000)}
- catch(e){try{console.error("[Kosmara] Earn:",e&&(e.stack||e.message||e))}catch(z){}res('<span class="dn">'+esc(fe(e))+"</span>")}}
+ catch(e){try{console.error("[Kosmara] Earn:",e&&(e.stack||e.message||e))}catch(z){}var m=fe(e);if(/Algo ha fallado/.test(m)&&e&&/simulación/i.test(e.message||""))m="La simulación falló y no se ha enviado nada. "+String(e.message).replace(/^.*?Error Message: /,"").slice(0,140);res('<span class="dn">'+esc(m)+"</span>")}}
 async function jeWithdraw(tok,el){var p={id:tok.address,A:{m:tok.assetAddress||(tok.asset&&tok.asset.address),s:(tok.asset&&tok.asset.symbol)||tok.symbol,d:tok.decimals}},pos=(JE.all||S.vlt||[]).filter(function(y){return y.token&&y.token.address===tok.address})[0];
  if(!pos)return;var have=+pos.underlyingAssets/Math.pow(10,p.A.d),r=function(h){if(el)el.innerHTML=h};
  var form=await kzConfirm("Retirar de Jupiter Earn",'<div>Tienes <b>'+f(have,6)+" "+esc(p.A.s)+'</b> depositados.</div><div class="srow" style="gap:6px;margin-top:10px">'+[25,50,75,100].map(function(v){return '<button class="btn kzpct'+(v===100?" on":"")+'" type="button" data-o="'+v+'">'+v+"%</button>"}).join("")+'</div><div class="dim" style="margin-top:10px;font-size:13px">Retirar no tiene comisión de Kosmara. Solo pagas la comisión de red de Solana.</div>',"Retirar",
