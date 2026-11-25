@@ -1160,7 +1160,7 @@ window.kzP=126;
 var LSTR=/^(msol|jitosol|bsol|jupsol|hsol|vsol|dsol|stsol|bbsol|picosol|lsol|bnsol|hubsol|inf)$/i,MEMER=/^(bonk|wif|trump|popcat|fartcoin|pengu|mew|bome|goat|pnut|moodeng|useless|wen|myro|giga|ponke|michi|buttcoin|pump)$/i,RWAR=/^[A-Z]{2,8}x$|^(buidl|ousg|usdy|bcspx)$/i,GOVR=/^(jup|orca|ray|jto|pyth|drift|mnde|kmno|tnsr|met)$/i;
 function ico(t){var u=t.i||(typeof lgOf==="function"?lgOf(t):"");return '<span class="ico" data-m="'+esc(t.m||"")+'" data-s="'+esc(t.s||"")+'">'+esc((t.s||"?").slice(0,1))+(u?'<img src="'+esc(u)+'" alt="" loading="lazy" onerror="this.remove()">':"")+"</span>"}
 function pnm(p){return '<span class="icos">'+ico(p.A)+(p.B.s?ico(p.B):"")+'</span><b>'+esc(p.A.s)+(p.B.s?"/"+esc(p.B.s):"")+"</b>"}
-function prow(p){return '<div class="row pick prow" data-pool="'+esc(p.k)+'"><div class="a">'+pnm(p)+'<span class="tag o">'+p.pr+'</span></div><div class="r up"><b>'+(p.apr!=null?f(p.apr,1)+"%":"—")+'</b> <small>'+(p.kind?"APY":"APR")+'</small></div><small>TVL '+cur(p.tvl,0)+(p.fee!=null&&!p.kind?" · comisión "+f(p.fee,2)+"%":"")+'</small><small class="r">'+(p.kind?esc(p.kind):"vol. "+cur(p.vol,0))+"</small></div>"}
+function prow(p){return '<div class="row pick prow" data-pool="'+esc(p.k)+'"><div class="a">'+pnm(p)+'<span class="tag o">'+p.pr+'</span></div><div class="r up"><b>'+(p.apr!=null?f(p.apr,1)+"%":"—")+'</b> <small>'+(p.kind?"APY":"APR")+'</small></div><small>TVL '+(p.kind&&p.tvl>=1e6?cur(p.tvl/1e6,1)+" M":cur(p.tvl,0))+(p.fee!=null&&!p.kind?" · comisión "+f(p.fee,2)+"%":"")+'</small><small class="r">'+(p.kind?esc(p.kind):"vol. "+cur(p.vol,0))+"</small></div>"}
 function filt(){
  var q=S.q.toLowerCase().trim(),ch=S.chip?CHIPS[S.chip]:null,L=Object.keys(S.pools).map(function(k){return S.pools[k]});
  L=L.filter(function(p){return !p.net&&(S.flt==="all"||p.pr===S.flt)&&(ch?ch.t(p):(p.A.s+"/"+p.B.s+" "+p.A.m+" "+p.B.m+" "+p.id).toLowerCase().indexOf(q)>=0)});
@@ -2277,7 +2277,7 @@ async function loadAave(){
  try{var V=await vtLoad(),aE="",R=await Promise.all([V.aaveMarkets().catch(function(e){aE=fe(e);return[]}),V.morphoVaults().catch(function(){return[]})]),n=0;
   Object.keys(S.pools).forEach(function(k){if(k.indexOf("vt:")===0||k.indexOf("aave:")===0)delete S.pools[k]});
   R[0].concat(R[1]).forEach(function(it){var id=it.pr==="Aave"?it.asset:it.vault,o=mk(it.pr,id,{m:it.asset,s:sy(it.sym),d:it.dec,i:it.img||""},{m:"-",s:"",d:0,i:""},0,it.tvl,0,it.apy,null,"");
-   o.k="vt:"+it.chain+":"+String(id).toLowerCase();o.net=V.NET[it.chain];o.kind=(it.pr==="Aave"?"Depósito":it.name)+" · "+VC[it.chain];o.vt=it;S.pools[o.k]=o;n++});
+   o.k="vt:"+it.chain+":"+String(id).toLowerCase();o.net=V.NET[it.chain];o.kind=(it.pr==="Aave"?"Depósito":it.name.replace(it.sym,"").replace(/\s+/g," ").trim())+" · "+VC[it.chain];o.vt=it;S.pools[o.k]=o;n++});
   S.aaveErr=aE&&!n?1:0;S.aaveSt=aE&&!n?"Aave y Morpho: "+aE:""}catch(e){S.aaveSt="Vaults: "+fe(e);S.aaveErr=1}
  if(S.view==="lottery")rLot();if(S.view==="home")rHome();if(S.view==="portfolio"&&S.pfTab==="vault")rPf()}
 /* Con qué puede pagar: el token del vault, el nativo de la red y lo que tengas en esta u otras redes */
