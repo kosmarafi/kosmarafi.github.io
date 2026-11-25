@@ -2214,7 +2214,7 @@ async function loadVaults(force){var ow=hSol();if(!ow){S.vlt=[];return}if(VL.bus
 function vaultsHtml(){if(!hSol())return '<div class="dim" style="margin-top:12px">Conecta una wallet de Solana para ver tus depósitos.</div>';
  if(!S.vlt){loadVaults();return '<div class="dim" style="margin-top:12px">Cargando tus depósitos…</div>'}
  if(!S.vlt.length)return '<div class="dim" style="margin-top:12px">'+(VL.err?esc(VL.err):"No tienes depósitos en vaults. Puedes depositar desde la pestaña Vault.")+"</div>";
- return S.vlt.map(function(x){var t=x.token,a=Object.assign({},t.asset||{}),d=+t.decimals;if(a.symbol==="WSOL")a.symbol="SOL";varamt=+x.underlyingAssets/Math.pow(10,d),u=amt*(+a.price||0),ap=+t.totalRate/100;
+ return S.vlt.map(function(x){var t=x.token,a=Object.assign({},t.asset||{}),d=+t.decimals;if(a.symbol==="WSOL")a.symbol="SOL";var amt=+x.underlyingAssets/Math.pow(10,d),u=amt*(+a.price||0),ap=+t.totalRate/100;
   return '<div class="pos"><div class="srow" style="justify-content:space-between"><b style="font-size:17px">'+esc(a.symbol||t.symbol)+'</b><span class="tag o">Jupiter Earn</span></div>'+
    '<div class="row" style="margin-top:8px"><span class="dim" style="font-size:13px">Depositado</span><span class="v"><b>'+f(amt,6)+" "+esc(a.symbol||"")+"</b></span></div>"+
    '<div class="row" style="margin-top:6px"><span class="dim" style="font-size:13px">Valor</span><span class="v"><b>'+usd(u)+"</b></span></div>"+
