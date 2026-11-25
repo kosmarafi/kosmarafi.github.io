@@ -757,7 +757,7 @@ window.kzP=44;
 var SW={from:"SOL",to:"USDC",amt:"",slip:1,res:[],sel:"",net:(function(){try{var v=localStorage.getItem("kz_swnet");return !v||v==="sol"||isNaN(+v)?"sol":+v}catch(e){return "sol"}})(),mode:"sol",np:false};
 /* ---------- Redes (LI.FI): lista de cadenas con logo y datos para la wallet ---------- */
 window.kzP=44;
-var LIFI="https://li.quest/v1",LIFI_INT="kosmara-defi",LIFI_FEE=0.002; /* afiliado LI.FI: nombre de integrador del portal y comisión en fracción (0.003 = 0,3 %). Vacío = sin comisión. */
+var LIFI="https://li.quest/v1",LIFI_INT="kosmara-defi",LIFI_FEE=0.002,LIFI_XFEE=0.003; /* afiliado LI.FI: nombre de integrador del portal y comisión en fracción (0.003 = 0,3 %). Vacío = sin comisión. */
 var NETL=["sol",1,56,8453,42161,43114,999,4663,137,10,130,143,146,59144],CH={},CHL=0;
 var CHF={sol:"Solana",1:"Ethereum",56:"BNB Chain",8453:"Base",42161:"Arbitrum",43114:"Avalanche",999:"HyperEVM",4663:"Robinhood Chain",137:"Polygon",10:"Optimism",130:"Unichain",143:"Monad",146:"Sonic",59144:"Linea"};
 var NAT="0x0000000000000000000000000000000000000000";
@@ -905,6 +905,15 @@ var TCE={ETH:{id:"0x1",x:"https://etherscan.io/tx/"},BSC:{id:"0x38",x:"https://b
  AVAX:{id:"0xa86a",x:"https://snowtrace.io/tx/",add:{chainName:"Avalanche C-Chain",nativeCurrency:{name:"AVAX",symbol:"AVAX",decimals:18},rpcUrls:["https://api.avax.network/ext/bc/C/rpc"],blockExplorerUrls:["https://snowtrace.io"]}},
  BASE:{id:"0x2105",x:"https://basescan.org/tx/",add:{chainName:"Base",nativeCurrency:{name:"Ether",symbol:"ETH",decimals:18},rpcUrls:["https://mainnet.base.org"],blockExplorerUrls:["https://basescan.org"]}}};
 var TCS={AVAX:"Avalanche",GAIA:"Cosmos",XRP:"XRP"};
+/* Entrada con cualquier token: si no es un activo de THORChain, Kosmara lo cambia antes al nativo de su red (Jupiter o KyberSwap, sin comisión de Kosmara) y después lo envía a THORChain. */
+var TCID={ETH:1,BSC:56,AVAX:43114,BASE:8453},TCNAT={SOL:"SOL.SOL",ETH:"ETH.ETH",BSC:"BSC.BNB",AVAX:"AVAX.AVAX",BASE:"BASE.ETH"},MEMO_P="MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr";
+function xsTok(k){if(XS.AM[k])return XS.AM[k];if(String(k).indexOf("X|")!==0)return null;var p=k.split("|");return{a:k,c:p[1],m:p[2],s:p[3],d:+p[4],usd:+p[5]||0,x:true,tok:""}}
+function xsMine(c){var pool=function(m){m=String(m).toLowerCase();return XS.A.some(function(p){return p.c===c&&p.tok===m})},L;
+ if(c==="SOL")L=(HD.sol||[]).filter(function(x){return x.m!==SOLM&&x.v>=.5&&x.ok});
+ else L=(HD.evm||[]).filter(function(x){return x.c===TCID[c]&&x.m!=="0x0000000000000000000000000000000000000000"&&x.v>=.5&&x.ok!==false&&!pool(x.m)});
+ return L.sort(function(a,b){return b.v-a.v}).map(function(x){return{k:["X",c,x.m,String(x.s).replace(/\|/g,""),x.d,x.px||0].join("|"),s:x.s}})}
+function solTxTo(to,L){var d=new Uint8Array(12),dv=new DataView(d.buffer);dv.setUint32(0,2,true);dv.setBigUint64(4,BigInt(L),true);return{programId:"11111111111111111111111111111111",accounts:[{pubkey:S.pk,isSigner:true,isWritable:true},{pubkey:to,isSigner:false,isWritable:true}],data:u8b(d)}}
+function memoIx(m){return{programId:MEMO_P,accounts:[{pubkey:S.pk,isSigner:true,isWritable:false}],data:u8b(new TextEncoder().encode(m))}}
 var TCO=["BTC","ETH","SOL","BSC","BASE","AVAX","TRON","XRP","LTC","DOGE","BCH","ZEC","GAIA"];
 var XS={from:"ETH.ETH",to:"BTC.BTC",amt:"",dest:"",auto:true,q:null,A:[],AM:{},halt:{},ld:0,err:""};
 async function tcj(p){var r=await fetch(TCB+p),j=null;try{j=await r.json()}catch(e){}
@@ -924,25 +933,27 @@ async function loadTC(){
    return{a:p.asset,c:c,s:i<0?r:r.slice(0,i),tok:i<0?"":r.slice(i+1).toLowerCase(),usd:(+p.asset_tor_price||0)/1e8,dep:+p.balance_rune||0}});
   XS.AM={};XS.A.forEach(function(x){XS.AM[x.a]=x});
   var pick=function(pref,ok){if(XS.AM[pref])return pref;var L=XS.A.filter(function(x){return ok(x)&&!XS.halt[x.c]}).sort(function(a,b){return b.dep-a.dep});L=L.length?L:XS.A.filter(ok);return L.length?L[0].a:null};
-  if(!XS.AM[XS.from])XS.from=pick("ETH.ETH",function(x){return !!TCE[x.c]});if(!XS.AM[XS.to]||XS.to===XS.from)XS.to=pick("BTC.BTC",function(x){return x.a!==XS.from});
+  if(!xsTok(XS.from))XS.from=pick("ETH.ETH",function(x){return !!TCE[x.c]||x.c==="SOL"});if(!XS.AM[XS.to]||XS.to===XS.from)XS.to=pick("BTC.BTC",function(x){return x.a!==XS.from});
   if(!XS.from||!XS.to)throw new Error("THORChain no tiene ahora activos disponibles para cambiar. Prueba más tarde.");XS.ld=2;
  }catch(e){XS.ld=0;XS.err=fe(e)}
  if(SW.mode==="x")rSwap();
 }
 function tcName(x){return x?x.s+" · "+TCN[x.c]:""}
 function tcOpts(sel,src){
- return TCO.filter(function(c){return !src||TCE[c]}).map(function(c){
-  var L=XS.A.filter(function(x){return x.c===c}).sort(function(a,b){return (b.tok?0:1)-(a.tok?0:1)||b.dep-a.dep});if(!L.length)return "";
-  return '<optgroup label="'+TCN[c]+(XS.halt[c]?" (en pausa)":"")+'">'+L.map(function(x){return '<option value="'+esc(x.a)+'"'+(x.a===sel?" selected":"")+(XS.halt[c]?" disabled":"")+">"+esc(x.s)+" · "+(TCS[c]||TCN[c])+(XS.halt[c]?" (en pausa)":"")+"</option>"}).join("")+"</optgroup>"}).join("")}
+ return TCO.filter(function(c){return !src||TCE[c]||c==="SOL"}).map(function(c){
+  var L=XS.A.filter(function(x){return x.c===c&&!(src&&c==="SOL"&&x.tok)}).sort(function(a,b){return (b.tok?0:1)-(a.tok?0:1)||b.dep-a.dep});if(!L.length)return "";
+  var M=src&&!XS.halt[c]?xsMine(c):[];
+  return '<optgroup label="'+TCN[c]+(XS.halt[c]?" (en pausa)":"")+'">'+L.map(function(x){return '<option value="'+esc(x.a)+'"'+(x.a===sel?" selected":"")+(XS.halt[c]?" disabled":"")+">"+esc(x.s)+" · "+(TCS[c]||TCN[c])+(XS.halt[c]?" (en pausa)":"")+"</option>"}).join("")+"</optgroup>"+
+   (M.length?'<optgroup label="Tus tokens en '+TCN[c]+' (se cambian antes a '+TCNAT[c].split(".")[1]+')">'+M.map(function(x){return '<option value="'+esc(x.k)+'"'+(x.k===sel?" selected":"")+">"+esc(x.s)+" · "+(TCS[c]||TCN[c])+"</option>"}).join("")+"</optgroup>":"")}).join("")}
 function tcAutoDest(){var c=(XS.AM[XS.to]||{}).c;if(!XS.auto)return;XS.dest=TCE[c]?(S.eaddr||""):c==="SOL"?(S.pk||""):""}
 function toU(v,d){v=String(v||"").trim().replace(",",".");if(!/^\d*\.?\d*$/.test(v)||!v||v===".")return 0n;var p=v.split("."),fr=(p[1]||"").slice(0,d);while(fr.length<d)fr+="0";return BigInt((p[0]||"0")+fr)}
 function rX(){
  swTint();
  var el=$("swap");if(XS.ld!==2){el.innerHTML=swTabs()+'<div class="k">Swap entre redes <small>vía THORChain</small></div><div class="stat">'+(XS.err?esc(XS.err)+' <button class="btn" data-act="xload">Reintentar</button>':"Cargando redes y activos…")+"</div>";if(!XS.ld)loadTC();return}
- var fr=XS.AM[XS.from],to=XS.AM[XS.to];if(!fr||!to){XS.ld=0;XS.err="No se pudieron cargar los activos de THORChain.";return rX()}tcAutoDest();var hz=XS.halt[fr.c]||XS.halt[to.c];
+ var fr=xsTok(XS.from),to=XS.AM[XS.to];if(!fr||!to){XS.ld=0;XS.err="No se pudieron cargar los activos de THORChain.";return rX()}tcAutoDest();var hz=XS.halt[fr.c]||XS.halt[to.c];
  el.innerHTML=swTabs()+'<div class="k">Swap entre redes <small>vía THORChain</small></div>'+
  '<div class="box"><label for="xf" class="lbi">'+chIco(fr.c)+"Das, desde tu wallet de "+TCN[fr.c]+'</label><div class="srow"><select id="xf">'+tcOpts(XS.from,1)+'</select><input id="xamt" class="num" type="text" inputmode="decimal" value="'+esc(XS.amt)+'" placeholder="0.0"></div>'+
- '<div class="chips"><button class="btn" data-act="xflip" '+(TCE[to.c]?"":"disabled ")+'title="Invertir">⇅ Invertir</button></div></div>'+
+ '<div class="chips"><button class="btn" data-act="xflip" '+((TCE[to.c]||to.c==="SOL")&&!fr.x?"":"disabled ")+'title="Invertir">⇅ Invertir</button></div></div>'+
  '<div class="box" style="margin-top:8px"><label for="xt" class="lbi">'+chIco(to.c)+"Recibes en "+TCN[to.c]+'</label><div class="srow"><select id="xt">'+tcOpts(XS.to,0)+'</select><span class="dim" id="xout">'+(XS.q?"≈ "+fs(XS.q.out):"")+'</span></div>'+
  '<label for="xdest" style="margin-top:10px;display:block">Tu dirección en '+TCN[to.c]+'</label><input id="xdest" class="xdest" type="text" autocomplete="off" spellcheck="false" value="'+esc(XS.dest)+'" placeholder="Pega tu dirección de '+TCN[to.c]+'">'+
  '<div class="dim" style="margin-top:6px;font-size:12px">Usa una dirección de una wallet tuya, no la de un exchange ni la de un contrato.</div></div>'+
@@ -950,23 +961,31 @@ function rX(){
  (hz?'<div class="stat dn">'+TCN[XS.halt[fr.c]?fr.c:to.c]+" está en pausa en THORChain ahora mismo. Elige otra red o prueba más tarde.</div>":"")+
  '<button class="btn p" style="background:rgba(255,255,255,.1);color:#fff" data-act="xquote"'+(hz?" disabled":"")+'>Ver precio</button><div id="xq">'+xqHtml()+'</div>'+
  '<button class="btn p" data-act="xswap"'+(hz?" disabled":"")+'>Cambiar (real)</button><div class="stat" id="xres"></div>'+
- '<div class="dim" style="margin-top:6px">Firmas con tu wallet de Ethereum, BNB Chain, Base o Avalanche. THORChain te envía el resultado a la dirección que indiques; Kosmara no toca tus fondos.</div>';
+ '<div class="dim" style="margin-top:6px">Firmas con tu wallet de Solana, Ethereum, BNB Chain, Base o Avalanche, con cualquier token que tengas: si no lo admite THORChain, primero se cambia al nativo de su red. THORChain te envía el resultado a la dirección que indiques; Kosmara no toca tus fondos.</div>';
 }
-function xqHtml(){var q=XS.q;if(!q)return "";var to=XS.AM[XS.to],fr=XS.AM[XS.from],fe=q.fees||{},ff=(+fe.total||0)/1e8,af=(+fe.affiliate||0)/1e8,sec=+q.total_swap_seconds||0;
+function xqHtml(){var q=XS.q;if(!q)return "";var to=XS.AM[XS.to],fr=xsTok(XS.from),nat=TCNAT[fr.c]?TCNAT[fr.c].split(".")[1]:"",fe=q.fees||{},ff=(+fe.total||0)/1e8,af=(+fe.affiliate||0)/1e8,sec=+q.total_swap_seconds||0;
  return '<div class="row"><div><b>Recibes unos '+fs(q.out)+" "+esc(to.s)+'</b><small>'+(to.usd?"≈ "+cur(q.out*to.usd,2)+" · ":"")+"en "+TCN[to.c]+'</small></div><div class="v"><b>'+(sec<90?"≈ "+Math.max(1,Math.round(sec))+" s":"≈ "+Math.round(sec/60)+" min")+'</b><small>tiempo estimado</small></div></div>'+
  '<div class="dim" style="font-size:12px;margin-top:6px">Comisiones de red y liquidez: '+f(ff,6)+" "+esc(to.s)+" ("+f((+fe.total_bps||0)/100,2)+" %)"+(af>0?" · incluye comisión de Kosmara ("+f(TC_BPS/100,2)+" %): "+f(af,6)+" "+esc(to.s):"")+
- (q.min?" · mínimo recomendado: "+f(q.min,6)+" "+esc(fr.s):"")+"</div>"}
+ (q.min?" · mínimo recomendado: "+f(q.min,6)+" "+esc(q.pre?nat:fr.s):"")+"</div>"+
+ (q.pre?'<div class="dim" style="font-size:12px;margin-top:4px">Antes: '+esc(fr.s)+" → "+esc(nat)+" con "+q.pre.via+", sin comisión de Kosmara. Son dos firmas: el cambio y el envío a THORChain.</div>":"")}
 function xres(h){var e=$("xres");if(e)e.innerHTML=h}
 async function tcQuote(){
- var fr=XS.AM[XS.from],to=XS.AM[XS.to],a=toU(XS.amt,8);
+ var fr=xsTok(XS.from),to=XS.AM[XS.to],a=toU(XS.amt,8),fa=fr&&fr.a,pre=null,sl=Math.round(SW.slip*100);
  if(!fr||!to||fr.a===to.a)throw new Error("Elige dos activos distintos.");if(!(a>0n))throw new Error("Introduce una cantidad.");
  if(!XS.dest.trim())throw new Error("Pega tu dirección de "+TCN[to.c]+" para recibir.");
- var u="/quote/swap?from_asset="+encodeURIComponent(fr.a)+"&to_asset="+encodeURIComponent(to.a)+"&amount="+a.toString()+"&destination="+encodeURIComponent(XS.dest.trim())+
+ if(fr.x){var raw=toU(XS.amt,fr.d);fa=TCNAT[fr.c];
+  if(fr.c==="SOL"){var jq=await jj("v1/quote?inputMint="+fr.m+"&outputMint="+SOLM+"&amount="+raw+"&slippageBps="+sl);pre={via:"Jupiter",jq:jq,raw:raw,min:BigInt(jq.otherAmountThreshold||"0")};a=pre.min/10n}
+  else{var kc=KSC[TCID[fr.c]],rr=await fetch(KS+"/"+kc+"/api/v1/routes?tokenIn="+fr.m+"&tokenOut="+KSE+"&amountIn="+raw,{headers:{"x-client-id":"kosmara"}}),rj=await rr.json();if(!rr.ok||rj.code!==0||!rj.data)throw new Error("No hay ruta para cambiar "+fr.s+" a "+fa.split(".")[1]+".");
+   pre={via:"KyberSwap",raw:raw,min:BigInt(rj.data.routeSummary.amountOut)*BigInt(10000-sl)/10000n};a=pre.min/10000000000n}
+  if(!(a>0n))throw new Error("La cantidad es demasiado pequeña.")}
+ var q=await tcQ(fa,to,a);q.pre=pre;return q}
+async function tcQ(fa,to,a,dest){
+ var u="/quote/swap?from_asset="+encodeURIComponent(fa)+"&to_asset="+encodeURIComponent(to.a)+"&amount="+a.toString()+"&destination="+encodeURIComponent(dest||XS.dest.trim())+
   "&streaming_interval=1&streaming_quantity=0&liquidity_tolerance_bps="+Math.round(SW.slip*100)+(TC_AFF&&TC_BPS>0?"&affiliate="+encodeURIComponent(TC_AFF)+"&affiliate_bps="+Math.min(1000,TC_BPS|0):"");
  var q=await tcj(u);if(!q.memo||!q.inbound_address)throw new Error("THORChain no devolvió una ruta.");
- q.out=(+q.expected_amount_out||0)/1e8;q.min=(+q.recommended_min_amount_in||0)/1e8;return q}
+ q.out=(+q.expected_amount_out||0)/1e8;q.min=(+q.recommended_min_amount_in||0)/1e8;q.amt8=a;q.fa=fa;q.dest=dest||XS.dest.trim();return q}
 async function xQuote(){xres("Consultando THORChain…");try{XS.q=await tcQuote();var e=$("xq");if(e)e.innerHTML=xqHtml();var o=$("xout");if(o)o.textContent="≈ "+fs(XS.q.out);
-  xres(XS.q.min&&parseFloat(XS.amt)<XS.q.min?'<span class="dn">Por debajo del mínimo recomendado: las comisiones pesan mucho.</span>':"Revisa el precio y pulsa Cambiar.")}
+  xres(XS.q.min&&!XS.q.pre&&parseFloat(XS.amt)<XS.q.min?'<span class="dn">Por debajo del mínimo recomendado: las comisiones pesan mucho.</span>':"Revisa el precio y pulsa Cambiar.")}
  catch(e){XS.q=null;var d=$("xq");if(d)d.innerHTML="";xres('<span class="dn">'+esc(fe(e))+"</span>")}}
 /* wallet de Ethereum: la conectada, o la parte EVM de la wallet de Solana (p. ej. Phantom) */
 async function needEvm(){
@@ -982,26 +1001,39 @@ async function ecall(to,data){return S.ev.request({method:"eth_call",params:[{to
 async function esend(tx){tx.from=S.eaddr;return S.ev.request({method:"eth_sendTransaction",params:[tx]})}
 async function waitRc(h){for(var i=0;i<90;i++){var r=await S.ev.request({method:"eth_getTransactionReceipt",params:[h]});if(r){if(r.status==="0x0")throw new Error("La transacción falló en la red.");return r}await new Promise(function(z){setTimeout(z,3000)})}throw new Error("La aprobación tarda demasiado; revisa tu wallet.")}
 async function xSwap(){
- var fr=XS.AM[XS.from],to=XS.AM[XS.to];
- try{if(!(await needEvm()))return;
+ var fr=xsTok(XS.from),to=XS.AM[XS.to],h,lk;
+ try{if(fr.c==="SOL"){if(!(await needSol()))return;if(!(window.kzSdk&&kzSdk.sendJson))throw new Error("El módulo de Solana aún está cargando. Prueba en unos segundos.")}else if(!(await needEvm()))return;
   xres("Calculando precio actual…");var q=await tcQuote();XS.q=q;var e=$("xq");if(e)e.innerHTML=xqHtml();
-  
-  xres("Cambiando tu wallet a "+TCN[fr.c]+"…");await evmChain(fr.c);
-  var dec=18;if(fr.tok){dec=parseInt(await ecall(fr.tok,"0x313ce567"),16);if(!(dec>=0))throw new Error("No pude leer los decimales del token.")}
-  var amt=toU(XS.amt,dec),h;if(!(amt>0n))throw new Error("Cantidad no válida.");
-  if(!fr.tok){xres("Firma en tu wallet…");h=await esend({to:q.inbound_address,value:"0x"+amt.toString(16),data:"0x"+hexU(q.memo)})}
-  else{
-   var al=BigInt(await ecall(fr.tok,"0xdd62ed3e"+h32(S.eaddr)+h32(q.router))||"0x0");
-   if(al<amt){
-    if(al>0n){xres("Reiniciando el permiso del token (paso 1 de 3)…");await waitRc(await esend({to:fr.tok,data:"0x095ea7b3"+h32(q.router)+h32(0n)}))}
-    xres("Aprueba el uso de "+esc(fr.s)+" por THORChain…");await waitRc(await esend({to:fr.tok,data:"0x095ea7b3"+h32(q.router)+h32(amt)}))}
-   var mb=hexU(q.memo),ml=mb.length/2;
-   var data="0x44bc937b"+h32(q.inbound_address)+h32(fr.tok)+h32(amt)+h32(160n)+h32(BigInt(q.expiry))+h32(BigInt(ml))+mb.padEnd(Math.ceil(ml/32)*64,"0");
-   xres("Firma el envío en tu wallet…");h=await esend({to:q.router,data:data})}
-  xres('Enviado. <a href="'+TCE[fr.c].x+esc(h)+'" target="_blank" rel="noopener">Ver transacción</a>. THORChain te enviará unos '+fs(q.out)+" "+esc(to.s)+" a tu dirección de "+TCN[to.c]+" en "+(q.total_swap_seconds>90?"≈ "+Math.round(q.total_swap_seconds/60)+" min":"unos segundos")+".");
+  if(fr.c==="SOL"){if(!fr.x&&fr.tok)throw new Error("Desde Solana, elige SOL o uno de tus tokens.");var o=await tcSolSend(fr,q,to,xres);h=o.signature;lk="https://solscan.io/tx/"+h;q=o.q}
+  else{xres("Cambiando tu wallet a "+TCN[fr.c]+"…");await evmChain(fr.c);
+   if(fr.x){var K=await kyRoute(TCID[fr.c],fr.m,KSE,q.pre.raw,Math.round(SW.slip*100),true),al0=BigInt(await ecall(fr.m,"0xdd62ed3e"+h32(S.eaddr)+h32(K.router))||"0x0");
+    if(al0<q.pre.raw){if(al0>0n){xres("Reiniciando el permiso de "+esc(fr.s)+"…");await waitRc(await esend({to:fr.m,data:"0x095ea7b3"+h32(K.router)+h32(0n)}))}xres("Paso 1: aprueba el uso de "+esc(fr.s)+"…");await waitRc(await esend({to:fr.m,data:"0x095ea7b3"+h32(K.router)+h32(q.pre.raw)}))}
+    xres("Paso 1: firma el cambio de "+esc(fr.s)+" a "+TCNAT[fr.c].split(".")[1]+"…");var sh=await esend({to:K.tx.to,data:K.tx.data,value:K.tx.value,gas:K.tx.gas});await waitRc(sh);
+    xres("Cambio hecho. Preparando el envío a THORChain…");q=await tcQ(TCNAT[fr.c],to,K.min/10000000000n);XS.q=q}
+   var dec=18,tk=fr.x?"":fr.tok;if(tk){dec=parseInt(await ecall(tk,"0x313ce567"),16);if(!(dec>=0))throw new Error("No pude leer los decimales del token.")}
+   var amt=fr.x?q.amt8*10000000000n:toU(XS.amt,dec);if(!(amt>0n))throw new Error("Cantidad no válida.");
+   var mb=hexU(q.memo),ml=mb.length/2,dep=function(asset){return "0x44bc937b"+h32(q.inbound_address)+h32(asset)+h32(amt)+h32(160n)+h32(BigInt(q.expiry))+h32(BigInt(ml))+mb.padEnd(Math.ceil(ml/32)*64,"0")};
+   if(!tk){xres("Firma el envío a THORChain en tu wallet…");h=await esend({to:q.router,value:"0x"+amt.toString(16),data:dep("0x0000000000000000000000000000000000000000")})}
+   else{var al=BigInt(await ecall(tk,"0xdd62ed3e"+h32(S.eaddr)+h32(q.router))||"0x0");
+    if(al<amt){if(al>0n){xres("Reiniciando el permiso del token…");await waitRc(await esend({to:tk,data:"0x095ea7b3"+h32(q.router)+h32(0n)}))}
+     xres("Aprueba el uso de "+esc(fr.s)+" por THORChain…");await waitRc(await esend({to:tk,data:"0x095ea7b3"+h32(q.router)+h32(amt)}))}
+    xres("Firma el envío en tu wallet…");h=await esend({to:q.router,data:dep(tk)})}
+   lk=TCE[fr.c].x+h}
+  xres('Enviado. <a href="'+esc(lk)+'" target="_blank" rel="noopener">Ver transacción</a>. THORChain te enviará unos '+fs(q.out)+" "+esc(to.s)+" a tu dirección de "+TCN[to.c]+" en "+(q.total_swap_seconds>90?"≈ "+Math.round(q.total_swap_seconds/60)+" min":"unos segundos")+".");
   toast("Swap entre redes enviado.");kzCelebrate();
  }catch(e){xres('<span class="dn">'+esc(fe(e))+"</span>")}
 }
+/* Envío desde Solana a THORChain: si el token no es SOL, primero se cambia a SOL con Jupiter (firma 1); después, una transferencia de SOL con su memo a la bóveda (firma 2). */
+async function tcSolSend(fr,q,to,res){
+ if(fr.x){res("Paso 1 de 2: firma el cambio de "+esc(fr.s)+" a SOL…");
+  var si=await jj("v1/swap-instructions",{quoteResponse:q.pre.jq,userPublicKey:S.pk,wrapAndUnwrapSol:true,dynamicComputeUnitLimit:false,dynamicSlippage:false});
+  var o1=await kzSdk.sendJson({rpc:rpcUrl(),owner:S.pk,provider:S.sw,ixs:[].concat(si.setupInstructions||[],[si.swapInstruction],si.cleanupInstruction?[si.cleanupInstruction]:[],si.otherInstructions||[]),alts:si.addressLookupTableAddresses||[]});
+  await waitSig(o1.signature);res("Cambio hecho. Preparando el envío a THORChain…");q=await tcQ("SOL.SOL",to,q.pre.min/10n,q.dest)}
+ var lam=q.amt8*10n;await loadBal();var have=BigInt(Math.floor((S.bal[SOLM]||0)*1e9));
+ if(lam+10000000n>have)throw new Error("No tienes saldo suficiente de SOL (se reservan 0,01 SOL para las comisiones de red).");
+ res((fr.x?"Paso 2 de 2: ":"")+"firma el envío a THORChain en tu wallet…");
+ var o=await kzSdk.sendJson({rpc:rpcUrl(),owner:S.pk,provider:S.sw,ixs:[solTxTo(q.inbound_address,lam),memoIx(q.memo)],cuLimit:200000});
+ return{signature:o.signature,q:q}}
 function swTabs(){return '<div class="smode" role="tablist"><button role="tab" data-sm="sol" class="'+(SW.mode!=="x"?"on":"")+'">En una red</button><button role="tab" data-sm="x" class="'+(SW.mode==="x"?"on":"")+'">Entre redes</button></div>'}
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("[data-sm],[data-act^='x']");if(!b)return;
  var m=b.getAttribute("data-sm");if(m){SW.mode=m;rSwap();if(m==="x")loadTC();return}
@@ -2221,7 +2253,7 @@ document.addEventListener("change",function(e){if(e.target.id==="jepay"){JE.pay=
 /* ---------- Vaults EVM: Aave v3 y Morpho (evm-vault.js) ----------
    Depositar y retirar es gratis. El autoswap cobra el 0,2 % de Kosmara: KyberSwap dentro de la misma red y LI.FI entre redes.
    Kosmara elige el camino con menos firmas: si la wallet admite agrupar operaciones (EIP-5792), todo va en una sola confirmación. */
-var VC={1:"Ethereum",56:"BNB Chain",8453:"Base",42161:"Arbitrum",10:"Optimism"},VX=null,VT={},NAT0="0x0000000000000000000000000000000000000000",UMAX=(1n<<256n)-1n,ATOM={};
+var VC={1:"Ethereum",56:"BNB Chain",8453:"Base",42161:"Arbitrum",10:"Optimism",sol:"Solana"},VTC={1:"ETH",56:"BSC",8453:"BASE"},VX=null,VT={},NAT0="0x0000000000000000000000000000000000000000",UMAX=(1n<<256n)-1n,ATOM={};
 function vtLoad(){if(window.kzVault)return Promise.resolve(kzVault);if(!VX)VX=new Promise(function(ok,ko){var s=document.createElement("script");s.src="./evm-vault.js?v=1";s.onload=function(){ok(window.kzVault)};s.onerror=function(){VX=null;ko(new Error("No se pudo cargar el módulo de vaults."))};document.head.appendChild(s)});return VX}
 function vRaw(v,d){v=String(v).replace(",",".").trim();if(!/^\d*\.?\d*$/.test(v)||v===""||v===".")return 0n;var p=v.split("."),fr=(p[1]||"").slice(0,d).padEnd(d,"0");return BigInt(p[0]||"0")*(10n**BigInt(d))+BigInt(fr||"0")}
 function vNat(c){return c===56?"BNB":"ETH"}
@@ -2255,10 +2287,16 @@ function vtPays(it){var c=it.chain,H=HD.evm||[],L=[],seen={},add=function(x){var
  var okS=/^(ETH|BNB|WETH|WBNB|USDC|USDC\.e|USDbC|USDT|USD₮0|DAI|USDS|USDe|FDUSD|EURC|WBTC|cbBTC|BTCB|tBTC|wstETH|weETH|cbETH|rETH|ARB|OP|AERO|LINK|UNI|AAVE|CAKE)$/i;
  H.filter(function(x){return x.c===c&&x.v>=.5&&okS.test(x.s)}).sort(function(a,b){return b.v-a.v}).forEach(function(x){add({c:c,m:x.m,s:x.s,d:x.d,a:x.a,px:x.px})});
  H.filter(function(x){return x.c!==c&&VC[x.c]&&x.v>=1&&okS.test(x.s)}).sort(function(a,b){return b.v-a.v}).forEach(function(x){add({c:x.c,m:x.m,s:x.s,d:x.d,a:x.a,px:x.px,far:1})});
+ /* Desde Solana, vía THORChain: solo a las redes y tokens que THORChain entrega (USDC, USDT, ETH… en Ethereum, Base y BNB Chain) */
+ if(hSol()&&vtTc(it)){var sb=(HD.sol||[]).filter(function(x){return x.m===SOLM||(x.v>=1&&x.ok&&okS.test(x.s))});if(!sb.some(function(x){return x.m===SOLM}))sb.unshift({m:SOLM,s:"SOL",d:9,a:S.bal[SOLM]||0,px:0});
+  sb.sort(function(a,b){return (b.m===SOLM)-(a.m===SOLM)||b.v-a.v}).forEach(function(x){add({c:"sol",m:x.m,s:sy(x.s),d:x.d,a:x.a,px:x.px,far:1})})}
  return L}
+/* Activo de THORChain que llega a la vault: el mismo token, o el nativo si la vault es de WETH/WBNB */
+function vtTc(it){var c=VTC[it.chain];if(!c||XS.ld!==2)return null;var m=String(it.asset).toLowerCase(),P=XS.A.filter(function(p){return p.c===c&&p.tok===m})[0];
+ if(P)return{p:P,nat:false};if(m===String(kzVault.WETH[it.chain]).toLowerCase()&&XS.AM[TCNAT[c]])return{p:XS.AM[TCNAT[c]],nat:true};return null}
 function vtPay(){var L=vtPays(VT.p.vt);return L.filter(function(x){return x.c+":"+x.m===VT.pay})[0]||L[0]}
-function vtMode(it,pay){return pay.c!==it.chain?"bridge":String(pay.m).toLowerCase()===String(it.asset).toLowerCase()?"direct":pay.m===NAT0&&String(it.asset).toLowerCase()===String(kzVault.WETH[it.chain]).toLowerCase()?"wrap":"swap"}
-function vOpen(p,el){VT={p:p,pay:"",amt:"",perm:LS("kz_vperm")==="1",sig:""};el.style.setProperty("--tc","20,241,149");
+function vtMode(it,pay){return pay.c==="sol"?"thor":pay.c!==it.chain?"bridge":String(pay.m).toLowerCase()===String(it.asset).toLowerCase()?"direct":pay.m===NAT0&&String(it.asset).toLowerCase()===String(kzVault.WETH[it.chain]).toLowerCase()?"wrap":"swap"}
+function vOpen(p,el){if(XS.ld!==2)loadTC().then(function(){if(VT.p===p)rVt()});VT={p:p,pay:"",amt:"",perm:LS("kz_vperm")==="1",sig:""};el.style.setProperty("--tc","20,241,149");
  var it=p.vt,L=vtPays(it),pick=L.filter(function(x){return !x.far&&x.a>0&&String(x.m).toLowerCase()===String(it.asset).toLowerCase()})[0]||L.filter(function(x){return !x.far&&x.a>0&&vtMode(it,x)==="wrap"})[0]||L.filter(function(x){return x.a>0})[0]||L[0];VT.pay=pick.c+":"+pick.m;
  rVt(el);el.hidden=false;if(hEvm()&&!HD.evm)loadHold(true).then(function(){if(VT.p===p){var L2=vtPays(it),q=L2.filter(function(x){return String(x.m).toLowerCase()===String(it.asset).toLowerCase()&&x.a>0})[0]||L2.filter(function(x){return x.a>0})[0];if(q)VT.pay=q.c+":"+q.m;rVt()}}).catch(function(){})}
 function rVt(el){el=el||$("ps");var p=VT.p;if(!el||!p)return;var it=p.vt,L=vtPays(it),pay=vtPay(),md=vtMode(it,pay),who=it.pr==="Aave"?"Aave v3":it.pr==="Kosmara"?"Vault Kosmara":"Morpho · "+it.name;
@@ -2268,10 +2306,10 @@ function rVt(el){el=el||$("ps");var p=VT.p;if(!el||!p)return;var it=p.vt,L=vtPay
   '<div class="sum" id="vtsum">'+vtSum()+"</div>"+
   '<div class="hrow"><label class="tg"><input type="checkbox" id="vtperm"'+(VT.perm?" checked":"")+'>Permiso permanente para este token</label></div><div class="dim" style="font-size:12px;margin-top:-4px">Así tus próximos depósitos de '+esc(sy(it.sym))+" en este vault necesitan una firma menos. Lo puedes quitar cuando quieras desde tu wallet.</div>"+
   '<button class="btn p" data-act="vtdep">Depositar</button><div class="stat" id="vtres"></div>'+
-  '<div class="dim" style="margin-top:10px;font-size:13px">El depósito va directo de tu wallet a '+(it.pr==="Aave"?"Aave":"la vault de Morpho")+" y lo retiras cuando quieras. Depositar y retirar es gratis"+(md==="swap"||md==="bridge"?"; el autoswap tiene una comisión de Kosmara del 0,2 %, incluida en el cambio":"")+". Solo pagas la comisión de red."+(it.pr==="Kosmara"?" En las vaults Kosmara, Kosmara se queda el "+f(it.kfee,0)+" % del rendimiento; el rendimiento mostrado ya lo descuenta.":it.pr==="Morpho"?" El curador ("+esc(it.name.split(" ")[0])+") gestiona dónde se presta el dinero.":"")+"</div></div>";
+  '<div class="dim" style="margin-top:10px;font-size:13px">El depósito va directo de tu wallet a '+(it.pr==="Aave"?"Aave":"la vault de Morpho")+" y lo retiras cuando quieras. Depositar y retirar es gratis"+(md==="swap"?"; el autoswap tiene una comisión de Kosmara del 0,2 %, incluida en el cambio":md==="bridge"||md==="thor"?"; el autoswap entre redes tiene una comisión de Kosmara del 0,3 %, incluida en el cambio":"")+". Solo pagas la comisión de red."+(it.pr==="Kosmara"?" En las vaults Kosmara, Kosmara se queda el "+f(it.kfee,0)+" % del rendimiento; el rendimiento mostrado ya lo descuenta.":it.pr==="Morpho"?" El curador ("+esc(it.name.split(" ")[0])+") gestiona dónde se presta el dinero.":"")+"</div></div>";
  vtSig()}
 function vtSum(){var it=VT.p.vt,pay=vtPay(),a=+String(VT.amt).replace(",",".")||0,md=vtMode(it,pay);if(!(a>0))return '<div class="dim">Introduce una cantidad.</div>';
- var R=function(k,v){return '<div class="row" style="margin-top:4px"><span class="dim">'+k+'</span><span class="v">'+v+"</span></div>"},t=md==="direct"||md==="wrap"?R("Depositas",f(a,6)+" "+esc(pay.s))+(md==="wrap"&&it.pr!=="Aave"?R("Se convierte a",esc(sy(it.sym))):""):R("Autoswap",f(a,6)+" "+esc(pay.s)+(md==="bridge"?" ("+esc(VC[pay.c])+")":"")+" → "+esc(sy(it.sym))+(md==="bridge"?" ("+esc(VC[it.chain])+")":""))+R("Comisión de Kosmara","0,2 % del cambio");
+ var R=function(k,v){return '<div class="row" style="margin-top:4px"><span class="dim">'+k+'</span><span class="v">'+v+"</span></div>"},t=md==="direct"||md==="wrap"?R("Depositas",f(a,6)+" "+esc(pay.s))+(md==="wrap"&&it.pr!=="Aave"?R("Se convierte a",esc(sy(it.sym))):""):R("Autoswap",f(a,6)+" "+esc(pay.s)+(md!=="swap"?" ("+esc(VC[pay.c])+")":"")+" → "+esc(sy(it.sym))+(md!=="swap"?" ("+esc(VC[it.chain])+")":""))+R("Comisión de Kosmara",(md==="swap"?"0,2":"0,3")+" % del cambio")+(md==="thor"?R("Ruta","THORChain"+(pay.m!==SOLM?" (antes "+esc(pay.s)+" → SOL)":"")):"");
  return t+(pay.px?R("Valor","≈"+usd(a*pay.px)):"")+'<div class="dim" style="margin-top:8px" id="vtsig">'+esc(VT.sig||"")+"</div>"}
 /* Cuántas firmas hacen falta (se avisa antes de empezar) */
 var VTS=0;
@@ -2280,8 +2318,9 @@ async function vtSig(){var n=++VTS,e=function(){var x=$("vtsig");if(x&&n===VTS)x
  try{if(ow&&window.kzVault){var sp=it.pr==="Aave"?it.market:it.vault;needA=(await kzVault.allowance(it.chain,it.asset,ow,sp))<(md==="direct"?raw:1n)}}catch(z){}
  var A=md==="direct"?(needA?1:0)+1:md==="wrap"?(it.pr==="Aave"?1:1+(needA?1:0)+1):md==="swap"?(needP?1:0)+1+(needA?1:0)+1:0;
  if(md==="bridge"){VT.sig="Firmas: "+(needP?"permiso y ":"")+"envío entre redes en "+VC[pay.c]+"; cuando llegue, "+(needA?"permiso y ":"")+"depósito en "+VC[it.chain]+".";return e()}
+ if(md==="thor"){VT.sig="Firmas: "+(pay.m!==SOLM?"cambio a SOL y ":"")+"envío desde Solana; cuando llegue (5-20 min), "+(needA?"permiso y ":"")+"depósito en "+VC[it.chain]+". Necesitas un poco de "+vNat(it.chain)+" en "+VC[it.chain]+" para el gas del depósito.";return e()}
  var at=ow&&S.ev?await evAtomic(it.chain):false;VT.sig=A<=1?"Necesitarás 1 firma en tu wallet.":at?"Necesitarás 1 confirmación en tu wallet (agrupa "+A+" operaciones).":"Necesitarás "+A+" firmas en tu wallet"+(ow?"":" como máximo")+".";e()}
-async function kyRoute(c,tIn,tOut,amIn,sl){var kc=KSC[c],u=KS+"/"+kc+"/api/v1/routes?tokenIn="+tIn+"&tokenOut="+tOut+"&amountIn="+amIn.toString()+(KS_RCV&&KS_FEE_BPS>0?"&feeAmount="+KS_FEE_BPS+"&isInBps=true&chargeFeeBy=currency_in&feeReceiver="+KS_RCV:"");
+async function kyRoute(c,tIn,tOut,amIn,sl,nofee){var kc=KSC[c],u=KS+"/"+kc+"/api/v1/routes?tokenIn="+tIn+"&tokenOut="+tOut+"&amountIn="+amIn.toString()+(KS_RCV&&KS_FEE_BPS>0&&!nofee?"&feeAmount="+KS_FEE_BPS+"&isInBps=true&chargeFeeBy=currency_in&feeReceiver="+KS_RCV:"");
  var rr=await fetch(u,{headers:{"x-client-id":"kosmara"}}),rj=await rr.json();if(!rr.ok||rj.code!==0||!rj.data)throw new Error("Autoswap: "+(rj&&rj.message?(/route not found/i.test(rj.message)?"no hay ruta para este par":rj.message):"sin ruta"));
  var bd=await fetch(KS+"/"+kc+"/api/v1/route/build",{method:"POST",headers:{"Content-Type":"application/json","x-client-id":"kosmara"},body:JSON.stringify({routeSummary:rj.data.routeSummary,sender:S.eaddr,recipient:S.eaddr,slippageTolerance:sl})}),bj=await bd.json();
  if(!bd.ok||bj.code!==0||!bj.data)throw new Error("Autoswap: "+(bj.message||"no se pudo preparar"));var tx={to:bj.data.routerAddress,data:bj.data.data,value:"0x"+BigInt(bj.data.transactionValue||"0").toString(16),lbl:"Autoswap"};if(bj.data.gas)tx.gas="0x"+Math.ceil(+bj.data.gas*1.25).toString(16);
@@ -2292,10 +2331,11 @@ async function vtAppr(c,tok,sp,need,perm,sym){var ow=S.eaddr,al=await kzVault.al
 async function vtDepB(it,dep){var ow=S.eaddr,tx=await kzVault.depositTx(it,ow,dep,false);return (await vtAppr(it.chain,it.asset,tx.spender,dep,VT.perm,sy(it.sym))).concat([{to:tx.to,data:tx.data,value:tx.value,lbl:"Depósito"}])}
 async function vtDeposit(){var p=VT.p,it=p.vt,c=it.chain,C0=kzEvmPos.CH[kzVault.KEY[c]],res=function(h){var e=$("vtres");if(e)e.innerHTML=h};
  try{var pay=vtPay(),md=vtMode(it,pay),raw=vRaw(VT.amt,pay.d);if(!(raw>0n))throw new Error("Introduce una cantidad.");if(!(await needEvm()))return;var ow=S.eaddr,sl=Math.round(ST.slip*100),h=null;
+  if(md==="thor")return await vtThor(it,pay,raw,res);
   var gas=pay.m===NAT0?BigInt(Math.floor(kzEvmPos.CH[kzVault.KEY[pay.c]].gas*1e18)):0n,have=vRaw(String(pay.a.toFixed?pay.a.toFixed(Math.min(pay.d,12)):pay.a),pay.d);
   if(raw+gas>have)throw new Error("No tienes saldo suficiente de "+pay.s+(gas?" (se reserva un poco para el gas)":"")+".");
   if(md==="bridge"){var Cf=kzEvmPos.CH[kzVault.KEY[pay.c]];res("Buscando la mejor ruta entre redes…");
-   var u=LIFI+"/quote?fromChain="+pay.c+"&toChain="+c+"&fromToken="+pay.m+"&toToken="+it.asset+"&fromAmount="+raw.toString()+"&fromAddress="+ow+"&toAddress="+ow+"&slippage="+ST.slip/100+(LIFI_INT?"&integrator="+encodeURIComponent(LIFI_INT)+(LIFI_FEE>0?"&fee="+LIFI_FEE:""):"");
+   var u=LIFI+"/quote?fromChain="+pay.c+"&toChain="+c+"&fromToken="+pay.m+"&toToken="+it.asset+"&fromAmount="+raw.toString()+"&fromAddress="+ow+"&toAddress="+ow+"&slippage="+ST.slip/100+(LIFI_INT?"&integrator="+encodeURIComponent(LIFI_INT)+(LIFI_FEE>0?"&fee="+LIFI_XFEE:""):"");
    var qr=await fetch(u),q=await qr.json();if(!qr.ok||!q.transactionRequest)throw new Error((q&&q.message)||"No hay ruta entre redes para este importe.");
    res("Cambiando tu wallet a "+esc(Cf.name)+"…");await evSwitch(pay.c);var T=q.transactionRequest,A=[];
    if(pay.m!==NAT0)A=await vtAppr(pay.c,pay.m,q.estimate.approvalAddress,raw,false,pay.s);
@@ -2320,9 +2360,28 @@ async function vtDeposit(){var p=VT.p,it=p.vt,c=it.chain,C0=kzEvmPos.CH[kzVault.
 document.addEventListener("click",function(e){var t=e.target.closest&&e.target.closest("[data-act='vtdep'],[data-act='vtmax'],[data-vtdep],[data-vtwd]");if(!t)return;
  if(t.hasAttribute("data-vtdep")){var k=t.getAttribute("data-vtdep");if(S.pools[k]){S.sel=k;rPs()}else toast("Cargando los vaults; prueba en unos segundos.");return}
  if(t.hasAttribute("data-vtwd")){var x=(S.vte||[])[+t.getAttribute("data-vtwd")];if(x)vtWithdraw(x,$("vtr_"+t.getAttribute("data-vtwd")));return}
- if(!VT.p)return;var a=t.getAttribute("data-act");if(a==="vtdep")vtDeposit();else{e.preventDefault();var pay=vtPay(),g=pay.m===NAT0?kzEvmPos.CH[kzVault.KEY[pay.c]].gas:0;var dd=Math.pow(10,Math.min(8,pay.d));VT.amt=String(Math.floor(Math.max(0,pay.a-g)*dd)/dd);var i=$("vtamt");if(i)i.value=VT.amt;var s=$("vtsum");if(s)s.innerHTML=vtSum();vtSig()}});
+ if(!VT.p)return;var a=t.getAttribute("data-act");if(a==="vtdep")vtDeposit();else{e.preventDefault();var pay=vtPay(),g=pay.c==="sol"?(pay.m===SOLM?.01:0):pay.m===NAT0?kzEvmPos.CH[kzVault.KEY[pay.c]].gas:0;var dd=Math.pow(10,Math.min(8,pay.d));VT.amt=String(Math.floor(Math.max(0,pay.a-g)*dd)/dd);var i=$("vtamt");if(i)i.value=VT.amt;var s=$("vtsum");if(s)s.innerHTML=vtSum();vtSig()}});
 var VTI=null;document.addEventListener("input",function(e){if(e.target.id==="vtamt"&&VT.p){VT.amt=e.target.value;var s=$("vtsum");if(s)s.innerHTML=vtSum();clearTimeout(VTI);VTI=setTimeout(vtSig,500)}});
 document.addEventListener("change",function(e){if(!VT.p)return;if(e.target.id==="vtpay"){VT.pay=e.target.value;VT.amt="";rVt()}else if(e.target.id==="vtperm"){VT.perm=e.target.checked;LS("kz_vperm",VT.perm?"1":"");vtSig()}});
+/* Desde Solana a una vault EVM vía THORChain: envío desde Solana, espera a que llegue y deposita lo recibido */
+async function vtThor(it,pay,raw,res){var c=it.chain,C0=kzEvmPos.CH[kzVault.KEY[c]],T=vtTc(it),ow=S.eaddr;if(!T)throw new Error("THORChain no entrega este token en "+VC[c]+".");
+ if(!(await needSol()))return;if(!(window.kzSdk&&kzSdk.sendJson))throw new Error("El módulo de Solana aún está cargando. Prueba en unos segundos.");
+ var B=await kzEvmPos.balances(kzVault.KEY[c],ow,T.nat?[]:[it.asset]),gas=BigInt(Math.floor(C0.gas*1e18));
+ if(B.native<gas/2n)throw new Error("Necesitas un poco de "+vNat(c)+" en "+VC[c]+" (≈"+C0.gas+") para pagar el gas del depósito cuando lleguen los fondos.");
+ var b0=T.nat?B.native:(B[it.asset]||B[String(it.asset).toLowerCase()]||0n);
+ res("Consultando THORChain…");var fr,q,sl=Math.round(ST.slip*100);
+ if(pay.m===SOLM){if(raw+10000000n>BigInt(Math.floor((S.bal[SOLM]||0)*1e9)))throw new Error("No tienes saldo suficiente de SOL (se reservan 0,01 SOL para las comisiones de red).");fr={a:"SOL.SOL",c:"SOL",s:"SOL"};q=await tcQ("SOL.SOL",T.p,raw/10n,ow)}
+ else{var jq=await jj("v1/quote?inputMint="+pay.m+"&outputMint="+SOLM+"&amount="+raw+"&slippageBps="+sl),mn=BigInt(jq.otherAmountThreshold||"0");fr={a:"X",c:"SOL",s:pay.s,x:true};q=await tcQ("SOL.SOL",T.p,mn/10n,ow);q.pre={via:"Jupiter",jq:jq,raw:raw,min:mn}}
+ if(q.min&&q.amt8<BigInt(Math.floor(q.min*1e8)))throw new Error("Por debajo del mínimo de THORChain para esta ruta ("+f(q.min,4)+" SOL). Prueba con más cantidad.");
+ var o=await tcSolSend(fr,q,T.p,res);q=o.q;var exp=BigInt(Math.floor(q.out*Math.pow(10,T.nat?18:it.dec))),got=0n;
+ for(var i=0;i<240;i++){res('Enviado desde Solana. Esperando a que THORChain lo entregue en '+esc(VC[c])+'… (≈ '+Math.max(1,Math.round((+q.total_swap_seconds||600)/60))+' min) <a class="lk" href="https://solscan.io/tx/'+esc(o.signature)+'" target="_blank" rel="noopener">Ver ↗</a>');
+  await new Promise(function(z){setTimeout(z,10000)});try{var B1=await kzEvmPos.balances(kzVault.KEY[c],ow,T.nat?[]:[it.asset]),v=T.nat?B1.native:(B1[it.asset]||B1[String(it.asset).toLowerCase()]||0n);got=v-b0;if(got>=exp/2n)break}catch(z){}}
+ if(got<=0n)throw new Error("Aún no ha llegado. THORChain lo enviará a tu wallet en "+VC[c]+"; cuando llegue, deposita desde aquí.");
+ res("Ha llegado. Cambiando tu wallet a "+esc(C0.name)+" para depositar…");if(!(await needEvm()))return;await evSwitch(c);var h;
+ if(T.nat){var g2=got>gas?got-gas/4n:got;if(it.pr==="Aave"){var t=await kzVault.depositTx(it,ow,g2,true);h=await evRun(c,[{to:t.to,data:t.data,value:t.value,lbl:"Depósito"}],res)}
+  else h=await evRun(c,[Object.assign(kzVault.wrapTx(c,g2),{lbl:"Convertir "+vNat(c)+" a "+sy(it.sym)})].concat(await vtDepB(it,g2)),res)}
+ else h=await evRun(c,await vtDepB(it,got),res);
+ res("Depositado. "+(h?'<a class="lk" href="'+C0.tx+esc(h)+'" target="_blank" rel="noopener">Ver transacción ↗</a> ':"")+"Lo verás en Portafolio → Vaults.");kzCelebrate(1);VT.amt="";setTimeout(function(){loadVtPos(true);try{loadHold(true);loadBal()}catch(z){}},3000)}
 /* Retirar (gratis) */
 async function vtWithdraw(x,el){var r=function(h){if(el)el.innerHTML=h},nat=x.pr==="Aave"&&x.native;
  var form=await kzConfirm("Retirar de "+(x.pr==="Aave"?"Aave":x.name),'<div>Tienes <b>'+f(x.amt,6)+" "+esc(sy(x.sym))+"</b> en "+esc(VC[x.chain])+'.</div><div class="srow" style="gap:6px;margin-top:10px">'+[25,50,75,100].map(function(v){return '<button class="btn kzpct'+(v===100?" on":"")+'" type="button" data-o="'+v+'">'+v+"%</button>"}).join("")+"</div>"+
