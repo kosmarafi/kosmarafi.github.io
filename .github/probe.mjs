@@ -12,3 +12,4 @@ await click("data-vf","Morpho");await click("data-vs","apy");await pg.waitForTim
 console.log("ERRS",JSON.stringify(errs));
 for(const f of fs.readdirSync("shots")){const p2=await b.newPage();await p2.goto("file://"+process.cwd()+"/shots/"+f);const j=(await p2.screenshot({type:"jpeg",quality:55})).toString("base64");await p2.close();j.match(/.{1,3000}/g).forEach((c,i)=>console.log("IMG "+f+" "+i+" "+c))}
 await b.close();
+// r
